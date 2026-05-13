@@ -1229,47 +1229,98 @@ function cancelMyBooking(id){
 // ── 床位時間表 ──
 
 function renderSchedule(){
-  const therapistIds=['T043','T031','T026'];
-  const tNames={'T043':'43號','T031':'31號','T026':'26號'};
-  const shiftColors={'17':'#e8f4fd','18':'#f0edf9','OFF':'#f5f5f5'};
-  const shiftTextColors={'17':'#2255aa','18':'var(--pu)','OFF':'#ccc'};
-  const shiftLabels={'17':'早','18':'晚','OFF':'△'};
+  const isBoss = cur.user.role === 'boss';
+  const therapistIds = ['T043','T031','T026'];
+  const tNames = {'T043':'43號','T031':'31號','T026':'26號'};
+  const shiftOpts = ['17','18','全','OFF'];
+  const shiftColors = {'17':'#e8f4fd','18':'#f0edf9','全':'#edf9f0','OFF':'#f5f5f5'};
+  const shiftText = {'17':'#2255aa','18':'var(--pu)','全':'var(--green)','OFF':'#ccc'};
+  const shiftLabels = {'17':'早','18':'晚','全':'全','OFF':'△'};
 
-  let out = '<div class="section-title">5月排班總覽</div>';
-  out += '<div style="overflow-x:auto;padding:0 0.9rem"><table style="width:100%;border-collapse:collapse;min-width:520px;font-size:11px;">';
-  out += '<thead><tr style="background:var(--pu-pale)">';
-  out += '<th style="padding:8px 6px;text-align:left;color:var(--pu);font-weight:700;position:sticky;left:0;background:var(--pu-pale)">師傅</th>';
+  let out = '<div class="section-title">5月排班總覽' + (isBoss ? ' <span style="font-size:11px;color:var(--text3);font-weight:400">（老闆可點格子修改）</span>' : '') + '</div>';
+  out += '<div style="overflow-x:auto;padding:0 0.9rem"><div style="min-width:520px;">';
+
+  // Header row
+  out += '<div style="display:grid;grid-template-columns:64px repeat(31,1fr);gap:2px;margin-bottom:3px;">';
+  out += '<div style="font-size:10px;color:var(--text3);padding:4px 0"></div>';
   for(let d=1;d<=31;d++){
-    out += '<th style="padding:4px 2px;text-align:center;color:var(--text3);font-weight:600;min-width:22px">'+d+'</th>';
+    const dow = new Date(2026,4,d).getDay();
+    const isWeekend = dow===0||dow===6;
+    out += '<div style="font-size:9px;color:'+(isWeekend?'var(--red)':'var(--text3)')+';text-align:center;padding:2px 0;font-weight:600">'+d+'</div>';
   }
-  out += '</tr></thead><tbody>';
+  out += '</div>';
 
+  // Each therapist row
   therapistIds.forEach(function(tid){
-    const sched = SCHEDULE_2026_05[tid];
-    out += '<tr style="border-bottom:1px solid var(--border)">';
-    out += '<td style="padding:6px;font-weight:700;color:var(--pu);white-space:nowrap;position:sticky;left:0;background:#fff">'+tNames[tid]+'</td>';
+    const sched = SCHEDULE_2026_05[tid] || {};
+    out += '<div style="display:grid;grid-template-columns:64px repeat(31,1fr);gap:2px;margin-bottom:3px;">';
+    out += '<div style="font-size:12px;font-weight:700;color:var(--pu);display:flex;align-items:center;padding:0 4px;">'+tNames[tid]+'</div>';
     for(let d=1;d<=31;d++){
-      const val = sched[d];
-      const isOff = !val || val==='OFF';
-      const isMorning = val==='17';
-      const isEvening = val==='18';
-      let bg = isOff ? '#f5f5f5' : isMorning ? '#e8f4fd' : isEvening ? '#f0edf9' : '#edf9f0';
-      let color = isOff ? '#ccc' : isMorning ? '#2255aa' : isEvening ? 'var(--pu)' : 'var(--green)';
-      let lbl = isOff ? '△' : isMorning ? '早' : isEvening ? '晚' : '全';
-      out += '<td style="text-align:center;padding:4px 1px;background:'+bg+';color:'+color+';font-weight:600">'+lbl+'</td>';
+      const val = sched[d] || 'OFF';
+      const isOff = !sched[d] || sched[d]==='OFF';
+      const bg = shiftColors[val] || '#f5f5f5';
+      const color = shiftText[val] || '#ccc';
+      const lbl = shiftLabels[val] || val;
+      if(isBoss){
+        out += '<div onclick="editShift(\''+tid+'\','+d+')" style="border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;min-height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:'+bg+';color:'+color+';font-weight:600;border:1px solid transparent;" title="點擊修改">'+lbl+'</div>';
+      } else {
+        out += '<div style="border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;min-height:28px;display:flex;align-items:center;justify-content:center;background:'+bg+';color:'+color+';font-weight:600;">'+lbl+'</div>';
+      }
     }
-    out += '</tr>';
+    out += '</div>';
   });
 
-  out += '</tbody></table></div>';
-  out += '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:0.75rem 0.9rem;font-size:11px;color:var(--text2)">';
+  out += '</div></div>';
+
+  // Legend
+  out += '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:0.75rem 0.9rem;font-size:11px;color:var(--text2)">';
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#e8f4fd;border-radius:3px;vertical-align:middle;margin-right:3px"></span>早班 09:30–14:00</span>';
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#f0edf9;border-radius:3px;vertical-align:middle;margin-right:3px"></span>晚班 19:00–22:00</span>';
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#edf9f0;border-radius:3px;vertical-align:middle;margin-right:3px"></span>全天班</span>';
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#f5f5f5;border-radius:3px;vertical-align:middle;margin-right:3px"></span>△ 休假</span>';
   out += '</div>';
+
+  // Edit modal (hidden)
+  out += '<div id="shift-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;">';
+  out += '<div style="background:#fff;border-radius:16px;padding:1.5rem;max-width:300px;width:90%;margin:0 auto;">';
+  out += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:0.25rem" id="shift-modal-title">修改班別</div>';
+  out += '<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem" id="shift-modal-sub"></div>';
+  out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">';
+  out += '<button onclick="setShift(\'17\')" style="padding:14px;border-radius:10px;background:#e8f4fd;color:#2255aa;border:1.5px solid #b0d0f0;font-size:14px;font-weight:700;cursor:pointer">早班<br><span style="font-size:10px;font-weight:400">09:30–14:00</span></button>';
+  out += '<button onclick="setShift(\'18\')" style="padding:14px;border-radius:10px;background:#f0edf9;color:var(--pu);border:1.5px solid var(--pu-mid);font-size:14px;font-weight:700;cursor:pointer">晚班<br><span style="font-size:10px;font-weight:400">19:00–22:00</span></button>';
+  out += '<button onclick="setShift(\'全\')" style="padding:14px;border-radius:10px;background:#edf9f0;color:var(--green);border:1.5px solid #a0d0b0;font-size:14px;font-weight:700;cursor:pointer">全天班<br><span style="font-size:10px;font-weight:400">全日上班</span></button>';
+  out += '<button onclick="setShift(\'OFF\')" style="padding:14px;border-radius:10px;background:#f5f5f5;color:#999;border:1.5px solid #ddd;font-size:14px;font-weight:700;cursor:pointer">休假<br><span style="font-size:10px;font-weight:400">△ 不上班</span></button>';
+  out += '</div>';
+  out += '<button onclick="closeShiftModal()" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;font-family:inherit">取消</button>';
+  out += '</div></div>';
+
   return out;
 }
+
+let editingShift = {tid: null, day: null};
+
+function editShift(tid, day){
+  editingShift = {tid, day};
+  const tNames = {'T043':'43號','T031':'31號','T026':'26號'};
+  document.getElementById('shift-modal-title').textContent = '修改班別 — ' + tNames[tid];
+  document.getElementById('shift-modal-sub').textContent = '2026年5月 ' + day + '日（' + ['日','一','二','三','四','五','六'][new Date(2026,4,day).getDay()] + '）';
+  const modal = document.getElementById('shift-modal');
+  modal.style.display = 'flex';
+}
+
+function setShift(val){
+  const {tid, day} = editingShift;
+  if(!SCHEDULE_2026_05[tid]) SCHEDULE_2026_05[tid] = {};
+  SCHEDULE_2026_05[tid][day] = val;
+  closeShiftModal();
+  toast('✅ 已更新 ' + day + ' 日班別為「' + {'17':'早班','18':'晚班','全':'全天班','OFF':'休假'}[val] + '」', 'sys', '班表更新');
+  renderStaffContent();
+}
+
+function closeShiftModal(){
+  document.getElementById('shift-modal').style.display = 'none';
+}
+
 
 function renderTimeline(){
   const todayStr = '4/'+new Date().getDate();
