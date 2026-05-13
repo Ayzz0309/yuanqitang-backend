@@ -688,13 +688,14 @@ const SCHEDULE_2026_05 = {
     26:'10-17',27:'10-17',28:'10-17',29:'10-17',30:'10-20',31:'10-18'
   },
   'T026': {
-    // 全月幾乎 14:00-21:00
     1:'14-21',2:'14-21',3:'14-21',4:'14-21',5:'14-21',6:'14-21',7:'14-21',
     8:'14-21',9:'14-21',10:'14-21',11:'14-21',12:'14-21',13:'14-21',
     14:'14-21',15:'14-21',16:'14-21',17:'14-21',18:'14-21',19:'14-21',
     20:'14-21',21:'14-21',22:'14-21',23:'14-21',24:'14-21',25:'14-21',
     26:'14-21',27:'14-21',28:'14-21',29:'14-21',30:'14-21',31:'14-21'
-  }
+  },
+  'T_GUO': {},
+  'T_HON': {}
 };
 
 
@@ -1009,6 +1010,7 @@ function resetBook(){
 
 // ===== STAFF APP =====
 function initStaffApp(){
+  setTimeout(initShiftModal, 100);
   staffTab='pending';
   renderStaffNav();
   renderStaffContent();
@@ -1053,14 +1055,26 @@ function renderStaffContent(){
   } else if(staffTab==='today'){
     const list=bookings.filter(b=>b.date===todayStr||b.date==='4/20');
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">☀️</div>今天沒有排程</div>`;
+  } else if(staffTab==='schedule'){
+    html=renderSchedule();
+  } else if(staffTab==='timeline'){
+    html=renderTimeline();
+  } else if(staffTab==='manual'){
+    html=renderManualBook();
   } else if(staffTab==='linelog'){
     html=renderLineLog();
   } else if(staffTab==='stats'){
     html=renderStats(isBoss);
+  } else if(staffTab==='customers'){
+    html=renderCustomers(isBoss);
   } else if(staffTab==='employees'&&isBoss){
     html=renderEmployees();
+  } else if(staffTab==='holidays'&&isBoss){
+    html=renderHolidays();
   }
   document.getElementById('staff-content').innerHTML=html;
+  // 班表渲染後初始化公休chip
+  if(staffTab==='holidays') setTimeout(renderHolidayChips, 50);
 }
 
 function statsRow(){
@@ -1230,8 +1244,8 @@ function cancelMyBooking(id){
 
 function renderSchedule(){
   const isBoss = cur.user.role === 'boss';
-  const therapistIds = ['T043','T031','T026'];
-  const tNames = {'T043':'43號','T031':'31號','T026':'26號'};
+  const therapistIds = ['T043','T031','T026','T_GUO','T_HON'];
+  const tNames = {'T043':'43號','T031':'31號','T026':'26號','T_GUO':'郭老師','T_HON':'洪老師'};
   const shiftOpts = ['17','18','全','OFF'];
   const shiftColors = {'17':'#e8f4fd','18':'#f0edf9','全':'#edf9f0','OFF':'#f5f5f5'};
   const shiftText = {'17':'#2255aa','18':'var(--pu)','全':'var(--green)','OFF':'#ccc'};
@@ -1258,9 +1272,15 @@ function renderSchedule(){
     for(let d=1;d<=31;d++){
       const val = sched[d] || 'OFF';
       const isOff = !sched[d] || sched[d]==='OFF';
-      const bg = shiftColors[val] || '#f5f5f5';
-      const color = shiftText[val] || '#ccc';
-      const lbl = shiftLabels[val] || val;
+      // 支援自訂時段 "10-22" 格式
+      let bg, color, lbl;
+      if(shiftColors[val]){
+        bg = shiftColors[val]; color = shiftText[val]; lbl = shiftLabels[val]||val;
+      } else if(val && val.includes('-')){
+        bg = '#fffbe6'; color = '#c07000'; lbl = val;
+      } else {
+        bg = '#f5f5f5'; color = '#ccc'; lbl = val||'△';
+      }
       if(isBoss){
         out += '<div onclick="editShift(\''+tid+'\','+d+')" style="border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;min-height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:'+bg+';color:'+color+';font-weight:600;border:1px solid transparent;" title="點擊修改">'+lbl+'</div>';
       } else {
@@ -1280,32 +1300,75 @@ function renderSchedule(){
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#f5f5f5;border-radius:3px;vertical-align:middle;margin-right:3px"></span>△ 休假</span>';
   out += '</div>';
 
-  // Edit modal (hidden)
-  out += '<div id="shift-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;">';
-  out += '<div style="background:#fff;border-radius:16px;padding:1.5rem;max-width:300px;width:90%;margin:0 auto;">';
-  out += '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:0.25rem" id="shift-modal-title">修改班別</div>';
-  out += '<div style="font-size:13px;color:var(--text2);margin-bottom:1.25rem" id="shift-modal-sub"></div>';
-  out += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">';
-  out += '<button onclick="setShift(\'17\')" style="padding:14px;border-radius:10px;background:#e8f4fd;color:#2255aa;border:1.5px solid #b0d0f0;font-size:14px;font-weight:700;cursor:pointer">早班<br><span style="font-size:10px;font-weight:400">09:30–14:00</span></button>';
-  out += '<button onclick="setShift(\'18\')" style="padding:14px;border-radius:10px;background:#f0edf9;color:var(--pu);border:1.5px solid var(--pu-mid);font-size:14px;font-weight:700;cursor:pointer">晚班<br><span style="font-size:10px;font-weight:400">19:00–22:00</span></button>';
-  out += '<button onclick="setShift(\'全\')" style="padding:14px;border-radius:10px;background:#edf9f0;color:var(--green);border:1.5px solid #a0d0b0;font-size:14px;font-weight:700;cursor:pointer">全天班<br><span style="font-size:10px;font-weight:400">全日上班</span></button>';
-  out += '<button onclick="setShift(\'OFF\')" style="padding:14px;border-radius:10px;background:#f5f5f5;color:#999;border:1.5px solid #ddd;font-size:14px;font-weight:700;cursor:pointer">休假<br><span style="font-size:10px;font-weight:400">△ 不上班</span></button>';
-  out += '</div>';
-  out += '<button onclick="closeShiftModal()" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;font-family:inherit">取消</button>';
-  out += '</div></div>';
-
   return out;
+}
+
+function initShiftModal(){
+  if(document.getElementById('shift-modal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'shift-modal';
+  modal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:1.5rem;max-width:320px;width:92%;margin:0 auto;';
+  box.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--pu);margin-bottom:4px" id="shift-modal-title">修改班別</div>'
+    + '<div style="font-size:12px;color:var(--text2);margin-bottom:1rem" id="shift-modal-sub"></div>'
+    + '<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px">快速選擇</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:1rem" id="shift-quick-btns"></div>'
+    + '<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px">自訂時段（填數字）</div>'
+    + '<div style="background:var(--bg);border-radius:10px;padding:0.9rem;margin-bottom:0.75rem">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+    + '<span style="font-size:13px;color:var(--text2);width:40px">開始</span>'
+    + '<input id="shift-start" type="number" min="0" max="23" placeholder="例 10" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit">'
+    + '<span style="font-size:13px;color:var(--text2)">:00</span></div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+    + '<span style="font-size:13px;color:var(--text2);width:40px">結束</span>'
+    + '<input id="shift-end" type="number" min="1" max="24" placeholder="例 22" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit">'
+    + '<span style="font-size:13px;color:var(--text2)">:00</span></div>'
+    + '<button id="shift-custom-btn" style="width:100%;padding:10px;border-radius:9px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認自訂時段</button>'
+    + '</div>'
+    + '<button id="shift-cancel-btn" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:14px;cursor:pointer;font-family:inherit">取消</button>';
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  document.getElementById('shift-custom-btn').onclick = setCustomShift;
+  document.getElementById('shift-cancel-btn').onclick = closeShiftModal;
+  const quickOpts = [
+    {val:'17',label:'早班',sub:'09:30–14:00',bg:'#e8f4fd',color:'#2255aa',border:'#b0d0f0'},
+    {val:'18',label:'晚班',sub:'19:00–22:00',bg:'#f0edf9',color:'var(--pu)',border:'var(--pu-mid)'},
+    {val:'全',label:'全天班',sub:'全日',bg:'#edf9f0',color:'var(--green)',border:'#a0d0b0'},
+    {val:'OFF',label:'休假',sub:'△ 不上班',bg:'#f5f5f5',color:'#999',border:'#ddd'},
+    {val:'10-22',label:'10–22',sub:'全天長班',bg:'#edf9f0',color:'var(--green)',border:'#a0d0b0'},
+    {val:'14-21',label:'14–21',sub:'下午班',bg:'#fff8e0',color:'#c07000',border:'#ffe082'},
+  ];
+  const btnContainer = document.getElementById('shift-quick-btns');
+  quickOpts.forEach(function(opt){
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:10px 4px;border-radius:10px;background:'+opt.bg+';color:'+opt.color+';border:1.5px solid '+opt.border+';font-size:12px;font-weight:700;cursor:pointer;font-family:inherit';
+    btn.innerHTML = opt.label+'<br><span style="font-size:9px;font-weight:400">'+opt.sub+'</span>';
+    btn.onclick = (function(v){ return function(){ setShift(v); }; })(opt.val);
+    btnContainer.appendChild(btn);
+  });
 }
 
 let editingShift = {tid: null, day: null};
 
 function editShift(tid, day){
   editingShift = {tid, day};
-  const tNames = {'T043':'43號','T031':'31號','T026':'26號'};
+  const tNames = {'T043':'43號','T031':'31號','T026':'26號','T_GUO':'郭老師','T_HON':'洪老師'};
   document.getElementById('shift-modal-title').textContent = '修改班別 — ' + tNames[tid];
   document.getElementById('shift-modal-sub').textContent = '2026年5月 ' + day + '日（' + ['日','一','二','三','四','五','六'][new Date(2026,4,day).getDay()] + '）';
-  const modal = document.getElementById('shift-modal');
-  modal.style.display = 'flex';
+  // 清空自訂輸入
+  const s = document.getElementById('shift-start');
+  const e = document.getElementById('shift-end');
+  if(s) s.value='';
+  if(e) e.value='';
+  // 帶入現有值
+  const cur_val = (SCHEDULE_2026_05[tid]||{})[day]||'OFF';
+  if(cur_val && cur_val.includes('-') && cur_val!=='OFF'){
+    const parts = cur_val.split('-');
+    if(s) s.value = parts[0];
+    if(e) e.value = parts[1];
+  }
+  document.getElementById('shift-modal').style.display = 'flex';
 }
 
 function setShift(val){
@@ -1313,7 +1376,24 @@ function setShift(val){
   if(!SCHEDULE_2026_05[tid]) SCHEDULE_2026_05[tid] = {};
   SCHEDULE_2026_05[tid][day] = val;
   closeShiftModal();
-  toast('✅ 已更新 ' + day + ' 日班別為「' + {'17':'早班','18':'晚班','全':'全天班','OFF':'休假'}[val] + '」', 'sys', '班表更新');
+  const lblMap = {'17':'早班 09:30–14:00','18':'晚班 19:00–22:00','全':'全天班','OFF':'休假 △','10-22':'10–22 全天長班','14-21':'14–21 下午班'};
+  toast('✅ 已更新 ' + day + ' 日：' + (lblMap[val]||val), 'sys', '班表更新');
+  renderStaffContent();
+}
+
+function setCustomShift(){
+  const s = document.getElementById('shift-start').value.trim();
+  const e = document.getElementById('shift-end').value.trim();
+  if(!s || !e){ alert('請填寫開始和結束時間'); return; }
+  const sv = parseInt(s), ev = parseInt(e);
+  if(isNaN(sv)||isNaN(ev)||sv<0||sv>23||ev<1||ev>24){ alert('時間格式不對，請填 0~24 的數字'); return; }
+  if(sv >= ev){ alert('結束時間必須大於開始時間'); return; }
+  const val = sv + '-' + ev;
+  const {tid, day} = editingShift;
+  if(!SCHEDULE_2026_05[tid]) SCHEDULE_2026_05[tid] = {};
+  SCHEDULE_2026_05[tid][day] = val;
+  closeShiftModal();
+  toast('✅ 已更新 ' + day + ' 日：' + sv + ':00–' + ev + ':00', 'sys', '班表更新');
   renderStaffContent();
 }
 
