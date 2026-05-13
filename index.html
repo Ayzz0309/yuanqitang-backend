@@ -324,7 +324,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
       <div id="form-login-emp" class="hidden">
         <div class="auth-inp-wrap">
           <label class="auth-lbl">員工帳號</label>
-          <input class="auth-inp" id="le-id" placeholder="staff001" type="text">
+          <input class="auth-inp" id="le-id" placeholder="請輸入帳號" type="text">
         </div>
         <div class="auth-inp-wrap">
           <label class="auth-lbl">密碼</label>
@@ -332,7 +332,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div id="le-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="loginEmp()">員工登入</button>
-        <div class="auth-hint">示範帳號：boss / 1234 或 staff001 / 1234</div>
+        
       </div>
 
       <!-- REGISTER CUSTOMER -->
@@ -365,7 +365,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div class="auth-inp-wrap">
           <label class="auth-lbl">設定員工帳號</label>
-          <input class="auth-inp" id="re-id" placeholder="staff002">
+          <input class="auth-inp" id="re-id" placeholder="請輸入帳號">
         </div>
         <div class="auth-inp-wrap">
           <label class="auth-lbl">LINE ID</label>
@@ -381,7 +381,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div id="re-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="regEmp()">申請員工帳號</button>
-        <div class="auth-hint">老闆授權碼：BOSS2024（示範用）</div>
+        <div class="auth-hint">老闆授權碼請向老闆索取</div>
       </div>
 
     </div>
@@ -496,32 +496,20 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 
 <script>
 // ===== DATA =====
-const BOSS_CODE = 'BOSS2024';
+const BOSS_CODE = 'BOSS2026';
 const MONTHS = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 const MN = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
 
 let employees = [
-  {id:'boss',name:'老闆',pw:'1234',role:'boss',lineId:'@boss_yuan',cases:[]},
-  {id:'staff001',name:'阿明師',pw:'1234',role:'staff',lineId:'@aming_therapist',cases:[]},
-  {id:'staff002',name:'小琪',pw:'1234',role:'staff',lineId:'@xiaoqi_yuan',cases:[]},
+  {id:'boss',name:'老闆',pw:'yuanqi2026',role:'boss',lineId:'',cases:[]},
 ];
-let customers = [
-  {id:'C001',name:'示範客人',phone:'0912345678',pw:'1234',lineId:'@demo_user'},
-];
-let bookings = [
-  {id:'B001',custId:'C001',name:'王小明',phone:'0911-111-111',svc:'全背徒手調理放鬆',dur:'60分',price:800,date:'4/21',time:'10:00',status:'new',lineId:'@wang',note:'',acceptedBy:null,acceptedAt:null},
-  {id:'B002',custId:'C001',name:'李美華',phone:'0922-222-222',svc:'全身頸缽筋膜調理放鬆',dur:'120分',price:3600,date:'4/21',time:'14:00',status:'accepted',lineId:'@li',note:'準備加熱',acceptedBy:'staff001',acceptedAt:'09:32'},
-  {id:'B003',custId:'C001',name:'陳志豪',phone:'0933-333-333',svc:'腳底按摩筋膜調理放鬆',dur:'60分',price:900,date:'4/22',time:'11:00',status:'new',lineId:'',note:'',acceptedBy:null,acceptedAt:null},
-  {id:'B004',custId:'C001',name:'張淑芬',phone:'0944-444-444',svc:'香薰腹燭+腹腰部精油+頸缽筋膜',dur:'90分',price:4500,date:'4/20',time:'13:30',status:'done',lineId:'@zhang',note:'',acceptedBy:'staff002',acceptedAt:'11:15'},
-];
+let customers = [];
+let bookings = [];
 // seed employee cases
-employees[1].cases = ['B002'];
-employees[2].cases = ['B004'];
 
-let lineLog = [
-  {to:'客人',name:'李美華',msg:'【元氣堂】您的預約已確認！\n療程：全身頸缽筋膜調理放鬆 120分\n日期：4/21 14:00\n接待員工：staff001 阿明師\n請準時到場，謝謝！',time:'09:32'},
-  {to:'員工',name:'阿明師',msg:'【新案件通知】09:32\n客人：李美華\n療程：全身頸缽筋膜調理放鬆 120分\n日期：4/21 14:00\n電話：0922-222-222\n備註：準備加熱\n您已接受此案件 ✓',time:'09:32'},
-];
+
+
+let lineLog = [];
 
 let cur = {type:null, user:null}; // current session
 let authMode = {tab:'login', mode:'cust'};
