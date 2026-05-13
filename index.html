@@ -1157,11 +1157,34 @@ function doneBook(id){
 function custNav(tab, el){
   document.querySelectorAll('#cn-book,#cn-history').forEach(b=>b.classList.remove('act'));
   el.classList.add('act');
-  const bookingSteps = ['cs1','cs2','cs2c','cs2b','cs3','cs4','cs5'];
-  bookingSteps.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.toggle('hidden',tab!=='book');});
   const hist = document.getElementById('cust-history');
   if(hist) hist.classList.toggle('hidden', tab!=='history');
-  if(tab==='history') renderMyBookings();
+  if(tab==='history'){
+    // 隱藏所有預約步驟
+    ['cs1','cs2','cs2c','cs2b','cs3','cs4','cs5'].forEach(id=>{
+      const e=document.getElementById(id);if(e)e.classList.add('hidden');
+    });
+    renderMyBookings();
+  } else {
+    // 回到預約頁：重置到第一步
+    bookState.step=1;
+    bookState.svc=null; bookState.price=null;
+    bookState.date=null; bookState.time=null;
+    bookState.therapist='none'; bookState.bed=null;
+    ['cs2','cs2c','cs2b','cs3','cs4','cs5'].forEach(id=>{
+      const e=document.getElementById(id);if(e)e.classList.add('hidden');
+    });
+    const cs1=document.getElementById('cs1');
+    if(cs1) cs1.classList.remove('hidden');
+    // 重置步驟點
+    for(let i=1;i<=6;i++){
+      const d=document.getElementById('sd'+i);
+      if(d) d.className='sd '+(i===1?'act':'pend');
+      if(i<6){const l=document.getElementById('sl'+i);if(l)l.className='sl';}
+    }
+    renderSvcs();
+    document.getElementById('cs1-btn').disabled=true;
+  }
 }
 
 function renderMyBookings(){
