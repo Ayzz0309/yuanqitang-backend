@@ -2,6 +2,9 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>元氣堂傳統整復推拿 — 線上預約</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -23,7 +26,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text
 input,button,select{font-family:'Noto Sans TC',sans-serif;}
 
 /* ===== TOAST / LINE NOTIFY ===== */
-#toast-container{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:320px;}
+#toast-container{position:fixed;top:16px;right:16px;left:16px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:320px;align-items:flex-end;}
 .toast{background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.18);overflow:hidden;animation:slideIn 0.35s ease;border-left:4px solid var(--pu);}
 .toast.line-toast{border-left-color:#06c755;}
 .toast-header{display:flex;align-items:center;gap:8px;padding:10px 14px 0;}
@@ -59,7 +62,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 .auth-body{padding:1.25rem 1.5rem 1.5rem;}
 .auth-inp-wrap{margin-bottom:0.9rem;}
 .auth-lbl{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block;}
-.auth-inp{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);transition:border-color 0.2s;background:#fff;}
+.auth-inp{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-size:16px;color:var(--text);transition:border-color 0.2s;background:#fff;}
 .auth-inp:focus{outline:none;border-color:var(--pu);}
 .auth-inp.error{border-color:var(--red);}
 .auth-err{font-size:11px;color:var(--red);margin-top:4px;}
@@ -140,7 +143,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 
 .fg{margin-bottom:0.9rem;}
 .flbl{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block;}
-.finp{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;color:var(--text);}
+.finp{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;font-size:16px;color:var(--text);}
 .finp:focus{outline:none;border-color:var(--pu);}
 
 .sum-box{background:var(--pu-pale);border-radius:12px;padding:1rem;margin-bottom:1rem;border:1px solid var(--pu-mid);}
@@ -276,6 +279,37 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 /* ── 公休設定 ── */
 .holiday-chip{display:inline-flex;align-items:center;gap:5px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:20px;padding:4px 10px;font-size:12px;margin:4px;}
 .holiday-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0;line-height:1;}
+
+/* ── 打單 / 服務中 ── */
+.service-active-banner{background:linear-gradient(135deg,#1a7a3a,#2d9e52);color:#fff;border-radius:14px;margin:0.6rem 0.9rem;padding:1rem 1.1rem;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(30,120,60,0.25);}
+.service-active-banner .sa-pulse{width:12px;height:12px;border-radius:50%;background:#7fffb0;flex-shrink:0;animation:saPulse 1.2s ease-in-out infinite;}
+@keyframes saPulse{0%,100%{box-shadow:0 0 0 0 rgba(127,255,176,0.7);}50%{box-shadow:0 0 0 8px rgba(127,255,176,0);}}
+.sa-info{flex:1;min-width:0;}
+.sa-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sa-svc{font-size:12px;opacity:0.85;margin-top:2px;}
+.sa-timer{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;flex-shrink:0;letter-spacing:1px;}
+.sa-end-btn{background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.5);color:#fff;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.boss-board{background:#fff;border-radius:14px;margin:0.6rem 0.9rem;border:1.5px solid var(--gold);overflow:hidden;box-shadow:0 4px 16px rgba(201,168,76,0.15);}
+.boss-board-hdr{background:linear-gradient(135deg,#2c2060,var(--pu));padding:0.75rem 1rem;display:flex;align-items:center;gap:8px;}
+.boss-board-hdr span{color:#fff;font-size:14px;font-weight:700;}
+.boss-board-hdr .bb-badge{background:var(--gold2);color:#5a3800;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:auto;}
+.bb-row{padding:0.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.bb-row:last-child{border-bottom:none;}
+.bb-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pu),var(--pu2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.bb-info{flex:1;min-width:0;}
+.bb-emp{font-size:13px;font-weight:700;color:var(--text);}
+.bb-detail{font-size:11px;color:var(--text2);margin-top:2px;}
+.bb-timer{font-size:18px;font-weight:900;color:var(--green);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.bb-timer.overdue{color:var(--red);}
+.bb-empty{padding:1.5rem;text-align:center;color:var(--text3);font-size:13px;}
+
+/* ── 修改預約 Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center;}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:1.5rem 1.5rem 2rem;max-height:85vh;overflow-y:auto;animation:slideUp 0.3s ease;}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:var(--bg);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text2);}
+.modal-warn{background:#fff8e0;border:1.5px solid var(--gold);border-radius:10px;padding:0.75rem 1rem;font-size:12px;color:#8a5c00;margin-bottom:1rem;}
 </style>
 </head>
 <body>
@@ -317,7 +351,8 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div id="lc-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="loginCust()">客人登入</button>
-        <div class="auth-hint">預約時段 10:00～22:00 ｜ 0987-450-468</div>
+        <div style="text-align:center;margin-top:0.6rem"><span style="font-size:12px;color:var(--pu);cursor:pointer;text-decoration:underline" onclick="showForgotPw('cust')">忘記密碼？</span></div>
+        <div class="auth-hint">預約時段 09:30～14:00、19:00～22:00 ｜ 0987-450-468</div>
       </div>
 
       <!-- LOGIN EMPLOYEE -->
@@ -332,7 +367,10 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div id="le-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="loginEmp()">員工登入</button>
-        
+        <div class="auth-hint">尚未有帳號？請切換至「註冊」建立員工帳號</div>
+        <div style="text-align:center;margin-top:0.75rem">
+          <span style="font-size:12px;color:var(--pu);cursor:pointer;text-decoration:underline" onclick="showForgotPw('emp')">忘記密碼？</span>
+        </div>
       </div>
 
       <!-- REGISTER CUSTOMER -->
@@ -352,6 +390,11 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         <div class="auth-inp-wrap">
           <label class="auth-lbl">設定密碼</label>
           <input class="auth-inp" id="rc-pw" placeholder="至少6位數" type="password">
+        </div>
+        <div class="auth-inp-wrap">
+          <label class="auth-lbl">優惠碼（選填）</label>
+          <input class="auth-inp" id="rc-promo" placeholder="有優惠碼請填入">
+          <div id="rc-promo-msg" style="font-size:11px;color:var(--green);margin-top:3px"></div>
         </div>
         <div id="rc-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="regCust()">完成註冊</button>
@@ -375,13 +418,10 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
           <label class="auth-lbl">設定密碼</label>
           <input class="auth-inp" id="re-pw" placeholder="至少6位數" type="password">
         </div>
-        <div class="auth-inp-wrap">
-          <label class="auth-lbl">老闆授權碼（老闆帳號填入）</label>
-          <input class="auth-inp" id="re-boss" placeholder="留空=員工，填入=老闆" type="password">
-        </div>
+
         <div id="re-err" class="auth-err hidden"></div>
-        <button class="auth-submit" onclick="regEmp()">申請員工帳號</button>
-        <div class="auth-hint">老闆授權碼請向老闆索取</div>
+        <button class="auth-submit" onclick="regEmp()">建立員工帳號</button>
+        <div class="auth-hint">帳號建立後請告知老闆，由老闆設定相關權限</div>
       </div>
 
     </div>
@@ -417,6 +457,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
   <div style="display:flex;background:#fff;border-bottom:2px solid var(--border);position:sticky;top:56px;z-index:100;">
     <div class="snav-btn act" id="cn-book" onclick="custNav('book',this)" style="flex:1;text-align:center;">預約</div>
     <div class="snav-btn" id="cn-history" onclick="custNav('history',this)" style="flex:1;text-align:center;">我的預約</div>
+    <div class="snav-btn" id="cn-coupon" onclick="custNav('coupon',this)" style="flex:1;text-align:center;">優惠券</div>
   </div>
 
   <div id="cust-history" class="hidden" style="max-width:430px;margin:0 auto;padding-bottom:3rem;">
@@ -424,10 +465,16 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
     <div id="my-bookings-list"></div>
   </div>
 
+  <div id="cust-coupon" class="hidden" style="max-width:430px;margin:0 auto;padding-bottom:3rem;">
+    <div class="section-title">我的優惠券</div>
+    <div id="my-coupons-list"></div>
+  </div>
+
   <div id="cs1" class="sc">
-    <div class="sc-lbl">選擇療程</div>
+    <div class="sc-lbl">選擇療程 <span style="font-size:11px;font-weight:400;color:var(--text3)">（可複選多個品項）</span></div>
     <div class="cat-pills" id="cat-pills"></div>
     <div id="svc-list"></div>
+    <div id="svc-selected-summary" style="padding:0 1rem;font-size:12px;color:var(--green);font-weight:600;min-height:18px;margin-bottom:4px"></div>
     <button class="pbtn" id="cs1-btn" disabled onclick="cGoStep(2)">選好了，選時間 →</button>
   </div>
 
@@ -439,7 +486,8 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
       <button class="cal-nav" onclick="chgMonth(1)">›</button>
     </div>
     <div class="cg" id="cal-grid"></div>
-    <div style="margin-top:1rem;font-size:11px;font-weight:700;color:var(--pu);letter-spacing:1px;margin-bottom:0.5rem;">選擇時段</div>
+    <div style="margin-top:1rem;font-size:11px;font-weight:700;color:var(--pu);letter-spacing:1px;margin-bottom:2px;">選擇時段</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:0.5rem;">早班 09:30–14:00 ／ 晚班 19:00–22:00</div>
     <div class="tgrid" id="tgrid"></div>
     <button class="pbtn" id="cs2-btn" style="margin-top:1rem" disabled onclick="cGoStep('2c')">確認時段，選床位 →</button>
     <button class="sbtn" onclick="cGoStep(1)">← 返回</button>
@@ -464,7 +512,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
     <div class="fg"><label class="flbl">姓名</label><input class="finp" id="cs3-name" readonly></div>
     <div class="fg"><label class="flbl">手機</label><input class="finp" id="cs3-phone" readonly></div>
     <div class="fg"><label class="flbl">LINE ID</label><input class="finp" id="cs3-line" readonly></div>
-    <div class="fg"><label class="flbl">備註（選填）</label><input class="finp" id="cs3-note" placeholder="特殊需求..."></div>
+    <div class="fg"><label class="flbl">備註（選填）</label><input class="finp" id="cs3-note" placeholder=""></div>
     <button class="pbtn" onclick="cGoStep(4)">確認，看預約摘要 →</button>
     <button class="sbtn" onclick="cGoStep(2)">← 返回</button>
   </div>
@@ -501,8 +549,10 @@ const MONTHS = ['一月','二月','三月','四月','五月','六月','七月','
 const MN = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
 
 let employees = [
-  {id:'boss',name:'老闆',pw:'yuanqi2026',role:'boss',lineId:'',cases:[]},
+  {id:'boss',name:'老闆',pw:'yuanqi2026',role:'boss',lineId:'',cases:[],clockIn:null,clockOut:null,clockLog:[]},
 ];
+let customSvcs = []; // 老闆自訂療程
+let custSvcNextId = 100;
 let customers = [];
 let bookings = [];
 // seed employee cases
@@ -567,14 +617,27 @@ function regCust(){
   const phone=document.getElementById('rc-phone').value.trim();
   const line=document.getElementById('rc-line').value.trim();
   const pw=document.getElementById('rc-pw').value;
+  const promoInput=(document.getElementById('rc-promo')||{}).value||'';
   if(!name||!phone||!pw){showErr('rc-err','請填寫所有必填欄位');return;}
   if(pw.length<6){showErr('rc-err','密碼至少6位');return;}
   if(customers.find(c=>c.phone===phone)){showErr('rc-err','此手機號碼已註冊');return;}
   const id='C'+String(customers.length+1).padStart(3,'0');
-  const u={id,name,phone,pw,lineId:line};
+  const u={id,name,phone,pw,lineId:line,coupons:[]};
+  // 優惠碼處理
+  let promoMsg='';
+  if(promoInput){
+    const pc=PROMO_CODES[promoInput.toUpperCase()];
+    if(pc){
+      u.coupons.push({code:promoInput.toUpperCase(),desc:pc.desc,type:pc.type,value:pc.value,used:false});
+      promoMsg = `，優惠碼 ${promoInput} 已套用：${pc.desc}`;
+    } else {
+      showErr('rc-err','優惠碼無效，其他欄位已儲存');
+      // still proceed but without coupon
+    }
+  }
   customers.push(u);
   cur={type:'cust',user:u};
-  toast(`歡迎加入元氣堂！${name}，帳號建立成功 🎉`,'sys');
+  toast(`歡迎加入元氣堂！${name}，帳號建立成功 🎉${promoMsg}`,'sys');
   enterApp();
 }
 function regEmp(){
@@ -582,16 +645,66 @@ function regEmp(){
   const id=document.getElementById('re-id').value.trim();
   const line=document.getElementById('re-line').value.trim();
   const pw=document.getElementById('re-pw').value;
-  const bossCode=document.getElementById('re-boss').value;
   if(!name||!id||!pw){showErr('re-err','請填寫所有必填欄位');return;}
   if(pw.length<6){showErr('re-err','密碼至少6位');return;}
   if(employees.find(e=>e.id===id)){showErr('re-err','此帳號已被使用');return;}
-  const role=bossCode===BOSS_CODE?'boss':'staff';
-  const u={id,name,pw,role,lineId:line,cases:[]};
+  const u={id,name,pw,role:'staff',lineId:line,cases:[],clockIn:null,clockOut:null,clockLog:[]};
   employees.push(u);
   cur={type:'emp',user:u};
-  toast(`${name} 員工帳號建立成功！身分：${role==='boss'?'老闆':'員工'}`,'sys');
+  toast(name+' 員工帳號建立成功！','sys');
   enterApp();
+}
+
+
+// ── 優惠碼設定 ──
+const PROMO_CODES = {
+  'YUANQI100': {type:'fixed', value:100, desc:'折抵 NT$100'},
+  'NEW200':    {type:'fixed', value:200, desc:'新客折抵 NT$200'},
+  'VIP10':     {type:'percent', value:10, desc:'九折優惠'},
+};
+
+// ── 忘記密碼 ──
+let forgotPwType = 'cust'; // 'cust' or 'emp'
+let forgotPwTarget = null;
+
+function showForgotPw(type){
+  forgotPwType = type;
+  forgotPwTarget = null;
+  document.getElementById('fp-id').value = '';
+  document.getElementById('fp-err').classList.add('hidden');
+  document.getElementById('forgot-step1').classList.remove('hidden');
+  document.getElementById('forgot-step2').classList.add('hidden');
+  document.getElementById('forgot-modal').classList.remove('hidden');
+}
+function closeForgotModal(){
+  document.getElementById('forgot-modal').classList.add('hidden');
+}
+function forgotVerify(){
+  const idVal = document.getElementById('fp-id').value.trim();
+  let user = null;
+  if(forgotPwType==='cust'){
+    user = customers.find(c=>c.phone===idVal);
+  } else {
+    user = employees.find(e=>e.id===idVal);
+  }
+  if(!user){ document.getElementById('fp-err').textContent='查無此帳號'; document.getElementById('fp-err').classList.remove('hidden'); return; }
+  forgotPwTarget = user;
+  // Show a masked hint (first char of name + ***)
+  const hint = user.name ? `帳號持有人：${user.name[0]}${'*'.repeat(user.name.length-1)}` : '帳號找到了';
+  document.getElementById('fp-hint').textContent = '✅ ' + hint + '，請設定新密碼。';
+  document.getElementById('forgot-step1').classList.add('hidden');
+  document.getElementById('forgot-step2').classList.remove('hidden');
+  document.getElementById('fp-newpw').value = '';
+  document.getElementById('fp-newpw2').value = '';
+}
+function forgotReset(){
+  const pw1 = document.getElementById('fp-newpw').value;
+  const pw2 = document.getElementById('fp-newpw2').value;
+  if(pw1.length<6){ document.getElementById('fp-err2').textContent='密碼至少6位'; document.getElementById('fp-err2').classList.remove('hidden'); return; }
+  if(pw1!==pw2){ document.getElementById('fp-err2').textContent='兩次密碼不一致'; document.getElementById('fp-err2').classList.remove('hidden'); return; }
+  forgotPwTarget.pw = pw1;
+  closeForgotModal();
+  toast('密碼已重設，請重新登入。','sys','密碼更新');
 }
 
 function enterApp(){
@@ -642,34 +755,46 @@ function toast(msg, type='line', title=null){
 function now(){const d=new Date();return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;}
 
 // ===== CUSTOMER APP =====
-const SVCS=[
+let SVCS=[
   {id:1,cat:'full',name:'全背徒手調理放鬆',sub:'元氣滿滿調理放鬆',prices:[{l:'60分',p:800},{l:'120分',p:1600}]},
   {id:2,cat:'full',name:'全背油推調理放鬆',sub:'元氣滿滿調理放鬆',prices:[{l:'60分',p:800},{l:'120分',p:1600}]},
   {id:3,cat:'full',name:'筋膜刀調理放鬆',sub:'元氣滿滿調理放鬆',prices:[{l:'60分',p:1200},{l:'120分',p:2400}]},
-  {id:4,cat:'neck',name:'局部頸缽筋膜調理放鬆',sub:'含徒手放鬆／內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:1500},{l:'120分',p:3000}]},
-  {id:5,cat:'neck',name:'全身頸缽筋膜調理放鬆',sub:'含頭眼臉部放鬆',prices:[{l:'60分',p:1800},{l:'120分',p:3600}]},
-  {id:6,cat:'neck',name:'頸缽筋膜刀調理放鬆',sub:'內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:2000},{l:'120分',p:4000}]},
+  {id:4,cat:'neck',name:'局部頌缽筋膜調理放鬆',sub:'含徒手放鬆／內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:1500},{l:'120分',p:3000}]},
+  {id:5,cat:'neck',name:'全身頌缽筋膜調理放鬆',sub:'含頭眼臉部放鬆',prices:[{l:'60分',p:1800},{l:'120分',p:3600}]},
+  {id:6,cat:'neck',name:'頌缽筋膜刀調理放鬆',sub:'內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:2000},{l:'120分',p:4000}]},
   {id:7,cat:'foot',name:'腳底按摩筋膜調理放鬆',sub:'',prices:[{l:'40分',p:600},{l:'60分',p:900},{l:'120分',p:1800}]},
   {id:8,cat:'foot',name:'腳底按摩+半身',sub:'',prices:[{l:'60+40分',p:1500}]},
-  {id:9,cat:'ear',name:'專業采耳SPA+頭眼臉頸缽筋膜調理',sub:'',prices:[{l:'約60分',p:1500}]},
-  {id:10,cat:'ear',name:'香薰耳燭淨化+頭眼臉頸缽筋膜調理',sub:'',prices:[{l:'約60分',p:1500}]},
-  {id:11,cat:'ear',name:'采耳SPA+香薰耳燭+頭眼臉頸缽調理',sub:'',prices:[{l:'約90分',p:2200}]},
-  {id:12,cat:'belly',name:'頸缽、腹燭、腹部精油調理放鬆',sub:'香薰腹燭+腹部精油調理+頸缽筋膜調理',prices:[{l:'60分',p:3000},{l:'優惠',p:2500}]},
-  {id:13,cat:'belly',name:'香薰腹燭+腹腰部精油+頸缽筋膜',sub:'',prices:[{l:'90分',p:4500},{l:'優惠',p:4000}]},
+  {id:9,cat:'ear',name:'專業采耳SPA+頭眼臉頌缽筋膜調理',sub:'',prices:[{l:'約60分',p:1500}]},
+  {id:10,cat:'ear',name:'香薰耳燭淨化+頭眼臉頌缽筋膜調理',sub:'',prices:[{l:'約60分',p:1500}]},
+  {id:11,cat:'ear',name:'采耳SPA+香薰耳燭+頭眼臉頌缽筋膜調理',sub:'',prices:[{l:'約90分',p:2200}]},
+  {id:12,cat:'belly',name:'頌缽、腹燭、腹部精油調理放鬆',sub:'香薰腹燭+腹部精油調理+頌缽筋膜調理',prices:[{l:'60分',p:3000},{l:'優惠',p:2500}]},
+  {id:13,cat:'belly',name:'香薰腹燭+腹腰部精油調理+頌缽筋膜調理',sub:'',prices:[{l:'90分',p:4500},{l:'優惠',p:4000}]},
   {id:14,cat:'half',name:'徒手半身調理放鬆',sub:'半身/局部品項',prices:[{l:'40分',p:600}]},
-  {id:15,cat:'half',name:'局部頸缽筋膜調理放鬆（局部）',sub:'半身/局部品項',prices:[{l:'40分',p:800}]},
+  {id:15,cat:'half',name:'局部頌缽筋膜調理放鬆（局部）',sub:'半身/局部品項',prices:[{l:'40分',p:800}]},
   {id:16,cat:'half',name:'刮痧/拔罐',sub:'單品項調理放鬆',prices:[{l:'40分',p:600}]},
   {id:17,cat:'half',name:'頭眼臉部精油調理',sub:'單品項調理放鬆',prices:[{l:'40分',p:800}]},
   {id:18,cat:'half',name:'大腳缽調理放鬆',sub:'單品項調理放鬆',prices:[{l:'10分',p:1000}]},
-  {id:19,cat:'half',name:'頭眼臉頸缽筋膜調理',sub:'單品項調理放鬆',prices:[{l:'40分',p:1200},{l:'60分',p:1800}]},
+  {id:19,cat:'half',name:'頭眼臉頌缽筋膜調理',sub:'單品項調理放鬆',prices:[{l:'40分',p:1200},{l:'60分',p:1800}]},
 ];
 const THERAPISTS = [
-  {id:'T043', name:'43號', specialty:'整復推拿', exp:'', avatar:'43'},
-  {id:'T031', name:'31號', specialty:'整復推拿', exp:'', avatar:'31'},
-  {id:'T026', name:'26號', specialty:'整復推拿', exp:'', avatar:'26'},
-  {id:'T_GUO', name:'郭老師', specialty:'整復推拿', exp:'', avatar:'郭'},
-  {id:'T_HON', name:'洪老師', specialty:'整復推拿', exp:'', avatar:'洪'},
+  {id:'T_GUO', name:'郭老師', specialty:'整復推拿', exp:'', avatar:'郭', role:'boss'},
+  {id:'T_HON', name:'洪老師', specialty:'整復推拿', exp:'', avatar:'洪', role:'boss'},
+  {id:'T043', name:'43號', specialty:'整復推拿', exp:'', avatar:'43', role:'staff'},
+  {id:'T031', name:'31號', specialty:'整復推拿', exp:'', avatar:'31', role:'staff'},
+  {id:'T026', name:'26號', specialty:'整復推拿', exp:'', avatar:'26', role:'staff'},
 ];
+
+// 打卡狀態：每位師傅獨立記錄
+let therapistClock = {
+  'T_GUO': {clockIn:null, clockOut:null, clockLog:[]},
+  'T_HON': {clockIn:null, clockOut:null, clockLog:[]},
+  'T043':  {clockIn:null, clockOut:null, clockLog:[]},
+  'T031':  {clockIn:null, clockOut:null, clockLog:[]},
+  'T026':  {clockIn:null, clockOut:null, clockLog:[]},
+};
+
+// 老闆目前代理的師傅 ID（老闆打卡時用）
+let bossActingAs = null;
 
 // 115年5月排班表（2026年5月）
 // 班別：17=09:30-14:00, 18=19:00-22:00, △=休假
@@ -705,7 +830,7 @@ function getShiftLabel(therapistId, dateStr){
   if(parts.length < 2) return '';
   const month = parseInt(parts[0]);
   const day = parseInt(parts[1]);
-  if(month !== 5) return '排班未設定';
+  if(month !== 5) return '⚠️ 排班資料僅含5月，請洽詢店家';
   const sched = SCHEDULE_2026_05[therapistId];
   if(!sched) return '排班未設定';
   const dayInfo = sched[day];
@@ -723,7 +848,7 @@ function isTherapistWorking(therapistId, dateStr, timeStr){
   if(parts.length < 2) return true;
   const month = parseInt(parts[0]);
   const day = parseInt(parts[1]);
-  if(month !== 5) return true; // 只有5月有排班表
+  if(month !== 5) return true; // 非5月沒有排班資料，預設顯示可接但會有提示
   const sched = SCHEDULE_2026_05[therapistId];
   if(!sched) return true; // 郭老師、洪老師沒排班資料，預設可接
   const dayInfo = sched[day];
@@ -743,8 +868,8 @@ function isTherapistWorking(therapistId, dateStr, timeStr){
 }
 
 
-const CATS=[{k:'all',l:'全部'},{k:'full',l:'全身調理'},{k:'neck',l:'頸缽筋膜'},{k:'foot',l:'腳底按摩'},{k:'ear',l:'采耳/頭臉'},{k:'belly',l:'腹燭調理'},{k:'half',l:'半身/單品'}];
-const TIMES=['10:00','11:00','12:30','14:00','15:30','17:00','18:30','20:00','21:00'];
+const CATS=[{k:'all',l:'全部'},{k:'full',l:'全身調理'},{k:'neck',l:'頌缽筋膜'},{k:'foot',l:'腳底按摩'},{k:'ear',l:'采耳/頭臉'},{k:'belly',l:'腹燭調理'},{k:'half',l:'半身/單品'}];
+const TIMES=['09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','19:00','19:30','20:00','20:30','21:00','21:30'];
 
 function initCustApp(){
   renderCatPills(); renderSvcs(); renderCal(); renderTimes();
@@ -765,27 +890,53 @@ function filterCat(k){
 
 function renderSvcs(){
   const list=bookState.catFilter==='all'?SVCS:SVCS.filter(s=>s.cat===bookState.catFilter);
-  document.getElementById('svc-list').innerHTML=list.map(s=>`
-    <div class="svc-item ${bookState.svc&&bookState.svc.id===s.id?'sel':''}" onclick="selSvc(${s.id})">
-      <div class="svc-chk">${bookState.svc&&bookState.svc.id===s.id?'✓':''}</div>
+  const summaryEl=document.getElementById('svc-selected-summary');
+  if(summaryEl){
+    const sel=bookState.svcs||[];
+    if(sel.length>0){
+      const total=sel.reduce((s,sv)=>s+(sv.selectedPrice?.p||0),0);
+      summaryEl.textContent='已選 '+sel.length+' 項：NT$'+total+'（'+(sel.some(s=>!s.selectedPrice)?'請選擇時長':'已完成選擇')+'）';
+    } else { summaryEl.textContent=''; }
+  }
+  document.getElementById('svc-list').innerHTML=list.map(s=>{
+    const entry = (bookState.svcs||[]).find(x=>x.id===s.id);
+    const isSel = !!entry;
+    return `<div class="svc-item ${isSel?'sel':''}" onclick="selSvc(${s.id})">
+      <div class="svc-chk">${isSel?'✓':''}</div>
       <div class="svc-name">${s.name}</div>
       ${s.sub?`<div class="svc-sub">${s.sub}</div>`:''}
-      <div class="price-chips">${s.prices.map((p,i)=>`<div class="pchip ${bookState.svc&&bookState.svc.id===s.id&&bookState.price&&bookState.price.p===p.p?'sel':''}" onclick="selPrice(event,${s.id},${i})">${p.l} ／ $${p.p}</div>`).join('')}</div>
-    </div>`).join('');
+      <div class="price-chips">${s.prices.map((p,i)=>`<div class="pchip ${entry&&entry.selectedPrice&&entry.selectedPrice.p===p.p?'sel':''}" onclick="selPrice(event,${s.id},${i})">${p.l} ／ $${p.p}</div>`).join('')}</div>
+    </div>`;
+  }).join('');
 }
 
 function selSvc(id){
-  const s=SVCS.find(x=>x.id===id);
-  bookState.svc=s;
-  if(s.prices.length===1){bookState.price=s.prices[0];document.getElementById('cs1-btn').disabled=false;}
-  else{bookState.price=null;document.getElementById('cs1-btn').disabled=true;}
+  // Multi-select: toggle
+  if(!bookState.svcs) bookState.svcs=[];
+  const existing = bookState.svcs.findIndex(x=>x.id===id);
+  if(existing>=0){
+    bookState.svcs.splice(existing,1);
+  } else {
+    const s=SVCS.find(x=>x.id===id);
+    // Auto-select first price if only one option
+    const price = s.prices.length===1 ? s.prices[0] : null;
+    bookState.svcs.push({...s, selectedPrice: price});
+  }
+  // Keep legacy bookState.svc/price for compatibility (use first selected)
+  bookState.svc = bookState.svcs[0] || null;
+  bookState.price = bookState.svcs[0]?.selectedPrice || null;
+  document.getElementById('cs1-btn').disabled = bookState.svcs.length===0 || bookState.svcs.some(s=>!s.selectedPrice);
   renderCatPills(); renderSvcs();
 }
 function selPrice(e,sid,pi){
   e.stopPropagation();
+  if(!bookState.svcs) bookState.svcs=[];
   const s=SVCS.find(x=>x.id===sid);
+  let entry = bookState.svcs.find(x=>x.id===sid);
+  if(!entry){ entry={...s,selectedPrice:null}; bookState.svcs.push(entry); }
+  entry.selectedPrice = s.prices[pi];
   bookState.svc=s; bookState.price=s.prices[pi];
-  document.getElementById('cs1-btn').disabled=false;
+  document.getElementById('cs1-btn').disabled = bookState.svcs.length===0 || bookState.svcs.some(sv=>!sv.selectedPrice);
   renderCatPills(); renderSvcs();
 }
 
@@ -822,10 +973,40 @@ function pickD(d){
   renderCal(); renderTimes();
 }
 function renderTimes(){
-  document.getElementById('tgrid').innerHTML=TIMES.map(t=>`
-    <div class="tbtn ${bookState.time===t?'sel':''}" onclick="pickT('${t}')">
-      <div class="tval">${t}</div><div class="tavail">尚有空位</div>
-    </div>`).join('');
+  // 生成 10分鐘為單位的完整時段選項 09:30~22:00
+  const allSlots = [];
+  // 早班 09:30~14:00
+  for(let h=9;h<=13;h++){
+    for(let m=0;m<60;m+=10){
+      if(h===9&&m<30) continue;
+      if(h===13&&m>30) break;
+      allSlots.push((h<10?'0':'')+h+':'+(m<10?'0':'')+m);
+    }
+  }
+  allSlots.push('13:30');
+  // 晚班 19:00~22:00
+  for(let h=19;h<=21;h++){
+    for(let m=0;m<60;m+=10){
+      allSlots.push(h+':'+(m<10?'0':'')+m);
+    }
+  }
+  allSlots.push('22:00');
+  // 檢查哪些時段有床位衝突
+  const selDate = bookState.date ? (bookState.calM+1)+'/'+bookState.date : '';
+  document.getElementById('tgrid').innerHTML = `
+    <div style="grid-column:1/-1">
+      <label class="flbl">選擇時間</label>
+      <select class="finp" id="time-select" onchange="pickT(this.value)">
+        <option value="">-- 請選擇時段 --</option>
+        ${allSlots.map(t=>{
+          const busy = bookings.filter(b=>b.status!=='declined'&&b.date===selDate&&b.time===t&&b.bed).map(b=>b.bed);
+          const allBusy = busy.length>=3;
+          return `<option value="${t}" ${bookState.time===t?'selected':''} ${allBusy?'disabled':''}>
+            ${t} ${allBusy?'（床位已滿）':''}
+          </option>`;
+        }).join('')}
+      </select>
+    </div>`;
 }
 function pickT(t){
   bookState.time=t;
@@ -957,27 +1138,34 @@ function selTherapist(id){
 
 function renderSummary(){
   const dateStr=`${MN[bookState.calM]}月${bookState.date}日`;
+  const svcs=bookState.svcs||[bookState.svc?{...bookState.svc,selectedPrice:bookState.price}:null].filter(Boolean);
+  const totalPrice=svcs.reduce((s,sv)=>s+(sv.selectedPrice?.p||0),0);
+  const svcHtml=svcs.map(sv=>`${sv.name}（${sv.selectedPrice?.l||''}）`).join('<br>');
   document.getElementById('sum-box').innerHTML=`
-    <div class="sum-row"><span class="sum-lbl">療程</span><span>${bookState.svc?.name||''}</span></div>
-    <div class="sum-row"><span class="sum-lbl">時間</span><span>${bookState.price?.l||''}</span></div>
+    <div class="sum-row"><span class="sum-lbl">療程</span><span>${svcHtml||'未選'}</span></div>
     <div class="sum-row"><span class="sum-lbl">日期</span><span>${dateStr}</span></div>
     <div class="sum-row"><span class="sum-lbl">時段</span><span>${bookState.time||''}</span></div>
     <div class="sum-row"><span class="sum-lbl">姓名</span><span>${cur.user.name}</span></div>
     <div class="sum-row"><span class="sum-lbl">電話</span><span>${cur.user.phone}</span></div>
     <div class="sum-row"><span class="sum-lbl">床位</span><span>${bookState.bed ? bookState.bed+'號床' : '未選擇'}</span></div>
     <div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${bookState.therapist==='none'?'不指定':THERAPISTS.find(t=>t.id===bookState.therapist)?.name||'不指定'}</span></div>
-    <div class="sum-row"><span class="sum-lbl">總金額</span><span>NT$${bookState.price?.p||0}</span></div>`;
+    <div class="sum-row"><span class="sum-lbl">總金額</span><span style="font-weight:700;color:var(--green)">NT$${totalPrice}</span></div>`;
 }
 
 function submitBook(){
   const bId='B'+String(bookings.length+1).padStart(3,'0');
   const dateStr=`${MN[bookState.calM]}/${bookState.date}`;
+  const svcs=bookState.svcs||[bookState.svc?{...bookState.svc,selectedPrice:bookState.price}:null].filter(Boolean);
+  const svcName=svcs.map(sv=>sv.name).join(' + ');
+  const svcDur=svcs.reduce((s,sv)=>{const m=sv.selectedPrice?.l?.match(/(\d+)/);return s+(m?parseInt(m[1]):60);},0)+'分';
+  const svcPrice=svcs.reduce((s,sv)=>s+(sv.selectedPrice?.p||0),0);
   const b={
     id:bId, custId:cur.user.id, name:cur.user.name, phone:cur.user.phone,
-    svc:bookState.svc.name, dur:bookState.price.l, price:bookState.price.p,
+    svc:svcName, dur:svcDur, price:svcPrice,
     date:dateStr, time:bookState.time, status:'new',
     lineId:cur.user.lineId||'', note:document.getElementById('cs3-note').value,
     bed: bookState.bed,
+    startTime: null, endTime: null, extraMins: 0,
     therapistId: bookState.therapist==='none'?null:bookState.therapist,
     therapistName: bookState.therapist==='none'?null:(THERAPISTS.find(t=>t.id===bookState.therapist)?.name||null),
     acceptedBy:null, acceptedAt:null
@@ -999,12 +1187,14 @@ function submitBook(){
   document.getElementById('success-sum').innerHTML=`
     <div class="sum-row"><span class="sum-lbl">療程</span><span>${b.svc}</span></div>
     <div class="sum-row"><span class="sum-lbl">日期時段</span><span>${b.date} ${b.time}</span></div>
-    <div class="sum-row"><span class="sum-lbl">費用</span><span>NT$${b.price}</span></div>`;
+    <div class="sum-row"><span class="sum-lbl">費用</span><span>NT$${b.price}</span></div>
+    ${b.bed?`<div class="sum-row"><span class="sum-lbl">床位</span><span>${b.bed}號床</span></div>`:''}
+    ${b.therapistName?`<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${b.therapistName}</span></div>`:'<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>不指定</span></div>'}`;
   showStep(5);
 }
 
 function resetBook(){
-  bookState={step:1,svc:null,price:null,date:null,time:null,therapist:'none',bed:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
+  bookState={step:1,svc:null,price:null,svcs:[],date:null,time:null,therapist:'none',bed:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
   initCustApp();
 }
 
@@ -1030,7 +1220,7 @@ function renderStaffNav(){
     {k:'stats',l:'報表'},
     {k:'customers',l:'客人'},
   ];
-  if(isBoss) tabs.push({k:'employees',l:'員工'},{k:'holidays',l:'公休'});
+  if(isBoss) tabs.push({k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
   document.getElementById('staff-nav').innerHTML=tabs.map(t=>`
     <button class="snav-btn ${staffTab===t.k?'act':''}" onclick="swStaffTab('${t.k}')">${t.l}${t.dot?'<span class="ndot"></span>':''}</button>`).join('');
 }
@@ -1044,16 +1234,18 @@ function swStaffTab(t){
 function renderStaffContent(){
   let html='';
   const isBoss=cur.user.role==='boss';
-  const todayStr='4/'+new Date().getDate();
+  const _td=new Date(); const todayStr=(_td.getMonth()+1)+'/'+_td.getDate();
 
+  const _tnow=new Date(); const _todayStr2=(_tnow.getMonth()+1)+'/'+_tnow.getDate();
+  const _isBoss=cur.user.role==='boss';
   if(staffTab==='pending'){
-    const list=bookings.filter(b=>b.status==='new');
-    html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>目前沒有待確認預約</div>`);
+    const list=bookings.filter(b=>b.status==='new'&&(_isBoss||b.date===_todayStr2));
+    html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>${_isBoss?'目前沒有待確認預約':'今天沒有待確認的預約'}</div>`);
   } else if(staffTab==='accepted'){
     const list=bookings.filter(b=>b.status==='accepted');
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">📋</div>目前沒有已接受預約</div>`;
   } else if(staffTab==='today'){
-    const list=bookings.filter(b=>b.date===todayStr||b.date==='4/20');
+    const list=bookings.filter(b=>b.date===todayStr);
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">☀️</div>今天沒有排程</div>`;
   } else if(staffTab==='schedule'){
     html=renderSchedule();
@@ -1069,24 +1261,115 @@ function renderStaffContent(){
     html=renderCustomers(isBoss);
   } else if(staffTab==='employees'&&isBoss){
     html=renderEmployees();
+  } else if(staffTab==='liveboard'&&isBoss){
+    html=renderBossBoard();
   } else if(staffTab==='holidays'&&isBoss){
     html=renderHolidays();
   }
   document.getElementById('staff-content').innerHTML=html;
-  // 班表渲染後初始化公休chip
   if(staffTab==='holidays') setTimeout(renderHolidayChips, 50);
+  if(staffTab==='schedule'){
+    setTimeout(bindEasyInputEvents, 50);
+    setTimeout(bindShiftCellEvents, 50);
+  }
+  setTimeout(bindClockBtns, 50);
+  // Auto-start timer if any active services
+  const hasActive = bookings.some(b=>b.status==='accepted'&&b.startTime&&!b.endTime);
+  if(hasActive) startTimerLoop();
+}
+
+function bindClockBtns(){
+  document.querySelectorAll('.clock-in-btn').forEach(function(b){
+    b.onclick = function(){ clockIn(b.dataset.tid); };
+  });
+  document.querySelectorAll('.clock-out-btn').forEach(function(b){
+    b.onclick = function(){ clockOut(b.dataset.tid); };
+  });
+}
+
+function bindShiftCellEvents(){
+  document.querySelectorAll('.shift-cell-editable').forEach(function(cell){
+    cell.onclick = function(){
+      editShift(cell.dataset.tid, parseInt(cell.dataset.day));
+    };
+  });
+}
+
+function bindEasyInputEvents(){
+  // Teacher buttons
+  document.querySelectorAll('[id^="easy-t-"]').forEach(function(btn){
+    btn.onclick = function(){ easySelectTeacher(btn.dataset.tid, btn.dataset.tname); };
+  });
+  // Shift buttons
+  document.querySelectorAll('[id^="easy-s-"]').forEach(function(btn){
+    btn.onclick = function(){ easySelectShift(btn.dataset.sval); };
+  });
+  // Date buttons
+  document.querySelectorAll('[id^="easy-d-"]').forEach(function(el){
+    el.onclick = function(){ easyToggleDate(parseInt(el.dataset.day), el); };
+  });
 }
 
 function statsRow(){
   const newC=bookings.filter(b=>b.status==='new').length;
   const accC=bookings.filter(b=>b.status==='accepted').length;
-  const total=bookings.filter(b=>b.status!=='declined').reduce((s,b)=>s+b.price,0);
-  return `<div class="stats-grid">
-    <div class="stat-c"><div class="stat-n">${newC}</div><div class="stat-l">待確認</div></div>
-    <div class="stat-c"><div class="stat-n">${accC}</div><div class="stat-l">進行中</div></div>
-    <div class="stat-c"><div class="stat-n">$${(total/1000).toFixed(1)}k</div><div class="stat-l">總金額</div></div>
-  </div>`;
+  const total=bookings.filter(b=>b.status!=='declined').reduce((s,b)=>s+effectivePrice(b),0);
+  const isBoss = cur.user.role==='boss';
+
+  let clockCard = '';
+  if(isBoss){
+    // 老闆：顯示所有師傅打卡狀態 + 選擇代打卡
+    const therapistRows = THERAPISTS.map(function(t){
+      const clk = therapistClock[t.id] || {clockIn:null, clockOut:null};
+      const isIn = clk.clockIn && !clk.clockOut;
+      const statusTxt = isIn
+        ? '<span style="color:var(--green);font-weight:600">✅ 上班中（'+clk.clockIn+'）</span>'
+        : clk.clockOut
+        ? '<span style="color:var(--text3)">已下班（'+clk.clockOut+'）</span>'
+        : '<span style="color:var(--text3)">未打卡</span>';
+      const roleTag = t.role==='boss'
+        ? '<span style="background:#fff3e0;color:#c07000;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px">老闆</span>'
+        : '';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
+        +'<div style="width:34px;height:34px;border-radius:50%;background:var(--pu-pale);border:1.5px solid var(--pu-mid);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--pu);flex-shrink:0">'+t.avatar+'</div>'
+        +'<div style="flex:1;font-size:13px">'+t.name+roleTag+'<br><span style="font-size:11px">'+statusTxt+'</span></div>'
+        +'<div style="display:flex;gap:4px">'
+        +'<button class="clock-in-btn" data-tid="'+t.id+'" style="padding:5px 10px;border-radius:8px;background:var(--green);color:#fff;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">上班</button>'
+        +'<button class="clock-out-btn" data-tid="'+t.id+'" style="padding:5px 10px;border-radius:8px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">下班</button>'
+        +'</div></div>';
+    }).join('');
+    clockCard = '<div style="background:#fff;border-radius:12px;margin:0.6rem 0.9rem;padding:0.9rem;border:1px solid var(--border)">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--pu);margin-bottom:8px">📋 師傅打卡管理</div>'
+      +therapistRows
+      +'</div>';
+  } else {
+    // 員工：顯示自己的打卡狀態
+    const myId = cur.user.id;
+    // 找對應師傅
+    const myT = THERAPISTS.find(t=>t.id===myId);
+    const clk = therapistClock[myId] || {clockIn:null, clockOut:null};
+    const isIn = clk.clockIn && !clk.clockOut;
+    const clockStatus = isIn
+      ? '<span style="color:var(--green);font-weight:600">✅ 上班中（'+clk.clockIn+'打卡）</span>'
+      : clk.clockOut
+      ? '<span style="color:var(--text3)">已下班（'+clk.clockOut+'）</span>'
+      : '<span style="color:var(--text3)">尚未打卡</span>';
+    clockCard = '<div style="background:#fff;border-radius:12px;margin:0.6rem 0.9rem;padding:0.9rem;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
+      +'<div style="font-size:13px">'+clockStatus+'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<button onclick="clockIn()" style="padding:7px 14px;border-radius:8px;background:var(--green);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">上班打卡</button>'
+      +'<button onclick="clockOut()" style="padding:7px 14px;border-radius:8px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">下班打卡</button>'
+      +'</div></div>';
+  }
+
+  return clockCard
+    +'<div class="stats-grid">'
+    +'<div class="stat-c"><div class="stat-n">'+newC+'</div><div class="stat-l">待確認</div></div>'
+    +'<div class="stat-c"><div class="stat-n">'+accC+'</div><div class="stat-l">進行中</div></div>'
+    +'<div class="stat-c"><div class="stat-n">$'+(total/1000).toFixed(1)+'k</div><div class="stat-l">總金額</div></div>'
+    +'</div>';
 }
+
 
 function bCard(b){
   const stMap={new:'sb-new',accepted:'sb-acc',declined:'sb-dec',done:'sb-don'};
@@ -1094,18 +1377,48 @@ function bCard(b){
   const emp=b.acceptedBy?employees.find(e=>e.id===b.acceptedBy):null;
   const myEmpId = cur.user.id;
   const isDesignated = b.therapistId && b.therapistId !== null;
-  const canAccept = !isDesignated || b.therapistId === myEmpId;
+  const isBoss = cur.user.role === 'boss';
+  const canAccept = isBoss || !isDesignated || b.therapistId === myEmpId;
   const designatedName = b.therapistName || '';
+  const extraInfo = b.extraMins>0 ? `<span class="tag" style="background:#fff8e0;color:#c07000">+${b.extraMins}分</span>` : '';
+  const isInProgress = b.status==='accepted' && b.startTime && !b.endTime;
+
+  // Active service banner with live timer
+  const activeBanner = isInProgress ? `
+    <div class="service-active-banner">
+      <div class="sa-pulse"></div>
+      <div class="sa-info">
+        <div class="sa-name">🟢 服務中：${b.name}</div>
+        <div class="sa-svc">${b.svc} ・ ${b.dur}${b.extraMins>0?' (+'+b.extraMins+'分)':''} ・ 開始 ${b.startTime}</div>
+      </div>
+      <div class="sa-timer" id="sa-timer-${b.id}">--:--</div>
+      <button class="sa-end-btn" id="end-btn-${b.id}" onclick="confirmEnd('${b.id}')">⏹ 切單</button>
+    </div>` : '';
+
+  const addTimeSection = (b.status==='accepted') ? `<div style="border-top:1px solid var(--border);padding:0.6rem 1rem">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600">加時間</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+      <button onclick="addTime('${b.id}',15)" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit">+15分</button>
+      <button onclick="addTime('${b.id}',30)" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit">+30分</button>
+      <button onclick="addTime('${b.id}',40)" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit">+40分</button>
+      <button onclick="addTime('${b.id}',60)" style="padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit">+60分</button>
+      <input id="add-time-inp-${b.id}" type="number" placeholder="自訂分鐘" style="width:90px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:16px;font-family:inherit">
+      <button onclick="addTimeCustom('${b.id}')" style="padding:5px 10px;border-radius:8px;background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:11px;cursor:pointer;font-family:inherit">確認</button>
+    </div>
+  </div>` : '';
+
+  const editBtn = `<button class="abtn" style="background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:12px" onclick="openEditBooking('${b.id}')">✏️ 修改</button>`;
   const actions = b.status==='new'
     ? `<div class="bcard-acts">
         ${canAccept
           ? `<button class="abtn abtn-acc" onclick="acceptBook('${b.id}')">✓ 我接這件</button>
              <button class="abtn abtn-dec" onclick="declineBook('${b.id}')">✗ 婉拒</button>`
-          : `<div style="flex:1;text-align:center;font-size:12px;color:var(--text3);padding:8px">🔒 客人已指定 ${designatedName}，僅限該師傅接案</div>`
+          : `<div style="flex:1;text-align:center;font-size:12px;color:var(--text3);padding:8px">🔒 客人已指定 ${designatedName}</div>`
         }
+        ${editBtn}
        </div>`
     : b.status==='accepted'
-    ? `<div class="bcard-acts"><button class="abtn abtn-done" onclick="doneBook('${b.id}')">✓ 標記完成</button></div>`
+    ? `${activeBanner}${!b.startTime?`<div class="bcard-acts"><button class="abtn" style="background:linear-gradient(135deg,#1a7a3a,#2d9e52);color:#fff;border:none;flex:1;font-size:14px;letter-spacing:0.5px" onclick="startService('${b.id}')">▶ 打單開始</button></div>`:''}${addTimeSection}<div class="bcard-acts" style="border-top:none;padding-top:0">${editBtn}<button class="abtn abtn-dec" data-cancel-id="${b.id}" onclick="cancelAccepted('${b.id}')">✕ 取消預約</button></div>`
     : '';
   return `<div class="bcard ${b.status==='new'?'is-new':''}" id="bc-${b.id}">
     <div class="bcard-top">
@@ -1116,10 +1429,17 @@ function bCard(b){
         <div class="bcard-tags">
           <span class="tag tag-d">${b.date}</span>
           <span class="tag tag-t">${b.time} · ${b.dur}</span>
-          <span class="tag tag-p">NT$${b.price}</span>
+          ${(()=>{ if(b.status==='done'&&b.finalPrice!==undefined){
+            const fc=b.finalPrice<b.price?'#c07000':b.finalPrice>b.price?'var(--green)':'var(--pu)';
+            const bg=b.finalPrice<b.price?'#fff8e0':b.finalPrice>b.price?'#edf9f0':'var(--pu-pale)';
+            return `<span class="tag tag-p" style="text-decoration:line-through;opacity:0.5">NT$${b.price}</span>
+                    <span class="tag" style="background:${bg};color:${fc};font-weight:700">✓ NT$${b.finalPrice}${b.actualMins?'（'+b.actualMins+'分）':''}</span>`;
+          } return `<span class="tag tag-p">NT$${b.price}</span>`; })()}
           ${emp?`<span class="tag tag-e">👤 ${emp.id} ${emp.name}</span>`:''}
           ${b.bed?`<span class="tag" style="background:#f0f8ff;color:#2255cc">🛏️ ${b.bed}號床</span>`:''}
           ${b.therapistId?`<span class="tag" style="background:#fff0f8;color:#c2547a">🎯 指定：${b.therapistName}</span>`:''}
+          ${b.supportId?`<span class="tag" style="background:#f0fff4;color:var(--green)">🤝 支援：${b.supportName}</span>`:''}
+          ${extraInfo}
         </div>
         <div class="bcard-contact">📞 ${b.phone}${b.lineId?' ・ LINE '+b.lineId:''}</div>
         ${b.note?`<div class="bcard-note">備註：${b.note}</div>`:''}
@@ -1160,6 +1480,28 @@ function declineBook(id){
   renderStaffNav(); renderStaffContent();
 }
 
+let cancelConfirmId = null;
+function cancelAccepted(id){
+  if(cancelConfirmId===id){
+    const b=bookings.find(x=>x.id===id);
+    if(b){ b.status='declined'; b.cancelledAt=now(); }
+    cancelConfirmId=null;
+    toast('✕ 已取消預約：'+(b?b.name:''),'sys','取消預約');
+    renderStaffNav(); renderStaffContent();
+  } else {
+    cancelConfirmId=id;
+    const btn=document.querySelector('[data-cancel-id="'+id+'"]');
+    if(btn){ btn.textContent='確定取消？'; btn.style.background='var(--red)'; btn.style.color='#fff'; btn.style.border='1px solid var(--red)'; }
+    setTimeout(function(){
+      if(cancelConfirmId===id){
+        cancelConfirmId=null;
+        const b2=document.querySelector('[data-cancel-id="'+id+'"]');
+        if(b2){ b2.textContent='✕ 取消預約'; b2.style.background=''; b2.style.color=''; b2.style.border=''; }
+      }
+    },3000);
+  }
+}
+
 function doneBook(id){
   const b=bookings.find(x=>x.id===id);
   if(b){b.status='done';}
@@ -1169,17 +1511,27 @@ function doneBook(id){
 
 // ── 客人導覽 ──
 function custNav(tab, el){
-  document.querySelectorAll('#cn-book,#cn-history').forEach(b=>b.classList.remove('act'));
+  document.querySelectorAll('#cn-book,#cn-history,#cn-coupon').forEach(b=>b.classList.remove('act'));
   el.classList.add('act');
-  const hist = document.getElementById('cust-history');
-  if(hist) hist.classList.toggle('hidden', tab!=='history');
+  document.getElementById('cust-history').classList.add('hidden');
+  const cpEl=document.getElementById('cust-coupon'); if(cpEl) cpEl.classList.add('hidden');
   if(tab==='history'){
-    // 隱藏所有預約步驟
+    document.getElementById('cust-history').classList.remove('hidden');
     ['cs1','cs2','cs2c','cs2b','cs3','cs4','cs5'].forEach(id=>{
       const e=document.getElementById(id);if(e)e.classList.add('hidden');
     });
     renderMyBookings();
-  } else {
+    return;
+  }
+  if(tab==='coupon'){
+    if(cpEl) cpEl.classList.remove('hidden');
+    ['cs1','cs2','cs2c','cs2b','cs3','cs4','cs5'].forEach(id=>{
+      const e=document.getElementById(id);if(e)e.classList.add('hidden');
+    });
+    renderMyCoupons();
+    return;
+  }
+  if(tab==='book'){
     // 回到預約頁：重置到第一步
     bookState.step=1;
     bookState.svc=null; bookState.price=null;
@@ -1199,6 +1551,26 @@ function custNav(tab, el){
     renderSvcs();
     document.getElementById('cs1-btn').disabled=true;
   }
+}
+
+function renderMyCoupons(){
+  const u = cur.user;
+  const coupons = (u.coupons||[]);
+  const el = document.getElementById('my-coupons-list');
+  if(!coupons.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🎟️</div>目前沒有優惠券<br><span style="font-size:12px;color:var(--text3)">註冊時輸入優惠碼可獲得</span></div>';
+    return;
+  }
+  el.innerHTML = coupons.map((c,i)=>`
+    <div style="background:#fff;border-radius:14px;border:${c.used?'1px solid var(--border)':'2px solid var(--gold)'};padding:1rem 1.1rem;margin:0.6rem 0.9rem;opacity:${c.used?0.5:1}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:${c.used?'var(--text3)':'var(--gold)'}">${c.desc}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">代碼：${c.code}</div>
+        </div>
+        <div style="font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;background:${c.used?'#eee':'#fff8e0'};color:${c.used?'var(--text3)':'#c07000'}">${c.used?'已使用':'可使用'}</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderMyBookings(){
@@ -1228,7 +1600,7 @@ function renderMyBookings(){
 }
 
 function cancelMyBooking(id){
-  if(!confirm('確定要取消這個預約嗎？')) return;
+  // no confirm needed in iframe
   const b=bookings.find(x=>x.id===id);
   if(b){
     b.status='declined';
@@ -1244,7 +1616,7 @@ function cancelMyBooking(id){
 
 function renderSchedule(){
   const isBoss = cur.user.role === 'boss';
-  const therapistIds = ['T043','T031','T026','T_GUO','T_HON'];
+  const therapistIds = ['T_GUO','T_HON','T043','T031','T026'];
   const tNames = {'T043':'43號','T031':'31號','T026':'26號','T_GUO':'郭老師','T_HON':'洪老師'};
   const shiftOpts = ['17','18','全','OFF'];
   const shiftColors = {'17':'#e8f4fd','18':'#f0edf9','全':'#edf9f0','OFF':'#f5f5f5'};
@@ -1255,20 +1627,20 @@ function renderSchedule(){
   out += '<div style="overflow-x:auto;padding:0 0.9rem"><div style="min-width:520px;">';
 
   // Header row
-  out += '<div style="display:grid;grid-template-columns:64px repeat(31,1fr);gap:2px;margin-bottom:3px;">';
+  out += '<div style="display:grid;grid-template-columns:56px repeat(31,minmax(34px,1fr));gap:2px;margin-bottom:3px;">';
   out += '<div style="font-size:10px;color:var(--text3);padding:4px 0"></div>';
   for(let d=1;d<=31;d++){
     const dow = new Date(2026,4,d).getDay();
     const isWeekend = dow===0||dow===6;
-    out += '<div style="font-size:9px;color:'+(isWeekend?'var(--red)':'var(--text3)')+';text-align:center;padding:2px 0;font-weight:600">'+d+'</div>';
+    out += '<div style="font-size:11px;color:'+(isWeekend?'var(--red)':'var(--text3)')+';text-align:center;padding:2px 0;font-weight:600">'+d+'</div>';
   }
   out += '</div>';
 
   // Each therapist row
   therapistIds.forEach(function(tid){
     const sched = SCHEDULE_2026_05[tid] || {};
-    out += '<div style="display:grid;grid-template-columns:64px repeat(31,1fr);gap:2px;margin-bottom:3px;">';
-    out += '<div style="font-size:12px;font-weight:700;color:var(--pu);display:flex;align-items:center;padding:0 4px;">'+tNames[tid]+'</div>';
+    out += '<div style="display:grid;grid-template-columns:56px repeat(31,minmax(34px,1fr));gap:2px;margin-bottom:3px;">';
+    out += '<div style="font-size:13px;font-weight:700;color:var(--pu);display:flex;align-items:center;padding:0 4px;white-space:nowrap;">'+tNames[tid]+'</div>';
     for(let d=1;d<=31;d++){
       const val = sched[d] || 'OFF';
       const isOff = !sched[d] || sched[d]==='OFF';
@@ -1277,14 +1649,17 @@ function renderSchedule(){
       if(shiftColors[val]){
         bg = shiftColors[val]; color = shiftText[val]; lbl = shiftLabels[val]||val;
       } else if(val && val.includes('-')){
-        bg = '#fffbe6'; color = '#c07000'; lbl = val;
+        bg = '#fffbe6'; color = '#c07000';
+        // 自訂時段：只顯示起始~結束，字小一點
+        const parts = val.split('-');
+        lbl = parts.length===2 ? parts[0]+'-'+parts[1] : val;
       } else {
         bg = '#f5f5f5'; color = '#ccc'; lbl = val||'△';
       }
       if(isBoss){
-        out += '<div onclick="editShift(\''+tid+'\','+d+')" style="border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;min-height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:'+bg+';color:'+color+';font-weight:600;border:1px solid transparent;" title="點擊修改">'+lbl+'</div>';
+        out += '<div class="shift-cell-editable" data-tid="'+tid+'" data-day="'+d+'" style="border-radius:4px;padding:2px 1px;text-align:center;font-size:10px;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:'+bg+';color:'+color+';font-weight:700;border:1px solid transparent;word-break:break-all;text-align:center;line-height:1.1;padding:1px;" title="點擊修改">'+lbl+'</div>';
       } else {
-        out += '<div style="border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;min-height:28px;display:flex;align-items:center;justify-content:center;background:'+bg+';color:'+color+';font-weight:600;">'+lbl+'</div>';
+        out += '<div style="border-radius:4px;padding:2px 1px;text-align:center;font-size:10px;min-height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:'+bg+';color:'+color+';font-weight:700;word-break:break-all;text-align:center;line-height:1.1;padding:1px;">'+lbl+'</div>';
       }
     }
     out += '</div>';
@@ -1300,7 +1675,150 @@ function renderSchedule(){
   out += '<span><span style="display:inline-block;width:14px;height:14px;background:#f5f5f5;border-radius:3px;vertical-align:middle;margin-right:3px"></span>△ 休假</span>';
   out += '</div>';
 
+  // 簡易輸入區（老闆用）
+  if(isBoss){
+    const tList = [
+      {id:'T_GUO',name:'郭老師'},
+      {id:'T_HON',name:'洪老師'},
+      {id:'T043',name:'43號'},
+      {id:'T031',name:'31號'},
+      {id:'T026',name:'26號'},
+    ];
+    out += '<div style="margin:0 0.9rem 1rem;background:#fff;border-radius:14px;border:1.5px solid var(--pu-mid);padding:1.25rem;">';
+    out += '<div style="font-size:14px;font-weight:700;color:var(--pu);margin-bottom:4px">📝 簡易輸入班表</div>';
+    out += '<div style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.6">選擇師傅和日期，再選班別，即可快速更新。不用一格一格點！</div>';
+    out += '<div style="margin-bottom:0.9rem">';
+    out += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">① 選擇師傅</div>';
+    out += '<div style="display:flex;flex-wrap:wrap;gap:6px" id="easy-teacher-btns">';
+    tList.forEach(function(t){
+      out += '<button id="easy-t-'+t.id+'" data-tid="'+t.id+'" data-tname="'+t.name+'" style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2)">'+t.name+'</button>';
+    });
+    out += '</div></div>';
+    out += '<div style="margin-bottom:0.9rem">';
+    out += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">② 選擇日期（可多選）</div>';
+    out += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;" id="easy-date-grid">';
+    for(let d=1;d<=31;d++){
+      const dow = new Date(2026,4,d).getDay();
+      const isWE = dow===0||dow===6;
+      out += '<div id="easy-d-'+d+'" data-day="'+d+'" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;color:'+(isWE?'var(--red)':'var(--text)')+';">';
+      out += '<div>'+d+'</div>';
+      out += '<div style="font-size:9px;color:var(--text3)">'+['日','一','二','三','四','五','六'][dow]+'</div>';
+      out += '</div>';
+    }
+    out += '</div></div>';
+    out += '<div style="margin-bottom:1rem">';
+    out += '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">③ 選擇班別（或手動填入時段）</div>';
+    out += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="easy-shift-btns">';
+    const easyOpts = [
+      {val:'17',label:'早班',sub:'09:30–14:00',bg:'#e8f4fd',color:'#2255aa'},
+      {val:'18',label:'晚班',sub:'19:00–22:00',bg:'#f0edf9',color:'var(--pu)'},
+      {val:'全',label:'全天班',sub:'全日',bg:'#edf9f0',color:'var(--green)'},
+      {val:'14-21',label:'14–21',sub:'下午班',bg:'#fff8e0',color:'#c07000'},
+      {val:'10-22',label:'10–22',sub:'全天長班',bg:'#edf9f0',color:'var(--green)'},
+      {val:'OFF',label:'休假',sub:'△ 不上班',bg:'#f5f5f5',color:'#999'},
+    ];
+    easyOpts.forEach(function(opt){
+      out += '<button id="easy-s-'+opt.val+'" data-sval="'+opt.val+'" style="padding:10px 4px;border-radius:10px;background:'+opt.bg+';color:'+opt.color+';border:1.5px solid transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+opt.label+'<br><span style="font-size:10px;font-weight:400">'+opt.sub+'</span></button>';
+    });
+    out += '</div></div>';
+    // 手動輸入時段
+    out += '<div style="background:var(--pu-pale);border-radius:12px;padding:1rem;margin-bottom:1rem;border:1px solid var(--pu-mid)">';
+    out += '<div style="font-size:12px;font-weight:600;color:var(--pu);margin-bottom:8px">✏️ 或手動填入時段（24小時制）</div>';
+    out += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    out += '<span style="font-size:14px;font-weight:600;color:var(--text)">上班時間</span>';
+    out += '<input id="easy-custom-start" type="number" min="0" max="23" placeholder="開始（例 9）" style="width:110px;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:16px;font-family:inherit">';
+    out += '<span style="font-size:16px;color:var(--text2)">：00 ~ </span>';
+    out += '<input id="easy-custom-end" type="number" min="1" max="24" placeholder="結束（例 22）" style="width:110px;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:16px;font-family:inherit">';
+    out += '<span style="font-size:16px;color:var(--text2)">：00</span>';
+    out += '</div>';
+    out += '<div style="font-size:11px;color:var(--text3);margin-top:6px">填好後直接按下方「確認套用」，會優先使用此手動時段</div>';
+    out += '</div>';
+    out += '<button onclick="easyApply()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--pu),var(--pu2));color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">✓ 確認套用</button>';
+    out += '<div id="easy-status" style="text-align:center;margin-top:10px;font-size:13px;color:var(--green);font-weight:600;min-height:20px"></div>';
+    out += '</div>';
+  }
+
   return out;
+}
+
+// ── 簡易輸入班表邏輯 ──
+let easyState = {teacher: null, teacherName: '', dates: [], shift: null};
+
+function easySelectTeacher(id, name){
+  easyState.teacher = id;
+  easyState.teacherName = name;
+  document.querySelectorAll('[id^="easy-t-"]').forEach(function(b){
+    b.style.background = 'var(--bg)';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--text2)';
+  });
+  const btn = document.getElementById('easy-t-'+id);
+  if(btn){ btn.style.background='var(--pu)'; btn.style.borderColor='var(--pu)'; btn.style.color='#fff'; }
+}
+
+function easyToggleDate(d, el){
+  const idx = easyState.dates.indexOf(d);
+  if(idx >= 0){
+    easyState.dates.splice(idx,1);
+    el.style.background = '';
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'transparent';
+  } else {
+    easyState.dates.push(d);
+    el.style.background = 'var(--pu)';
+    el.style.borderColor = 'var(--pu)';
+    el.style.color = '#fff';
+  }
+}
+
+function easySelectShift(val){
+  easyState.shift = val;
+  document.querySelectorAll('[id^="easy-s-"]').forEach(function(b){
+    b.style.borderColor = 'transparent';
+    b.style.outline = 'none';
+  });
+  const btn = document.getElementById('easy-s-'+val);
+  if(btn){ btn.style.borderColor='var(--pu)'; btn.style.outline='2px solid var(--pu)'; }
+}
+
+function easyApply(){
+  if(!easyState.teacher){ alert('請先選擇師傅'); return; }
+  if(easyState.dates.length===0){ alert('請選擇日期（可多選）'); return; }
+
+  // 優先使用手動輸入時段
+  let finalShift = easyState.shift;
+  const csEl = document.getElementById('easy-custom-start');
+  const ceEl = document.getElementById('easy-custom-end');
+  if(csEl && ceEl && csEl.value.trim() && ceEl.value.trim()){
+    const sv = parseInt(csEl.value), ev = parseInt(ceEl.value);
+    if(!isNaN(sv) && !isNaN(ev) && sv>=0 && sv<=23 && ev>=1 && ev<=24 && sv<ev){
+      finalShift = sv+'-'+ev;
+    } else {
+      alert('手動時段格式不對，請確認開始和結束時間');
+      return;
+    }
+  }
+  if(!finalShift){ alert('請選擇班別或填入手動時段'); return; }
+
+  if(!SCHEDULE_2026_05[easyState.teacher]) SCHEDULE_2026_05[easyState.teacher]={};
+  easyState.dates.forEach(function(d){
+    SCHEDULE_2026_05[easyState.teacher][d] = finalShift;
+  });
+  const shiftName = {'17':'早班 09:30–14:00','18':'晚班 19:00–22:00','全':'全天班','OFF':'休假','14-21':'14–21','10-22':'10–22'}[finalShift]||finalShift;
+  const status = document.getElementById('easy-status');
+  if(status) status.textContent = '✅ 已更新「'+easyState.teacherName+'」共 '+easyState.dates.length+' 天 → '+shiftName;
+  // 重置
+  easyState.dates = [];
+  easyState.shift = null;
+  if(csEl) csEl.value='';
+  if(ceEl) ceEl.value='';
+  document.querySelectorAll('[id^="easy-d-"]').forEach(function(el){
+    el.style.background=''; el.style.borderColor='var(--border)'; el.style.color='';
+  });
+  document.querySelectorAll('[id^="easy-s-"]').forEach(function(b){
+    b.style.borderColor='transparent'; b.style.outline='none';
+  });
+  setTimeout(renderStaffContent, 100);
 }
 
 function initShiftModal(){
@@ -1309,7 +1827,7 @@ function initShiftModal(){
   modal.id = 'shift-modal';
   modal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9000;align-items:center;justify-content:center;';
   const box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:16px;padding:1.5rem;max-width:320px;width:92%;margin:0 auto;';
+  box.style.cssText = 'background:#fff;border-radius:16px;padding:1.5rem;max-width:320px;width:92%;margin:0 auto;max-height:90vh;overflow-y:auto;';
   box.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--pu);margin-bottom:4px" id="shift-modal-title">修改班別</div>'
     + '<div style="font-size:12px;color:var(--text2);margin-bottom:1rem" id="shift-modal-sub"></div>'
     + '<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px">快速選擇</div>'
@@ -1318,11 +1836,11 @@ function initShiftModal(){
     + '<div style="background:var(--bg);border-radius:10px;padding:0.9rem;margin-bottom:0.75rem">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
     + '<span style="font-size:13px;color:var(--text2);width:40px">開始</span>'
-    + '<input id="shift-start" type="number" min="0" max="23" placeholder="例 10" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit">'
+    + '<input id="shift-start" type="number" min="0" max="23" placeholder="例 10" style="width:80px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:16px;font-family:inherit">'
     + '<span style="font-size:13px;color:var(--text2)">:00</span></div>'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
     + '<span style="font-size:13px;color:var(--text2);width:40px">結束</span>'
-    + '<input id="shift-end" type="number" min="1" max="24" placeholder="例 22" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:14px;font-family:inherit">'
+    + '<input id="shift-end" type="number" min="1" max="24" placeholder="例 22" style="width:80px;border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:16px;font-family:inherit">'
     + '<span style="font-size:13px;color:var(--text2)">:00</span></div>'
     + '<button id="shift-custom-btn" style="width:100%;padding:10px;border-radius:9px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認自訂時段</button>'
     + '</div>'
@@ -1402,29 +1920,109 @@ function closeShiftModal(){
 }
 
 
+// 把 "HH:MM" 轉成當天的 Date 物件
+function slotToDate(hhmm){
+  const d=new Date();
+  const p=hhmm.split(':');
+  d.setHours(parseInt(p[0]),parseInt(p[1]),0,0);
+  return d;
+}
+
+// 判斷某床位在某時間格是否被某筆預約「佔用中」
+// 支援打單計時（startTime/endTime）和純預約（用 dur 推算）
+function isBedOccupied(b, slotTime){
+  // slotTime 是 Date 物件，代表該格開始
+  // 取得服務的「開始」和「預計結束」時間
+  let serviceStart, serviceEnd;
+
+  if(b.startTime){
+    // 已打單：用實際開始時間
+    serviceStart = parseTime(b.startTime);
+  } else {
+    // 未打單：用預約時段當開始
+    serviceStart = slotToDate(b.time);
+  }
+
+  if(b.endTime){
+    // 已切單：用實際結束時間
+    serviceEnd = parseTime(b.endTime);
+  } else {
+    // 未切單：開始 + 預定分鐘 + 加時
+    const totalMins = (b.durMins || parseDurMins(b.dur)) + (b.extraMins || 0);
+    serviceEnd = new Date(serviceStart.getTime() + totalMins * 60000);
+  }
+
+  if(!serviceStart || !serviceEnd) return false;
+  // 該時間格寬度：到下一格，這裡用 30 分鐘做最小單位判斷
+  const slotEnd = new Date(slotTime.getTime() + 30 * 60000);
+  // 只要服務時段與此格有重疊就算佔用
+  return serviceStart < slotEnd && serviceEnd > slotTime;
+}
+
+// 從 dur 字串解析分鐘數（例如 "60分" → 60，"120分" → 120）
+function parseDurMins(durStr){
+  if(!durStr) return 60;
+  const m = durStr.match(/(\d+)/);
+  return m ? parseInt(m[1]) : 60;
+}
+
+let timelineRefreshId = null;
+
 function renderTimeline(){
-  const todayStr = '4/'+new Date().getDate();
-  const slots = ['10:00','11:00','12:30','14:00','15:30','17:00','18:30','20:00','21:00'];
+  const _td2=new Date(); const todayStr = (_td2.getMonth()+1)+'/'+_td2.getDate();
+  const nowMs = Date.now();
+  // 24-hour grid, every hour 00:00~23:00
+  const slots = Array.from({length:24},function(_,i){ return (i<10?'0':'')+i+':00'; });
   const beds = [1,2,3];
-  let html = `<div class="section-title">今日床位時間表</div>
-    <div class="bed-timeline"><div class="bt-wrap">
-    <div class="bt-header">
-      <div class="bt-hlbl"></div>
-      ${slots.map(s=>`<div class="bt-hlbl">${s}</div>`).join('')}
-    </div>`;
+
+  // 今日所有有效預約
+  const todayBooks = bookings.filter(x=>x.bed&&x.date===todayStr&&x.status!=='declined');
+
+  const nowHour = new Date().getHours();
+  let html = `<div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+    <span>今日床位時間表（24小時）</span>
+    <span style="font-size:11px;color:var(--text3)" id="tl-refresh-hint">⏱ 自動更新中</span>
+  </div>
+  <div class="bed-timeline"><div class="bt-wrap" id="bt-scroll-wrap" style="overflow-x:auto">
+  <div class="bt-header" style="min-width:${24*52+80}px">
+    <div class="bt-hlbl" style="min-width:60px"></div>
+    ${slots.map((s,i)=>`<div class="bt-hlbl" style="min-width:52px;font-size:10px;${i===nowHour?'color:var(--pu);font-weight:700':''}">${s}</div>`).join('')}
+  </div>`;
+
   beds.forEach(bed=>{
-    html+=`<div class="bt-row"><div class="bt-bed-lbl">🛏️ ${bed}號</div>`;
-    slots.forEach(slot=>{
-      const b=bookings.find(x=>x.bed===bed&&x.date===todayStr&&x.time===slot&&x.status!=='declined');
+    html+=`<div class="bt-row" style="min-width:${24*52+80}px"><div class="bt-bed-lbl" style="min-width:60px;flex-shrink:0">🛏️ ${bed}號</div>`;
+    slots.forEach((slot,slotIdx)=>{
+      const isCurrentHour = slotIdx===nowHour;
+      const slotDate = slotToDate(slot);
+      // 找此床此格有無預約佔用
+      const b = todayBooks.find(x=>x.bed===bed && isBedOccupied(x, slotDate));
       if(b){
-        const isDone=b.status==='done';
-        const isMe=b.acceptedBy===cur.user.id;
-        html+=`<div class="bt-cell ${isDone?'bt-done':isMe?'bt-my':'bt-booked'}" title="${b.name} - ${b.svc}">
-          <div>${b.name[0]}客</div>
-          <div style="font-size:9px;margin-top:2px">${b.svc.slice(0,4)}</div>
+        const isDone = b.status==='done';
+        const isInProgress = b.startTime && !b.endTime;
+        const isMe = b.acceptedBy===cur.user.id;
+
+        let cellClass, extraStyle='', label2='';
+        if(isDone){
+          cellClass='bt-done';
+          label2='完成';
+        } else if(isInProgress){
+          // 服務中：強調顯示
+          cellClass = isMe ? 'bt-my' : 'bt-booked';
+          extraStyle = 'box-shadow:0 0 0 2px #2d9e52;position:relative;';
+          label2='<span style="font-size:8px;background:rgba(45,158,82,0.85);color:#fff;border-radius:3px;padding:1px 3px;margin-top:2px;display:inline-block">進行中</span>';
+        } else {
+          cellClass = isMe ? 'bt-my' : 'bt-booked';
+          label2=`<span style="font-size:8px;color:inherit;opacity:0.75">${b.time}</span>`;
+        }
+
+        html+=`<div class="bt-cell ${cellClass}" style="min-width:52px;${extraStyle}" title="${b.name} - ${b.svc}（${b.dur}）${isInProgress?' 🟢進行中':''}">
+          <div style="font-weight:700;font-size:10px">${b.name[0]}客</div>
+          <div style="font-size:8px;margin-top:1px;overflow:hidden;white-space:nowrap;max-width:46px;text-overflow:ellipsis">${b.svc.slice(0,4)}</div>
+          ${label2}
         </div>`;
       } else {
-        html+=`<div class="bt-cell bt-empty"></div>`;
+        const isPast = slotDate < new Date(nowMs - 60*60000);
+        html+=`<div class="bt-cell bt-empty" style="min-width:52px;${isPast?'opacity:0.35':''}${isCurrentHour?';background:rgba(100,80,200,0.06);border:1px solid var(--pu-mid)':''}"></div>`;
       }
     });
     html+=`</div>`;
@@ -1432,12 +2030,30 @@ function renderTimeline(){
   html+=`</div></div>`;
 
   // legend
-  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;padding:0 0.9rem;font-size:11px;color:var(--text2)">
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;padding:0.5rem 0.9rem;font-size:11px;color:var(--text2)">
     <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--pu-pale);border:1px solid var(--pu-mid);vertical-align:middle;margin-right:3px"></span>已預約</span>
     <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--pu),var(--pu2));vertical-align:middle;margin-right:3px"></span>我的案件</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#edf9f0;border:2px solid #2d9e52;vertical-align:middle;margin-right:3px"></span>進行中</span>
     <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#f0f0f0;border:1px solid #ddd;vertical-align:middle;margin-right:3px"></span>已完成</span>
     <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--bg);border:1px dashed var(--border);vertical-align:middle;margin-right:3px"></span>空位</span>
   </div>`;
+
+  // 啟動自動刷新，並捲到目前時間
+  html += '</div></div>'; // close bt-wrap early placeholder handled below
+  setTimeout(function(){
+    const wrap=document.getElementById('bt-scroll-wrap');
+    if(wrap){ const scrollTo=Math.max(0,(nowHour-1)*52+60); wrap.scrollLeft=scrollTo; }
+  },100);
+  if(timelineRefreshId) clearInterval(timelineRefreshId);
+  timelineRefreshId = setInterval(function(){
+    if(staffTab==='timeline'){
+      renderStaffContent();
+    } else {
+      clearInterval(timelineRefreshId);
+      timelineRefreshId=null;
+    }
+  }, 20000); // 每20秒刷新
+
   return html;
 }
 
@@ -1454,15 +2070,26 @@ function renderManualBook(){
       <select class="finp" id="mb-svc">
         <option value="">-- 選擇療程 --</option>
         ${SVCS.map(s=>s.prices.map(p=>`<option value="${s.id}_${p.p}">${s.name} ${p.l} / $${p.p}</option>`).join('')).join('')}
+        ${customSvcs.map(s=>`<option value="custom_${s.id}">${s.name} ${s.dur}分 / $${s.price}</option>`).join('')}
       </select>
+      <button type="button" onclick="showAddSvcForm()" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1.5px dashed var(--pu-mid);background:var(--pu-pale);color:var(--pu);font-size:13px;cursor:pointer;font-family:inherit">＋ 新增自訂療程</button>
+      <div id="add-svc-form" style="display:none;background:var(--pu-pale);border-radius:10px;padding:0.9rem;margin-top:8px;border:1px solid var(--pu-mid)">
+        <div style="font-size:13px;font-weight:600;color:var(--pu);margin-bottom:8px">新增療程</div>
+        <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:6px;align-items:end">
+          <div><label class="flbl">療程名稱</label><input class="finp" id="ns-name" placeholder="例：熱石療程"></div>
+          <div><label class="flbl">時間(分)</label><input class="finp" id="ns-dur" type="number" placeholder="60"></div>
+          <div><label class="flbl">價格</label><input class="finp" id="ns-price" type="number" placeholder="1500"></div>
+        </div>
+        <button onclick="addCustomSvc()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認新增</button>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="fg"><label class="flbl">日期 *</label><input class="finp" id="mb-date" placeholder="4/25" ></div>
       <div class="fg"><label class="flbl">時段 *</label>
-        <select class="finp" id="mb-time">
-          <option value="">-- 選時段 --</option>
-          ${['10:00','11:00','12:30','14:00','15:30','17:00','18:30','20:00','21:00'].map(t=>`<option>${t}</option>`).join('')}
-        </select>
+        <input class="finp" id="mb-time" placeholder="例：14:30" list="mb-time-list" autocomplete="off">
+        <datalist id="mb-time-list">
+          ${['10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00'].map(t=>`<option value="${t}">`).join('')}
+        </datalist>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1480,12 +2107,19 @@ function renderManualBook(){
           ${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
         </select>
       </div>
+      <div class="fg"><label class="flbl">支援師傅（選填）</label>
+        <select class="finp" id="mb-support">
+          <option value="">無</option>
+          ${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+        </select>
+      </div>
     </div>
-    <div class="fg"><label class="flbl">備註</label><input class="finp" id="mb-note" placeholder="特殊需求..."></div>
+    <div class="fg"><label class="flbl">備註</label><input class="finp" id="mb-note" placeholder=""></div>
     <div class="fg"><label class="flbl">是否為首次來訪</label>
       <select class="finp" id="mb-isnew">
         <option value="0">回頭客</option>
         <option value="1">新客人</option>
+        <option value="2">會員</option>
       </select>
     </div>
     <button class="pbtn" onclick="submitManual()">建立預約</button>
@@ -1500,23 +2134,41 @@ function submitManual(){
   const time=document.getElementById('mb-time').value;
   const bed=parseInt(document.getElementById('mb-bed').value)||null;
   const therapistId=document.getElementById('mb-therapist').value;
+  const supportId=document.getElementById('mb-support').value||'';
+  const supportObj=THERAPISTS.find(t=>t.id===supportId);
   const note=document.getElementById('mb-note').value;
-  const isNew=document.getElementById('mb-isnew').value==='1';
+  const isnewVal=document.getElementById('mb-isnew').value;
+  const isNew=isnewVal==='1';
+  const isMember=isnewVal==='2';
   if(!name||!phone||!svcVal||!date||!time){alert('請填寫必填欄位');return;}
-  const [svcId,priceStr]=svcVal.split('_');
-  const svcObj=SVCS.find(s=>s.id===parseInt(svcId));
-  const priceObj=svcObj.prices.find(p=>p.p===parseInt(priceStr));
+  const parts=svcVal.split('_');
+  const svcId=parts[0], priceStr=parts[1];
+  let svcName,durVal,priceVal;
+  if(svcId==='custom'){
+    const cust=customSvcs.find(s=>s.id===parseInt(priceStr));
+    if(!cust){alert('找不到自訂療程');return;}
+    svcName=cust.name; durVal=cust.dur+'分'; priceVal=cust.price;
+  } else {
+    const svcObj=SVCS.find(s=>s.id===parseInt(svcId));
+    if(!svcObj){alert('找不到療程');return;}
+    const priceObj=svcObj.prices.find(p=>p.p===parseInt(priceStr));
+    if(!priceObj){alert('找不到價格');return;}
+    svcName=svcObj.name; durVal=priceObj.l; priceVal=priceObj.p;
+  }
   const thObj=THERAPISTS.find(t=>t.id===therapistId);
   const bId='B'+Date.now().toString().slice(-4);
   const b={
     id:bId,custId:'MANUAL',name,phone,
-    svc:svcObj.name,dur:priceObj.l,price:priceObj.p,
+    svc:svcName,dur:durVal,price:priceVal,
     date,time,bed,
     therapistId:therapistId==='none'?null:therapistId,
     therapistName:thObj?thObj.name:null,
+    supportId:supportId||null,
+    supportName:supportObj?supportObj.name:null,
+    startTime:null, endTime:null, extraMins:0,
     status:'accepted',
     lineId:document.getElementById('mb-line').value,
-    note:note+(isNew?' ★新客人':''),
+    note:note+(isNew?' ★新客人':isMember?' ★會員':''),
     acceptedBy:cur.user.id,
     acceptedAt:now(),
     isNew
@@ -1533,22 +2185,29 @@ function submitManual(){
   fetch(LINE_CONFIG.backendUrl+'/api/notify/accepted',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({empId:cur.user.id,empName:cur.user.name,name,phone,svc:b.svc,dur:b.dur,date,time,price:b.price,note:b.note})
   }).catch(()=>{});
-  toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':'')+' LINE通知發送中','sys','手動預約成功');
+  toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':isMember?'（會員）':'')+' LINE通知發送中','sys','手動預約成功');
   swStaffTab('pending');
 }
 
 // ── 報表 ──
+function effectivePrice(b){
+  // 切單後使用實際計算金額；進行中或未切單用原始價格
+  return (b.status==='done' && b.finalPrice !== undefined) ? b.finalPrice : b.price;
+}
+
 function renderStats(isBoss){
   const myId=cur.user.id;
   const showList=isBoss?employees:employees.filter(function(e){return e.id===myId;});
   const allDone=bookings.filter(function(b){return b.status==='done'||b.status==='accepted';});
-  const totalRev=allDone.reduce(function(s,b){return s+b.price;},0);
-  const todayStr='4/'+new Date().getDate();
-  const todayRev=bookings.filter(function(b){return b.date===todayStr&&b.status!=='declined';}).reduce(function(s,b){return s+b.price;},0);
+  const totalRev=allDone.reduce(function(s,b){
+    return s+(b.status==='done'&&b.finalPrice!==undefined ? b.finalPrice : b.price);
+  },0);
+  const _tds=new Date(); const todayStr=(_tds.getMonth()+1)+'/'+_tds.getDate();
+  const todayRev=bookings.filter(function(b){return b.date===todayStr&&b.status!=='declined';}).reduce(function(s,b){return s+effectivePrice(b);},0);
   const newCount=bookings.filter(function(b){return b.status==='new';}).length;
 
   const svcMap={};
-  allDone.forEach(function(b){ svcMap[b.svc]=(svcMap[b.svc]||0)+b.price; });
+  allDone.forEach(function(b){ svcMap[b.svc]=(svcMap[b.svc]||0)+effectivePrice(b); });
   const svcList=Object.entries(svcMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   const maxRev=svcList[0]?svcList[0][1]:1;
 
@@ -1570,25 +2229,29 @@ function renderStats(isBoss){
   html+='</div>';
 
   html+='<div class="section-title">員工業績</div>'
-    +'<div style="margin:0 0.9rem;background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;">'
-    +'<table class="staff-tbl"><thead><tr><th>員工</th><th>接案</th><th>完成</th><th>金額</th></tr></thead><tbody>';
+    +'<div style="margin:0 0.9rem;background:#fff;border-radius:14px;border:1px solid var(--border);overflow-x:auto;">'
+    +'<table class="staff-tbl" style="min-width:320px;"><thead><tr><th>員工</th><th>接案</th><th>完成</th><th>金額</th></tr></thead><tbody>';
 
   showList.forEach(function(e){
     const myBooks=bookings.filter(function(b){return b.acceptedBy===e.id;});
     const done=myBooks.filter(function(b){return b.status==='done';}).length;
-    const total=myBooks.reduce(function(s,b){return s+b.price;},0);
+    const total=myBooks.reduce(function(s,b){return s+effectivePrice(b);},0);
+    const origTotal=myBooks.reduce(function(s,b){return s+b.price;},0);
+    const hasDiff = total !== origTotal;
     const bossTag=e.role==='boss'?'<span class="boss-mark">老闆</span>':'';
     html+='<tr class="staff-row">'
       +'<td><div style="display:flex;align-items:center;gap:6px"><div class="emp-av">'+e.name[0]+'</div>'+e.name+bossTag+'</div></td>'
       +'<td style="font-weight:700;color:var(--pu)">'+myBooks.length+'</td>'
       +'<td style="color:var(--green)">'+done+'</td>'
-      +'<td style="font-weight:700;color:var(--green)">$'+total.toLocaleString()+'</td>'
+      +'<td style="font-weight:700;color:var(--green)">$'+total.toLocaleString()
+        +(hasDiff?'<div style="font-size:10px;color:var(--text3);font-weight:400">原 $'+origTotal.toLocaleString()+'</div>':'')
+      +'</td>'
       +'</tr>';
   });
   html+='</tbody></table></div>';
 
   if(isBoss){
-    const totalAll=bookings.filter(function(b){return b.status!=='declined';}).reduce(function(s,b){return s+b.price;},0);
+    const totalAll=bookings.filter(function(b){return b.status!=='declined';}).reduce(function(s,b){return s+effectivePrice(b);},0);
     const totalCases=bookings.filter(function(b){return b.acceptedBy;}).length;
     html+='<div class="stats-grid" style="margin-top:0.5rem">'
       +'<div class="stat-c"><div class="stat-n">'+bookings.length+'</div><div class="stat-l">總預約數</div></div>'
@@ -1606,7 +2269,7 @@ function renderCustomers(isBoss){
   bookings.forEach(function(b){
     if(!b.phone) return;
     if(!custMap[b.phone]) custMap[b.phone]={name:b.name,phone:b.phone,lineId:b.lineId,count:0,total:0,lastDate:''};
-    if(b.status!=='declined'){custMap[b.phone].count++;custMap[b.phone].total+=b.price;}
+    if(b.status!=='declined'){custMap[b.phone].count++;custMap[b.phone].total+=effectivePrice(b);}
     if(!custMap[b.phone].lastDate||b.date>custMap[b.phone].lastDate) custMap[b.phone].lastDate=b.date;
   });
   const list=Object.values(custMap).sort(function(a,b){return b.count-a.count;});
@@ -1633,7 +2296,7 @@ function renderCustomers(isBoss){
 }
 
 // ── 公休設定 ──
-let holidays = ['2026/5/1','2026/5/2'];
+let holidays = [];
 
 function renderHolidays(){
   return `<div class="section-title">公休日設定</div>
@@ -1684,6 +2347,225 @@ function removeHoliday(d){
   setTimeout(renderHolidayChips, 50);
 }
 
+
+// ── 自訂療程 ──
+function showAddSvcForm(){
+  const f = document.getElementById('add-svc-form');
+  if(f) f.style.display = f.style.display==='none'?'block':'none';
+}
+function addCustomSvc(){
+  const name = document.getElementById('ns-name').value.trim();
+  const dur = parseInt(document.getElementById('ns-dur').value);
+  const price = parseInt(document.getElementById('ns-price').value);
+  if(!name||isNaN(dur)||isNaN(price)){alert('請填寫完整');return;}
+  customSvcs.push({id:custSvcNextId++, name, dur, price});
+  document.getElementById('ns-name').value='';
+  document.getElementById('ns-dur').value='';
+  document.getElementById('ns-price').value='';
+  document.getElementById('add-svc-form').style.display='none';
+  toast('✅ 已新增療程：'+name,'sys','療程新增');
+  renderStaffContent();
+}
+
+// ── 打卡功能 ──
+function todayDateStr(){
+  const d=new Date();
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
+function clockIn(tid){
+  const t = now();
+  const targetId = tid || (cur.user.role==='boss' ? bossActingAs : cur.user.id);
+  if(!targetId){ alert('請先選擇要打卡的師傅'); return; }
+  if(!therapistClock[targetId]) therapistClock[targetId]={clockIn:null,clockOut:null,clockLog:[]};
+  therapistClock[targetId].clockIn = t;
+  therapistClock[targetId].clockOut = null;
+  if(!therapistClock[targetId].clockLog) therapistClock[targetId].clockLog=[];
+  // 記錄到 clockLog
+  therapistClock[targetId].clockLog.push({date:todayDateStr(), inTime:t, outTime:null});
+  const tObj = THERAPISTS.find(t=>t.id===targetId);
+  const tName = tObj ? tObj.name : targetId;
+  toast('✅ '+tName+' 上班打卡 '+t,'sys','打卡成功');
+  renderStaffContent();
+}
+function clockOut(tid){
+  const t = now();
+  const targetId = tid || (cur.user.role==='boss' ? bossActingAs : cur.user.id);
+  if(!targetId){ alert('請先選擇要打卡的師傅'); return; }
+  if(!therapistClock[targetId]) therapistClock[targetId]={clockIn:null,clockOut:null,clockLog:[]};
+  therapistClock[targetId].clockOut = t;
+  const log = therapistClock[targetId].clockLog;
+  const today = todayDateStr();
+  const lastEntry = log.slice().reverse().find(l=>l.date===today&&!l.outTime);
+  if(lastEntry) lastEntry.outTime = t;
+  else log.push({date:today, inTime:null, outTime:t});
+  const tObj = THERAPISTS.find(t=>t.id===targetId);
+  const tName = tObj ? tObj.name : targetId;
+  toast('👋 '+tName+' 下班打卡 '+t,'sys','下班打卡');
+  renderStaffContent();
+}
+
+// ── 打單計時系統 ──
+let activeTimers = {}; // bookId -> intervalId
+
+function confirmEnd(bookId){
+  const btn = document.getElementById('end-btn-'+bookId);
+  if(!btn) return;
+  if(btn.dataset.confirming === '1'){
+    endService(bookId);
+  } else {
+    btn.dataset.confirming = '1';
+    btn.textContent = '確定切單？';
+    btn.style.background = 'rgba(255,80,80,0.5)';
+    btn.style.borderColor = '#ff8080';
+    setTimeout(function(){
+      if(btn.dataset.confirming === '1'){
+        btn.dataset.confirming = '0';
+        btn.textContent = '⏹ 切單';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }
+    }, 3000);
+  }
+}
+
+function startService(bookId){
+  const b = bookings.find(x=>x.id===bookId);
+  if(!b) return;
+  b.startTime = now();
+  b.startTimestamp = Date.now(); // for countdown
+  // parse duration to minutes
+  const durStr = b.dur || '';
+  const durMatch = durStr.match(/(\d+)/);
+  b.durMins = durMatch ? parseInt(durMatch[1]) : 60;
+  b.extraMins = b.extraMins || 0;
+  toast('▶️ 打單開始：'+b.name+' / '+b.svc,'sys','服務開始');
+  renderStaffContent();
+  startTimerLoop();
+}
+
+function endService(bookId){
+  const b = bookings.find(x=>x.id===bookId);
+  if(!b) return;
+
+  b.endTime = now();
+  b.status = 'done';
+  if(activeTimers[bookId]){ clearInterval(activeTimers[bookId]); delete activeTimers[bookId]; }
+
+  // ── 計算實際服務時間與應收金額 ──
+  const startT = parseTime(b.startTime);
+  const endT   = parseTime(b.endTime);
+  if(startT && endT){
+    const actualMs   = endT - startT;
+    const actualMins = Math.max(0, Math.round(actualMs / 60000));
+    b.actualMins = actualMins;
+
+    // 原定分鐘（durMins 由打單時解析，含加時）
+    const bookedMins = (b.durMins || 60) + (b.extraMins || 0);
+    const basePrice  = b.price; // 原價
+
+    // 比例計算：不足原定時間 → 按比例收；超過 → 原價（加時費另計）
+    let finalPrice;
+    if(actualMins >= bookedMins){
+      // 做足或超過：原價
+      finalPrice = basePrice;
+    } else {
+      // 做不足：按比例
+      finalPrice = Math.round((actualMins / bookedMins) * basePrice / 10) * 10; // 四捨五入到10元
+    }
+    b.finalPrice = finalPrice;
+    b.priceDiff  = finalPrice - basePrice; // 負數=少收，正數=多收
+
+    const diffStr = b.priceDiff < 0
+      ? '（少 NT$'+Math.abs(b.priceDiff)+'）'
+      : b.priceDiff > 0 ? '（多 NT$'+b.priceDiff+'）' : '（足額）';
+
+    toast(
+      '⏹️ 切單：'+b.name+' ・ 實際 '+actualMins+'分／預定 '+bookedMins+'分\n應收：NT$'+finalPrice+' '+diffStr,
+      'sys','服務結束'
+    );
+  } else {
+    b.finalPrice = b.price;
+    toast('⏹️ 切單完成：'+b.name+' / '+b.svc,'sys','服務結束');
+  }
+
+  renderStaffContent();
+  startTimerLoop();
+}
+
+// Timer loop: update active service banners every second
+let timerLoopId = null;
+function startTimerLoop(){
+  if(timerLoopId) clearInterval(timerLoopId);
+  timerLoopId = setInterval(updateAllTimers, 1000);
+  updateAllTimers();
+}
+
+function parseTime(hhmm){
+  // hhmm like "14:30" or "14:30:00"
+  if(!hhmm) return null;
+  const parts = hhmm.split(':');
+  const h = parseInt(parts[0]), m = parseInt(parts[1]||0), s = parseInt(parts[2]||0);
+  const now_d = new Date();
+  const t = new Date(now_d.getFullYear(), now_d.getMonth(), now_d.getDate(), h, m, s);
+  return t;
+}
+
+function updateAllTimers(){
+  const active = bookings.filter(b=>b.status==='accepted'&&b.startTime&&!b.endTime);
+  if(!active.length){ clearInterval(timerLoopId); timerLoopId=null; return; }
+  const nowMs = Date.now();
+  active.forEach(function(b){
+    // service active banner timer
+    const timerEl = document.getElementById('sa-timer-'+b.id);
+    const bossTimerEl = document.getElementById('bb-timer-'+b.id);
+    const startT = parseTime(b.startTime);
+    if(!startT) return;
+    const totalMins = (b.durMins||60) + (b.extraMins||0);
+    const elapsedMs = nowMs - startT.getTime();
+    const remainMs = (totalMins * 60 * 1000) - elapsedMs;
+    const overdue = remainMs < 0;
+    const displayMs = overdue ? -remainMs : remainMs;
+    const mm = Math.floor(displayMs/60000);
+    const ss = Math.floor((displayMs%60000)/1000);
+    const display = (overdue?'+':'') + (mm<10?'0':'')+mm+':'+(ss<10?'0':'')+ss;
+    if(timerEl){ timerEl.textContent = display; timerEl.style.color = overdue ? '#ff7070' : '#fff'; }
+    if(bossTimerEl){ bossTimerEl.textContent = display; bossTimerEl.className = 'bb-timer'+(overdue?' overdue':''); }
+  });
+  // boss board count
+  const countEl = document.getElementById('bb-active-count');
+  if(countEl) countEl.textContent = active.length+'人服務中';
+}
+
+// ── 加時間 ──
+function addTime(bookId, mins){
+  const b = bookings.find(x=>x.id===bookId);
+  if(!b) return;
+  b.extraMins = (b.extraMins||0) + mins;
+  toast('⏱️ 加時 '+mins+' 分鐘 → '+b.name+' 共加 '+b.extraMins+' 分','sys','加時');
+  // 檢查後面的客人床位衝突
+  const affected = bookings.filter(x=>x.id!==bookId&&x.bed===b.bed&&x.date===b.date&&x.status!=='declined');
+  if(affected.length>0){
+    toast('⚠️ 注意：同床位後續客人可能受影響，請確認','sys','床位提醒');
+  }
+  renderStaffContent();
+  if(b.startTime && !b.endTime) startTimerLoop();
+}
+function addTimeCustom(bookId){
+  const inp = document.getElementById('add-time-inp-'+bookId);
+  if(!inp) return;
+  const mins = parseInt(inp.value);
+  if(isNaN(mins)||mins<=0){alert('請填入有效分鐘數');return;}
+  addTime(bookId, mins);
+}
+
+// ── 床位緩衝時間設定 ──
+let bedBuffer = 10; // 預設10分鐘緩衝
+function setBedBuffer(mins){
+  bedBuffer = mins;
+  toast('🛏️ 床位緩衝時間設為 '+mins+' 分鐘','sys','床位設定');
+  renderStaffContent();
+}
+
 function renderLineLog(){
   if(!lineLog.length) return '<div class="empty"><div class="empty-ico">💬</div>尚無 LINE 通知紀錄</div>';
   let out = '<div class="section-title">LINE 通知紀錄</div><div class="line-log"><div class="line-log-hdr"><span>🟢 LINE 訊息紀錄</span></div>';
@@ -1692,6 +2574,87 @@ function renderLineLog(){
   });
   out += '</div>';
   return out;
+}
+// ── 老闆直播看板 ──
+function renderBossBoard(){
+  const active = bookings.filter(b=>b.status==='accepted'&&b.startTime&&!b.endTime);
+  const accepted_notstarted = bookings.filter(b=>b.status==='accepted'&&!b.startTime);
+  const todayBkgs = bookings.filter(b=>{ const td=new Date(); const ts=(td.getMonth()+1)+'/'+td.getDate(); return b.date===ts && b.status!=='declined'; });
+
+  let html = '<div class="section-title">🔴 直播看板 <span style="font-size:11px;color:var(--text3);font-weight:400">老闆即時監控</span></div>';
+
+  // Summary stats
+  html += '<div class="stats-grid" style="margin-bottom:0">';
+  html += '<div class="stat-c"><div class="stat-n" style="color:var(--green)">'+active.length+'</div><div class="stat-l">服務中</div></div>';
+  html += '<div class="stat-c"><div class="stat-n" style="color:var(--gold)">'+accepted_notstarted.length+'</div><div class="stat-l">待打單</div></div>';
+  html += '<div class="stat-c"><div class="stat-n">'+todayBkgs.length+'</div><div class="stat-l">今日預約</div></div>';
+  html += '</div>';
+
+  // Active services boss board
+  html += '<div class="boss-board">';
+  html += '<div class="boss-board-hdr"><span>🟢 正在服務中</span><span class="bb-badge" id="bb-active-count">'+active.length+'人服務中</span></div>';
+  if(!active.length){
+    html += '<div class="bb-empty">目前沒有進行中的服務</div>';
+  } else {
+    active.forEach(function(b){
+      const emp = b.acceptedBy ? employees.find(e=>e.id===b.acceptedBy) : null;
+      const empName = emp ? emp.name : (b.therapistName||'未指定師傅');
+      const empInitial = empName[0] || '?';
+      const totalMins = (b.durMins||60)+(b.extraMins||0);
+      html += '<div class="bb-row">';
+      html += '<div class="bb-av">'+empInitial+'</div>';
+      html += '<div class="bb-info">';
+      html += '<div class="bb-emp">'+empName+'</div>';
+      html += '<div class="bb-detail">'+b.name+' ・ '+b.svc+' ・ '+b.dur+(b.extraMins>0?' (+'+b.extraMins+'分)':'')+(b.bed?' ・ 🛏️'+b.bed+'號床':'')+'</div>';
+      html += '<div class="bb-detail">開始：'+b.startTime+' ・ 共 '+totalMins+' 分鐘</div>';
+      html += '</div>';
+      html += '<div class="bb-timer" id="bb-timer-'+b.id+'">--:--</div>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  // Accepted but not started
+  if(accepted_notstarted.length){
+    html += '<div class="section-title" style="padding-top:0.4rem">⏳ 已接受 / 等待打單</div>';
+    html += '<div class="boss-board">';
+    html += '<div class="boss-board-hdr"><span>等待開始服務</span></div>';
+    accepted_notstarted.forEach(function(b){
+      const emp = b.acceptedBy ? employees.find(e=>e.id===b.acceptedBy) : null;
+      const empName = emp ? emp.name : (b.therapistName||'未指定');
+      html += '<div class="bb-row">';
+      html += '<div class="bb-av" style="background:var(--gold2);color:#5a3800">'+empName[0]+'</div>';
+      html += '<div class="bb-info">';
+      html += '<div class="bb-emp">'+empName+' ・ '+b.name+'</div>';
+      html += '<div class="bb-detail">'+b.svc+' ・ '+b.date+' '+b.time+(b.bed?' ・ 🛏️'+b.bed+'號床':'')+'</div>';
+      html += '</div>';
+      html += '<span style="font-size:11px;padding:4px 10px;background:#fff8e0;color:#c07000;border-radius:20px;font-weight:700;flex-shrink:0">等待打單</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // ── 員工打卡狀況 ──
+  html += '<div class="section-title" style="padding-top:0.4rem">👥 員工今日打卡狀況</div>';
+  html += '<div class="boss-board"><div class="boss-board-hdr"><span>打卡狀況</span></div>';
+  employees.forEach(function(e){
+    if(e.role==='boss') return;
+    const isOnline = e.clockIn && !e.clockOut;
+    const log = e.clockLog||[];
+    const todayLog = log.filter(function(l){return l.date===todayDateStr();});
+    const todayIn = todayLog.find(function(l){return l.inTime;});
+    const todayOut = todayLog.find(function(l){return l.outTime;});
+    const isSupport = (e.supportDays||{})[todayDateStr()];
+    html += '<div class="bb-row">';
+    html += '<div class="bb-av" style="'+(isOnline?'background:linear-gradient(135deg,#1a7a3a,#2d9e52)':'background:#ccc')+'">' + e.name[0] + '</div>';
+    html += '<div class="bb-info"><div class="bb-emp">' + e.name + (isSupport?' <span style="background:#fff8e0;color:#c07000;border-radius:20px;font-size:10px;padding:1px 7px">支援</span>':'') + '</div>';
+    html += '<div class="bb-detail">'+(todayIn?'上班：'+todayIn.inTime:'尚未打卡')+(todayOut?' ・ 下班：'+todayOut.outTime:'')+'</div></div>';
+    html += '<span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;flex-shrink:0;background:'+(isOnline?'#edf9f0':'#f5f5f5')+';color:'+(isOnline?'var(--green)':'var(--text3)')+';">'+(isOnline?'🟢 上線':'⚫ 離線')+'</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="text-align:center;padding:0.75rem;font-size:11px;color:var(--text3)">⏱ 計時器每秒自動更新</div>';
+  return html;
 }
 
 
@@ -1722,12 +2685,21 @@ function renderEmployees(){
     const bossTag = e.role==='boss' ? '<span class="boss-mark">老闆</span>' : '';
     const caseCount = bookings.filter(function(b){return b.acceptedBy===e.id;}).length;
     const doneCount = bookings.filter(function(b){return b.acceptedBy===e.id&&b.status==='done';}).length;
-    const total = bookings.filter(function(b){return b.acceptedBy===e.id;}).reduce(function(s,b){return s+b.price;},0);
+    const total = bookings.filter(function(b){return b.acceptedBy===e.id;}).reduce(function(s,b){return s+effectivePrice(b);},0);
+    const isOnline = e.clockIn && !e.clockOut;
+    const onlineTag = isOnline
+      ? '<span style="background:#edf9f0;color:var(--green);border:1px solid #a0d0b0;border-radius:20px;font-size:10px;padding:2px 8px;font-weight:700;margin-left:4px">🟢 上線中</span>'
+      : '<span style="background:#f5f5f5;color:var(--text3);border:1px solid #ddd;border-radius:20px;font-size:10px;padding:2px 8px;margin-left:4px">⚫ 離線</span>';
     out += '<div class="emp-manage-card">'
       + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
-      + '<div class="emp-av">'+e.name[0]+'</div>'
-      + '<div><div style="font-size:14px;font-weight:700">'+e.name+' '+bossTag+'</div>'
-      + '<div style="font-size:11px;color:var(--text3)">'+e.id+' ・ LINE: '+(e.lineId||'未設定')+'</div></div></div>'
+      + '<div class="emp-av" style="'+(isOnline?'box-shadow:0 0 0 3px #2d9e52':'')+'">'+e.name[0]+'</div>'
+      + '<div style="flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
+      + '<span style="font-size:14px;font-weight:700">'+e.name+'</span>'+bossTag+onlineTag+'</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+e.id
+        +(e.clockIn?' ・ 上班：'+e.clockIn:'')
+        +(e.clockOut?' ・ 下班：'+e.clockOut:'')+'</div></div>'
+      + '<button data-empid="'+e.id+'" class="clk-log-btn" style="flex-shrink:0;background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">📋 打卡記錄</button>'
+      + '</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)">'
       + '<span>接案數：<strong style="color:var(--pu)">'+caseCount+'</strong></span>'
       + '<span>完成：<strong style="color:var(--green)">'+doneCount+'</strong></span>'
@@ -1735,6 +2707,44 @@ function renderEmployees(){
       + '</div></div>';
   });
   return out;
+}
+
+function showClockLog(empId){
+  const e = employees.find(function(x){return x.id===empId;});
+  if(!e) return;
+  const log = e.clockLog||[];
+  const byDate={};
+  log.forEach(function(l){ if(!byDate[l.date]) byDate[l.date]=[]; byDate[l.date].push(l); });
+  const dates=Object.keys(byDate).sort();
+  let html='<div style="font-size:14px;font-weight:700;color:var(--pu);margin-bottom:1rem">'+e.name+' — 打卡記錄</div>';
+  if(!dates.length){
+    html+='<div style="text-align:center;color:var(--text3);padding:1.5rem">尚無打卡記錄</div>';
+  } else {
+    dates.forEach(function(d){
+      const entries=byDate[d];
+      const inE=entries.find(function(l){return l.inTime;});
+      const outE=entries.find(function(l){return l.outTime;});
+      let durStr='';
+      if(inE&&outE){
+        const p1=inE.inTime.split(':'); const p2=outE.outTime.split(':');
+        const mins=(parseInt(p2[0])*60+parseInt(p2[1]))-(parseInt(p1[0])*60+parseInt(p1[1]));
+        if(mins>0) durStr=' ・ 共 '+Math.floor(mins/60)+'h'+(mins%60?mins%60+'m':'');
+      }
+      const isSupport=(e.supportDays||{})[d];
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:0.6rem 0;border-bottom:1px solid var(--border)">'
+        +'<div style="width:48px;font-size:12px;font-weight:700;color:var(--text)">'+d+'</div>'
+        +'<div style="flex:1;font-size:12px;color:var(--text2)">'
+        +(inE?'上班 <strong>'+inE.inTime+'</strong>':'—')+'  →  '+(outE?'下班 <strong>'+outE.outTime+'</strong>':'未下班')
+        +durStr+'</div>'
+        +(isSupport?'<span style="background:#fff8e0;color:#c07000;border-radius:20px;font-size:10px;padding:2px 8px;font-weight:700">支援</span>':'')
+        +'</div>';
+    });
+  }
+  document.getElementById('clock-log-body').innerHTML=html;
+  document.getElementById('clock-log-modal').classList.remove('hidden');
+}
+function closeClockLog(){
+  document.getElementById('clock-log-modal').classList.add('hidden');
 }
 
 // ===== LINE MESSAGING API 設定 =====
@@ -1771,6 +2781,172 @@ function buildNewBookingStaffMsg(b) {
   return "【元氣堂】新預約通知 " + t + " 📋\n━━━━━━━━━━━━━\n客人：" + b.name + "\n電話：" + b.phone + "\n療程：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + "\n費用：NT$" + b.price + (noteStr ? "\n" + noteStr : "") + "\n━━━━━━━━━━━━━\n請登入系統接案 👆";
 }
 
+// ── 修改預約 ──
+let editingBookId = null;
+
+function openEditBooking(id){
+  const b = bookings.find(function(x){return x.id===id;});
+  if(!b) return;
+  editingBookId = id;
+  document.getElementById('em-name').value = b.name||'';
+  document.getElementById('em-phone').value = b.phone||'';
+  document.getElementById('em-svc').value = b.svc||'';
+  document.getElementById('em-date').value = b.date||'';
+  document.getElementById('em-time').value = b.time||'';
+  document.getElementById('em-bed').value = b.bed||'';
+  document.getElementById('em-note').value = b.note||'';
+  document.getElementById('edit-warn').classList.add('hidden');
+  const sel = document.getElementById('em-therapist');
+  sel.innerHTML = '<option value="">不指定</option>'
+    + THERAPISTS.map(function(t){ return '<option value="'+t.id+'"'+(b.therapistId===t.id?' selected':'')+'>'+t.name+'</option>'; }).join('');
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+function hideEditWarn(){ document.getElementById('edit-warn').classList.add('hidden'); }
+function closeEditModal(){ document.getElementById('edit-modal').classList.add('hidden'); editingBookId=null; }
+function closeEditIfOutside(e){ if(e.target===document.getElementById('edit-modal')) closeEditModal(); }
+
+function saveEditBooking(){
+  const b=bookings.find(function(x){return x.id===editingBookId;});
+  if(!b) return;
+  const newDate=document.getElementById('em-date').value.trim();
+  const newTime=document.getElementById('em-time').value.trim();
+  const newBed=parseInt(document.getElementById('em-bed').value)||null;
+  const newName=document.getElementById('em-name').value.trim()||b.name;
+  const newPhone=document.getElementById('em-phone').value.trim()||b.phone;
+  const newSvc=document.getElementById('em-svc').value.trim();
+  const newNote=document.getElementById('em-note').value.trim();
+  const newThId=document.getElementById('em-therapist').value||null;
+  const newThName=newThId?(THERAPISTS.find(function(t){return t.id===newThId;})||{}).name||'':'';
+
+  if(newBed&&newDate&&newTime){
+    const conflict=bookings.filter(function(x){
+      return x.id!==editingBookId && x.bed===newBed && x.date===newDate
+        && x.status!=='declined' && isBedOccupied(x,slotToDate(newTime));
+    });
+    if(conflict.length){
+      const names=conflict.map(function(x){return x.name+'（'+x.time+'）';}).join('、');
+      const w=document.getElementById('edit-warn');
+      w.innerHTML='⚠️ <strong>床位衝突！</strong>'+newDate+' '+newTime+' 的 '+newBed+'號床 已有：'+names
+        +'<br><div style="display:flex;gap:8px;margin-top:8px">'
+        +'<button onclick="forceSaveEdit()" style="padding:5px 14px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">⚠️ 忽略仍儲存</button>'
+        +'<button onclick="hideEditWarn()" style="padding:5px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">取消重選</button>'
+        +'</div>';
+      w.classList.remove('hidden');
+      return;
+    }
+  }
+  doSaveEdit(newName,newPhone,newSvc,newDate,newTime,newBed,newNote,newThId,newThName);
+}
+
+function forceSaveEdit(){
+  const b=bookings.find(function(x){return x.id===editingBookId;});
+  if(!b) return;
+  doSaveEdit(
+    document.getElementById('em-name').value.trim()||b.name,
+    document.getElementById('em-phone').value.trim()||b.phone,
+    document.getElementById('em-svc').value.trim()||b.svc,
+    document.getElementById('em-date').value.trim()||b.date,
+    document.getElementById('em-time').value.trim()||b.time,
+    parseInt(document.getElementById('em-bed').value)||null,
+    document.getElementById('em-note').value.trim(),
+    document.getElementById('em-therapist').value||null,
+    (document.getElementById('em-therapist').value?(THERAPISTS.find(function(t){return t.id===document.getElementById('em-therapist').value;})||{}).name||'':'')
+  );
+}
+
+function doSaveEdit(newName,newPhone,newSvc,newDate,newTime,newBed,newNote,newThId,newThName){
+  const b=bookings.find(function(x){return x.id===editingBookId;});
+  if(!b) return;
+  b.name=newName; b.phone=newPhone;
+  if(newSvc) b.svc=newSvc;
+  b.date=newDate||b.date;
+  b.time=newTime||b.time;
+  b.bed=newBed; b.note=newNote;
+  b.therapistId=newThId; b.therapistName=newThName;
+  toast('✅ 已修改：'+b.name+' / '+b.date+' '+b.time+(newThName?' ・ 師傅→'+newThName:''),'sys','修改成功');
+  closeEditModal();
+  renderStaffContent();
+}
+
+
+// Event delegation for 打卡記錄 buttons
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.clk-log-btn');
+  if(btn) showClockLog(btn.dataset.empid);
+});
 </script>
+
+<!-- ── 修改預約 Modal ── -->
+<div id="edit-modal" class="modal-overlay hidden" onclick="closeEditIfOutside(event)">
+  <div class="modal-box" id="edit-modal-box">
+    <div class="modal-title">
+      <span>✏️ 修改預約</span>
+      <button class="modal-close" onclick="closeEditModal()">✕ 關閉</button>
+    </div>
+    <div id="edit-warn" class="modal-warn hidden"></div>
+    <div class="fg"><label class="flbl">客人姓名</label><input class="finp" id="em-name"></div>
+    <div class="fg"><label class="flbl">手機</label><input class="finp" id="em-phone"></div>
+    <div class="fg"><label class="flbl">療程名稱</label><input class="finp" id="em-svc" placeholder="例：整復推拿 60分"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="fg"><label class="flbl">日期（5/20）</label><input class="finp" id="em-date" placeholder="5/20"></div>
+      <div class="fg"><label class="flbl">時段（14:00）</label><input class="finp" id="em-time" placeholder="14:00"></div>
+    </div>
+    <div class="fg"><label class="flbl">床位</label>
+      <select class="finp" id="em-bed">
+        <option value="">不指定</option>
+        <option value="1">1號床</option>
+        <option value="2">2號床</option>
+        <option value="3">3號床</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">服務師傅（可修改）</label>
+      <select class="finp" id="em-therapist">
+        <option value="">不指定</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">備註</label><input class="finp" id="em-note"></div>
+    <button class="auth-submit" onclick="saveEditBooking()">確認修改</button>
+  </div>
+</div>
+
+<!-- ── 忘記密碼 Modal ── -->
+<div id="forgot-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeForgotModal()">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>🔑 重設密碼</span>
+      <button class="modal-close" onclick="closeForgotModal()">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">輸入您的手機號碼，系統將顯示提示讓您設定新密碼。</p>
+    <div id="forgot-step1">
+      <div class="auth-inp-wrap"><label class="auth-lbl">手機號碼 / 帳號</label>
+        <input class="auth-inp" id="fp-id" placeholder="輸入手機或帳號">
+      </div>
+      <div id="fp-err" class="auth-err hidden"></div>
+      <button class="auth-submit" onclick="forgotVerify()">查詢帳號</button>
+    </div>
+    <div id="forgot-step2" class="hidden">
+      <div style="background:var(--pu-pale);border-radius:10px;padding:0.75rem 1rem;font-size:13px;color:var(--pu);margin-bottom:1rem" id="fp-hint"></div>
+      <div class="auth-inp-wrap"><label class="auth-lbl">設定新密碼</label>
+        <input class="auth-inp" id="fp-newpw" type="password" placeholder="至少6位數">
+      </div>
+      <div class="auth-inp-wrap"><label class="auth-lbl">確認新密碼</label>
+        <input class="auth-inp" id="fp-newpw2" type="password" placeholder="再輸入一次">
+      </div>
+      <div id="fp-err2" class="auth-err hidden"></div>
+      <button class="auth-submit" onclick="forgotReset()">確認設定新密碼</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 打卡記錄 Modal ── -->
+<div id="clock-log-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeClockLog()">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>📋 打卡記錄</span>
+      <button class="modal-close" onclick="closeClockLog()">✕</button>
+    </div>
+    <div id="clock-log-body"></div>
+  </div>
+</div>
 </body>
 </html>
