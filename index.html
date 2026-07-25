@@ -353,6 +353,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         <button class="auth-submit" onclick="loginCust()">客人登入</button>
         <div style="text-align:center;margin-top:0.6rem"><span style="font-size:12px;color:var(--pu);cursor:pointer;text-decoration:underline" onclick="showForgotPw('cust')">忘記密碼？</span></div>
         <div class="auth-hint">預約時段 09:30～14:00、19:00～22:00 ｜ 0987-450-468</div>
+        <div class="auth-hint" style="margin-top:4px">無手機或需協助？請電洽或現場由服務人員代為預約</div>
       </div>
 
       <!-- LOGIN EMPLOYEE -->
@@ -1097,7 +1098,7 @@ function renderBeds(){
   ];
   // 找出同天同時段已佔用的床
   const takenBeds = bookings
-    .filter(b => b.status !== 'declined' && b.date === `${MN[bookState.calM]}/${bookState.date}` && b.time === bookState.time && b.bed)
+    .filter(b => b.status !== 'declined' && b.date === (bookState.calM+1)+'/'+bookState.date && b.time === bookState.time && b.bed)
     .map(b => b.bed);
 
   document.getElementById('bed-list').innerHTML = BEDS.map(bed => {
@@ -1205,7 +1206,7 @@ function renderSummary(){
 
 function submitBook(){
   const bId='B'+String(bookings.length+1).padStart(3,'0');
-  const dateStr=`${MN[bookState.calM]}/${bookState.date}`;
+  const dateStr=(bookState.calM+1)+'/'+bookState.date;
   const svcs=bookState.svcs||[bookState.svc?{...bookState.svc,selectedPrice:bookState.price}:null].filter(Boolean);
   const svcName=svcs.map(sv=>sv.name).join(' + ');
   const svcDur=svcs.reduce((s,sv)=>{const m=sv.selectedPrice?.l?.match(/(\d+)/);return s+(m?parseInt(m[1]):60);},0)+'分';
@@ -2116,10 +2117,14 @@ function renderTimeline(){
 let manualState = {svc:null,price:null,date:'',time:'',bed:null,therapist:'none'};
 
 function renderManualBook(){
-  return `<div class="section-title">手動預約（代客輸入）</div>
+  return `<div class="section-title">手動預約</div>
+  <div style="background:#fff8e0;border:1px solid #ffe082;border-radius:10px;padding:0.75rem 1rem;margin:0 0 1rem;font-size:13px;color:#7a5a00;line-height:1.7">
+    📞 <strong>適用情境：</strong>現場來客、電話預約、長者無手機<br>
+    手機號碼選填，沒有手機的客人可以留空
+  </div>
   <div class="manual-form">
     <div class="fg"><label class="flbl">客人姓名 *</label><input class="finp" id="mb-name" placeholder="姓名"></div>
-    <div class="fg"><label class="flbl">手機號碼 *</label><input class="finp" id="mb-phone" placeholder="09xx-xxx-xxx" type="tel"></div>
+    <div class="fg"><label class="flbl">手機號碼（無手機可留空）</label><input class="finp" id="mb-phone" placeholder="09xx-xxx-xxx（選填）" type="tel"></div>
     <div class="fg"><label class="flbl">LINE ID（選填）</label><input class="finp" id="mb-line" placeholder="@line_id"></div>
     <div class="fg"><label class="flbl">療程 *</label>
       <select class="finp" id="mb-svc">
@@ -2195,7 +2200,7 @@ function submitManual(){
   const isnewVal=document.getElementById('mb-isnew').value;
   const isNew=isnewVal==='1';
   const isMember=isnewVal==='2';
-  if(!name||!phone||!svcVal||!date||!time){alert('請填寫必填欄位');return;}
+  if(!name||!svcVal||!date||!time){alert('請填寫必填欄位（姓名、療程、日期、時段）');return;}
   const parts=svcVal.split('_');
   const svcId=parts[0], priceStr=parts[1];
   let svcName,durVal,priceVal;
