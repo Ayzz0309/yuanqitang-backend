@@ -880,27 +880,45 @@ function forgotReset(){
 function enterApp(){
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('app-header').classList.remove('hidden');
-  // 載入 Firebase 資料
-  loadAllData().then(()=>{
-    if(cur.type==='emp') startRealtimeSync();
-  });
-  const u=cur.user;
+  const u = cur.user;
   if(cur.type==='cust'){
-    document.getElementById('hdr-user-text').textContent=`${u.name}・客人`;
+    document.getElementById('hdr-user-text').textContent=u.name+'・客人';
     document.getElementById('hdr-badge').className='hdr-badge badge-cust';
     document.getElementById('hdr-badge').textContent='客人';
-    document.getElementById('cust-app').classList.remove('hidden');
-    document.getElementById('staff-app').classList.add('hidden');
-    initCustApp();
   } else {
-    const isBoss=u.role==='boss';
-    document.getElementById('hdr-user-text').textContent=`${u.name}・${isBoss?'老闆':'員工'} [${u.id}]`;
+    const isBoss = u.role==='boss';
+    document.getElementById('hdr-user-text').textContent=u.name+'・'+(isBoss?'老闆':'員工')+' ['+u.id+']';
     document.getElementById('hdr-badge').className='hdr-badge '+(isBoss?'badge-boss':'badge-staff');
     document.getElementById('hdr-badge').textContent=isBoss?'老闆':'員工';
-    document.getElementById('staff-app').classList.remove('hidden');
-    document.getElementById('cust-app').classList.add('hidden');
-    initStaffApp();
   }
+  // 顯示載入畫面
+  var ld = document.createElement('div');
+  ld.id='fb-loading';
+  ld.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(92,79,154,0.9);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;';
+  ld.innerHTML='<div style="font-size:36px;margin-bottom:1rem">⏳</div><div style="font-size:18px;font-weight:700">載入資料中...</div><div style="font-size:13px;margin-top:8px;opacity:0.8">正在從雲端讀取</div>';
+  document.body.appendChild(ld);
+
+  function showApp(){
+    var fbld = document.getElementById('fb-loading');
+    if(fbld) fbld.remove();
+    if(cur.type==='cust'){
+      document.getElementById('cust-app').classList.remove('hidden');
+      document.getElementById('staff-app').classList.add('hidden');
+      initCustApp();
+    } else {
+      document.getElementById('staff-app').classList.remove('hidden');
+      document.getElementById('cust-app').classList.add('hidden');
+      initStaffApp();
+      startRealtimeSync();
+    }
+  }
+
+  loadAllData().then(function(){ showApp(); }).catch(function(err){
+    console.error('Firebase 載入失敗:', err);
+    var fbld2 = document.getElementById('fb-loading');
+    if(fbld2){ fbld2.onclick=function(){fbld2.remove(); showApp();}; }
+    setTimeout(showApp, 3000);
+  });
 }
 
 function logout(){
