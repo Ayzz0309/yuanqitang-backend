@@ -311,6 +311,30 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 .modal-close{background:var(--bg);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:var(--text2);}
 .modal-warn{background:#fff8e0;border:1.5px solid var(--gold);border-radius:10px;padding:0.75rem 1rem;font-size:12px;color:#8a5c00;margin-bottom:1rem;}
 </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAs_GNdiTCyUsGRSRx_xc9XFZ9RPYot-SM",
+    authDomain: "yuqt-6fce7.firebaseapp.com",
+    projectId: "yuqt-6fce7",
+    storageBucket: "yuqt-6fce7.firebasestorage.app",
+    messagingSenderId: "843017221394",
+    appId: "1:843017221394:web:d1ac4b0d009c8acd82efcb",
+    measurementId: "G-PSXZGGGHBQ"
+  };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window._db = db;
+    window._fs = { doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc, updateDoc, serverTimestamp };
+    window._fbReady = true;
+    console.log('Firebase 已連線');
+    // 通知主程式 Firebase 準備好了
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
 </head>
 <body>
 
@@ -544,6 +568,150 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 </div>
 
 <script>
+// ===== FIREBASE 資料存取 =====
+const DB_ENABLED = true; // Firebase 已啟用
+
+async function db(){
+  // 等待 Firebase 準備好
+  if(!window._db){
+    await new Promise(r=>window.addEventListener('firebase-ready',r,{once:true}));
+  }
+  return window._db;
+}
+const fs = ()=> window._fs;
+
+// 存資料
+async function fbSet(collection, id, data){
+  try{
+    const d = await db();
+    const f = fs();
+    await f.setDoc(f.doc(d, collection, id), {...data, _updated: new Date().toISOString()});
+  }catch(e){ console.error('Firebase 寫入失敗:', e); }
+}
+
+// 讀資料
+async function fbGet(col, id){
+  try{
+    const d = await db();
+    const f = fs();
+    const snap = await f.getDoc(f.doc(d, col, id));
+    return snap.exists() ? snap.data() : null;
+  }catch(e){ console.error('Firebase 讀取失敗:', e); return null; }
+}
+
+// 讀整個集合
+async function fbGetAll(col){
+  try{
+    const d = await db();
+    const f = fs();
+    const snap = await f.getDocs(f.collection(d, col));
+    return snap.docs.map(d=>({id:d.id, ...d.data()}));
+  }catch(e){ console.error('Firebase 讀取集合失敗:', e); return []; }
+}
+
+// 刪除
+async function fbDelete(col, id){
+  try{
+    const d = await db();
+    const f = fs();
+    await f.deleteDoc(f.doc(d, col, id));
+  }catch(e){ console.error('Firebase 刪除失敗:', e); }
+}
+
+// 即時監聽（有人更新就自動重整畫面）
+function fbListen(col, callback){
+  (async()=>{
+    const d = await db();
+    const f = fs();
+    f.onSnapshot(f.collection(d, col), snap=>{
+      const docs = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      callback(docs);
+    });
+  })();
+}
+
+// 儲存預約
+async function saveBooking(b){
+  await fbSet('bookings', b.id, b);
+}
+
+// 儲存員工
+async function saveEmployee(e){
+  await fbSet('employees', e.id, e);
+}
+
+// 儲存客人
+async function saveCustomer(c){
+  await fbSet('customers', c.id, c);
+}
+
+// 儲存打卡
+async function saveClock(tid, data){
+  await fbSet('clocks', tid, data);
+}
+
+// 儲存公休日
+async function saveHolidays(list){
+  await fbSet('settings', 'holidays', {list});
+}
+
+// 儲存班表
+async function saveSchedule(month, data){
+  await fbSet('schedules', 'month_'+month, data);
+}
+
+// 載入所有資料（登入後呼叫）
+async function loadAllData(){
+  console.log('載入 Firebase 資料...');
+  try{
+    // 預約
+    const bks = await fbGetAll('bookings');
+    if(bks.length > 0){
+      bookings = bks.sort((a,b)=>b.id.localeCompare(a.id));
+      console.log('載入預約:', bks.length, '筆');
+    }
+    // 員工
+    const emps = await fbGetAll('employees');
+    if(emps.length > 0){
+      // 保留 boss 帳號，加上 Firebase 的員工
+      const firebaseEmps = emps.filter(e=>e.id!=='boss');
+      const bossAcc = employees.find(e=>e.id==='boss');
+      employees = bossAcc ? [bossAcc, ...firebaseEmps] : firebaseEmps;
+      console.log('載入員工:', emps.length, '筆');
+    }
+    // 客人
+    const custs = await fbGetAll('customers');
+    if(custs.length > 0){
+      customers = custs;
+      console.log('載入客人:', custs.length, '筆');
+    }
+    // 打卡
+    const clocks = await fbGetAll('clocks');
+    clocks.forEach(c=>{
+      if(therapistClock[c.id]){
+        therapistClock[c.id] = c;
+      }
+    });
+    console.log('載入打卡:', clocks.length, '筆');
+    // 公休日
+    const hols = await fbGet('settings','holidays');
+    if(hols && hols.list) holidays = hols.list;
+    console.log('Firebase 資料載入完成 ✅');
+  }catch(e){
+    console.error('載入失敗:', e);
+  }
+}
+
+// 即時監聽預約（多人同時用時自動更新）
+function startRealtimeSync(){
+  fbListen('bookings', function(docs){
+    if(docs.length > 0){
+      bookings = docs.sort((a,b)=>b.id.localeCompare(a.id));
+      if(cur.type==='emp') renderStaffContent();
+    }
+  });
+}
+
 // ===== DATA =====
 const BOSS_CODE = 'BOSS2026';
 const MONTHS = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
@@ -651,6 +819,7 @@ function regEmp(){
   if(employees.find(e=>e.id===id)){showErr('re-err','此帳號已被使用');return;}
   const u={id,name,pw,role:'staff',lineId:line,cases:[],clockIn:null,clockOut:null,clockLog:[]};
   employees.push(u);
+  saveEmployee(u); // 儲存到 Firebase
   cur={type:'emp',user:u};
   toast(name+' 員工帳號建立成功！','sys');
   enterApp();
@@ -711,6 +880,10 @@ function forgotReset(){
 function enterApp(){
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('app-header').classList.remove('hidden');
+  // 載入 Firebase 資料
+  loadAllData().then(()=>{
+    if(cur.type==='emp') startRealtimeSync();
+  });
   const u=cur.user;
   if(cur.type==='cust'){
     document.getElementById('hdr-user-text').textContent=`${u.name}・客人`;
@@ -1231,6 +1404,8 @@ function submitBook(){
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({name:b.name,phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time:b.time,price:b.price,note:b.note,therapistName:b.therapistName,bed:b.bed})
   }).catch(e=>console.error('通知失敗',e));
+  // 儲存到 Firebase
+  saveBooking(b);
   setTimeout(()=>toast(custMsg,'line',`${cur.user.name} 的預約確認`),600);
   setTimeout(()=>toast(staffMsg,'line','新預約通知給員工'),1400);
   lineLog.unshift({to:'客人',name:b.name,msg:custMsg,time:nowT});
@@ -1522,6 +1697,8 @@ function acceptBook(id){
   lineLog.unshift({to:'客人',name:b.name,msg:custMsg,time:nowT});
   lineLog.unshift({to:'員工',name:emp.name,msg:staffMsg,time:nowT});
 
+  // 儲存到 Firebase
+  saveBooking(bookings.find(x=>x.id===id));
   renderStaffNav();
   renderStaffContent();
 }
@@ -1874,6 +2051,7 @@ function easyApply(){
   document.querySelectorAll('[id^="easy-s-"]').forEach(function(b){
     b.style.borderColor='transparent'; b.style.outline='none';
   });
+  saveSchedule(new Date().getMonth()+1, getScheduleForMonth(new Date().getMonth()+1));
   setTimeout(renderStaffContent, 100);
 }
 
@@ -1951,6 +2129,7 @@ function setShift(val){
   SCHEDULE_2026_05[tid][day] = val;
   closeShiftModal();
   const lblMap = {'17':'早班 09:30–14:00','18':'晚班 19:00–22:00','全':'全天班','OFF':'休假 △','10-22':'10–22 全天長班','14-21':'14–21 下午班'};
+  saveSchedule(5, SCHEDULE_2026_05); saveSchedule(7, SCHEDULE_2026_07); // 儲存班表
   toast('✅ 已更新 ' + day + ' 日：' + (lblMap[val]||val), 'sys', '班表更新');
   renderStaffContent();
 }
@@ -1967,6 +2146,7 @@ function setCustomShift(){
   if(!SCHEDULE_2026_05[tid]) SCHEDULE_2026_05[tid] = {};
   SCHEDULE_2026_05[tid][day] = val;
   closeShiftModal();
+  saveSchedule(5, SCHEDULE_2026_05); saveSchedule(7, SCHEDULE_2026_07);
   toast('✅ 已更新 ' + day + ' 日：' + sv + ':00–' + ev + ':00', 'sys', '班表更新');
   renderStaffContent();
 }
@@ -2397,6 +2577,7 @@ function addHoliday(){
   const d=document.getElementById('hol-date').value.trim();
   if(!d){alert('請輸入日期');return;}
   if(!holidays.includes(d)) holidays.push(d);
+  saveHolidays(holidays); // 儲存到 Firebase
   renderStaffContent();
   setTimeout(renderHolidayChips, 50);
 }
@@ -2444,6 +2625,7 @@ function clockIn(tid){
   therapistClock[targetId].clockLog.push({date:todayDateStr(), inTime:t, outTime:null});
   const tObj = THERAPISTS.find(t=>t.id===targetId);
   const tName = tObj ? tObj.name : targetId;
+  saveClock(targetId, therapistClock[targetId]); // 儲存到 Firebase
   toast('✅ '+tName+' 上班打卡 '+t,'sys','打卡成功');
   renderStaffContent();
 }
@@ -2460,6 +2642,7 @@ function clockOut(tid){
   else log.push({date:today, inTime:null, outTime:t});
   const tObj = THERAPISTS.find(t=>t.id===targetId);
   const tName = tObj ? tObj.name : targetId;
+  saveClock(targetId, therapistClock[targetId]); // 儲存到 Firebase
   toast('👋 '+tName+' 下班打卡 '+t,'sys','下班打卡');
   renderStaffContent();
 }
