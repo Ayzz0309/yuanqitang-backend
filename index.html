@@ -1606,7 +1606,9 @@ function statsRow(){
       +'</div>';
   } else {
     // 員工：顯示自己的打卡狀態
-    const myId = cur.user.id;
+    const myId = cur.user.therapistId ||
+      (THERAPISTS.find(t=>t.name===cur.user.name) || {}).id ||
+      cur.user.id;
     // 找對應師傅
     const myT = THERAPISTS.find(t=>t.id===myId);
     const clk = therapistClock[myId] || {clockIn:null, clockOut:null};
@@ -2651,7 +2653,7 @@ function todayDateStr(){
   const d=new Date();
   return (d.getMonth()+1)+'/'+d.getDate();
 }
-function clockIn(tid){
+async function clockIn(tid){
   const t = now();
   // 找到正確的師傅ID
   let targetId = tid;
@@ -2674,11 +2676,17 @@ function clockIn(tid){
   therapistClock[targetId].clockLog.push({date:todayDateStr(), inTime:t, outTime:null});
   const tObj = THERAPISTS.find(t=>t.id===targetId);
   const tName = tObj ? tObj.name : targetId;
-  saveClock(targetId, therapistClock[targetId]); // 儲存到 Firebase
+  try {
+    await saveClock(targetId, therapistClock[targetId]);
+  } catch(e) {
+    console.error('上班打卡儲存失敗:', e);
+    alert('打卡資料儲存失敗，請確認網路後再試一次');
+    return;
+  }
   toast('✅ '+tName+' 上班打卡 '+t,'sys','打卡成功');
   renderStaffContent();
 }
-function clockOut(tid){
+async function clockOut(tid){
   const t = now();
   // 找到正確的師傅ID
   let targetId = tid;
@@ -2702,7 +2710,13 @@ function clockOut(tid){
   else log.push({date:today, inTime:null, outTime:t});
   const tObj = THERAPISTS.find(t=>t.id===targetId);
   const tName = tObj ? tObj.name : targetId;
-  saveClock(targetId, therapistClock[targetId]); // 儲存到 Firebase
+  try {
+    await saveClock(targetId, therapistClock[targetId]);
+  } catch(e) {
+    console.error('下班打卡儲存失敗:', e);
+    alert('打卡資料儲存失敗，請確認網路後再試一次');
+    return;
+  }
   toast('👋 '+tName+' 下班打卡 '+t,'sys','下班打卡');
   renderStaffContent();
 }
