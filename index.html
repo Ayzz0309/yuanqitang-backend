@@ -647,7 +647,14 @@ async function saveCustomer(c){
 
 // 儲存打卡
 async function saveClock(tid, data){
-  await fbSet('clocks', tid, data);
+  // 確保 clockLog 是陣列，clockIn/clockOut 是字串
+  const saveData = {
+    id: tid,
+    clockIn: data.clockIn || null,
+    clockOut: data.clockOut || null,
+    clockLog: Array.isArray(data.clockLog) ? data.clockLog : []
+  };
+  await fbSet('clocks', tid, saveData);
 }
 
 // 儲存公休日
@@ -662,7 +669,7 @@ async function saveSchedule(month, data){
 
 // 載入所有資料（登入後呼叫）
 async function loadAllData(){
-  console.log('載入 Firebase 資料...');
+  console.log('載入 Firebase 資料... (', new Date().toLocaleTimeString(), ')');
   try{
     // 預約
     const bks = await fbGetAll('bookings');
@@ -689,11 +696,13 @@ async function loadAllData(){
     // 打卡
     const clocks = await fbGetAll('clocks');
     clocks.forEach(c=>{
-      if(therapistClock[c.id]){
-        therapistClock[c.id] = c;
-      }
+      const tid = c.id;
+      if(!therapistClock[tid]) therapistClock[tid] = {clockIn:null,clockOut:null,clockLog:[]};
+      therapistClock[tid].clockIn = c.clockIn || null;
+      therapistClock[tid].clockOut = c.clockOut || null;
+      therapistClock[tid].clockLog = Array.isArray(c.clockLog) ? c.clockLog : [];
     });
-    console.log('載入打卡:', clocks.length, '筆');
+    console.log('載入打卡:', clocks.length, '筆', clocks.map(c=>c.id+':'+(c.clockIn||'未打卡')));
     // 公休日
     const hols = await fbGet('settings','holidays');
     if(hols && hols.list) holidays = hols.list;
