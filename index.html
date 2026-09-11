@@ -673,8 +673,9 @@ async function loadAllData(){
     // 員工
     const emps = await fbGetAll('employees');
     if(emps.length > 0){
-      // 保留 boss 帳號，加上 Firebase 的員工
-      const firebaseEmps = emps.filter(e=>e.id!=='boss');
+      const firebaseEmps = emps.filter(e=>e.id!=='boss').map(e=>({
+        clockIn:null, clockOut:null, clockLog:[], cases:[], ...e
+      }));
       const bossAcc = employees.find(e=>e.id==='boss');
       employees = bossAcc ? [bossAcc, ...firebaseEmps] : firebaseEmps;
       console.log('載入員工:', emps.length, '筆');
@@ -988,7 +989,7 @@ let therapistClock = {
 };
 
 // 老闆目前代理的師傅 ID（老闆打卡時用）
-let bossActingAs = null;
+let bossActingAs = null; // 老闆目前代理的師傅，登入後在打卡區選擇
 
 // 115年5月排班表（2026年5月）
 // 班別：17=09:30-14:00, 18=19:00-22:00, △=休假
@@ -1396,7 +1397,7 @@ function renderSummary(){
 }
 
 function submitBook(){
-  const bId='B'+String(bookings.length+1).padStart(3,'0');
+  const bId='B'+Date.now().toString(36).toUpperCase();
   const dateStr=(bookState.calM+1)+'/'+bookState.date;
   const svcs=bookState.svcs||[bookState.svc?{...bookState.svc,selectedPrice:bookState.price}:null].filter(Boolean);
   const svcName=svcs.map(sv=>sv.name).join(' + ');
@@ -1446,6 +1447,13 @@ function resetBook(){
 // ===== STAFF APP =====
 function initStaffApp(){
   setTimeout(initShiftModal, 100);
+  // 如果員工沒有對應的師傅ID，提示設定
+  if(cur.user.role!=='boss' && !cur.user.therapistId){
+    const matched = THERAPISTS.find(t=>t.name===cur.user.name);
+    if(matched){
+      cur.user.therapistId = matched.id;
+    }
+  }
   staffTab='pending';
   renderStaffNav();
   renderStaffContent();
@@ -1484,7 +1492,7 @@ function renderStaffContent(){
   const _tnow=new Date(); const _todayStr2=(_tnow.getMonth()+1)+'/'+_tnow.getDate();
   const _isBoss=cur.user.role==='boss';
   if(staffTab==='pending'){
-    const list=bookings.filter(b=>b.status==='new'&&(_isBoss||b.date===_todayStr2));
+    const list=bookings.filter(b=>b.status==='new');
     html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>${_isBoss?'目前沒有待確認預約':'今天沒有待確認的預約'}</div>`);
   } else if(staffTab==='accepted'){
     const list=bookings.filter(b=>b.status==='accepted');
@@ -2414,7 +2422,7 @@ function submitManual(){
     svcName=svcObj.name; durVal=priceObj.l; priceVal=priceObj.p;
   }
   const thObj=THERAPISTS.find(t=>t.id===therapistId);
-  const bId='B'+Date.now().toString().slice(-4);
+  const bId='B'+Date.now().toString(36).toUpperCase()+'M';
   const b={
     id:bId,custId:'MANUAL',name,phone,
     svc:svcName,dur:durVal,price:priceVal,
@@ -2633,7 +2641,18 @@ function todayDateStr(){
 }
 function clockIn(tid){
   const t = now();
-  const targetId = tid || (cur.user.role==='boss' ? bossActingAs : cur.user.id);
+  // 找到正確的師傅ID
+  let targetId = tid;
+  if(!targetId){
+    if(cur.user.role==='boss'){
+      targetId = bossActingAs;
+    } else {
+      // 員工：用帳號的 therapistId，或從 THERAPISTS 找名字對應
+      targetId = cur.user.therapistId ||
+        (THERAPISTS.find(t=>t.name===cur.user.name) || {}).id ||
+        cur.user.id;
+    }
+  }
   if(!targetId){ alert('請先選擇要打卡的師傅'); return; }
   if(!therapistClock[targetId]) therapistClock[targetId]={clockIn:null,clockOut:null,clockLog:[]};
   therapistClock[targetId].clockIn = t;
@@ -2649,7 +2668,18 @@ function clockIn(tid){
 }
 function clockOut(tid){
   const t = now();
-  const targetId = tid || (cur.user.role==='boss' ? bossActingAs : cur.user.id);
+  // 找到正確的師傅ID
+  let targetId = tid;
+  if(!targetId){
+    if(cur.user.role==='boss'){
+      targetId = bossActingAs;
+    } else {
+      // 員工：用帳號的 therapistId，或從 THERAPISTS 找名字對應
+      targetId = cur.user.therapistId ||
+        (THERAPISTS.find(t=>t.name===cur.user.name) || {}).id ||
+        cur.user.id;
+    }
+  }
   if(!targetId){ alert('請先選擇要打卡的師傅'); return; }
   if(!therapistClock[targetId]) therapistClock[targetId]={clockIn:null,clockOut:null,clockLog:[]};
   therapistClock[targetId].clockOut = t;
