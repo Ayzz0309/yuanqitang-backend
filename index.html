@@ -1691,6 +1691,7 @@ function bCard(b){
         <div class="bcard-tags">
           <span class="tag tag-d">${b.date}</span>
           <span class="tag tag-t">${b.time} · ${b.dur}</span>
+          ${b.bed?`<span class="tag tag-d">🛏️${b.bed}號床</span>`:''}
           ${(()=>{ if(b.status==='done'&&b.finalPrice!==undefined){
             const fc=b.finalPrice<b.price?'#c07000':b.finalPrice>b.price?'var(--green)':'var(--pu)';
             const bg=b.finalPrice<b.price?'#fff8e0':b.finalPrice>b.price?'#edf9f0':'var(--pu-pale)';
@@ -1768,7 +1769,7 @@ function cancelAccepted(id){
 
 function doneBook(id){
   const b=bookings.find(x=>x.id===id);
-  if(b){b.status='done';}
+  if(b){ b.status='done'; saveBooking(b); }
   renderStaffContent();
 }
 
@@ -1871,6 +1872,7 @@ function cancelMyBooking(id){
     const t=now();
     const msg=`【元氣堂】預約取消通知 ${t}\n客人：${b.name}\n療程：${b.svc} ${b.dur}\n日期：${b.date} ${b.time}\n此預約已由客人取消`;
     fetch(LINE_CONFIG.backendUrl+'/api/notify/new-booking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:b.name+'（取消）',phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time:b.time,price:0,note:'⚠️ 客人已取消此預約'})}).catch(()=>{});
+    saveBooking(b); // 儲存到 Firebase
     toast('預約已取消，已通知店家','sys','取消成功');
   }
   renderMyBookings();
@@ -2460,6 +2462,7 @@ function submitManual(){
   fetch(LINE_CONFIG.backendUrl+'/api/notify/accepted',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({empId:cur.user.id,empName:cur.user.name,name,phone,svc:b.svc,dur:b.dur,date,time,price:b.price,note:b.note})
   }).catch(()=>{});
+  saveBooking(b); // 儲存到 Firebase
   toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':isMember?'（會員）':'')+' LINE通知發送中','sys','手動預約成功');
   swStaffTab('pending');
 }
