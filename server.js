@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const admin = require('firebase-admin');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 
@@ -10,6 +14,39 @@ const LINE_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 const LINE_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const STAFF_GROUP_ID = process.env.STAFF_GROUP_ID || '';
 const CUSTOMER_GROUP_ID = process.env.CUSTOMER_GROUP_ID || '';
+const EMPLOYEE_REGISTRATION_CODE = process.env.EMPLOYEE_REGISTRATION_CODE || '';
+
+let firestore = null;
+try {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (serviceAccountJson) {
+    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(serviceAccountJson)) });
+    firestore = admin.firestore();
+    console.log('Firebase Admin 已連線');
+  } else {
+    console.warn('尚未設定 FIREBASE_SERVICE_ACCOUNT_JSON，員工註冊 API 將停用');
+  }
+} catch (error) {
+  console.error('Firebase Admin 初始化失敗:', error.message);
+}
+
+const registrationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '嘗試次數過多，請 15 分鐘後再試' }
+});
+
+function safeCodeEqual(input, expected) {
+  const left = Buffer.from(String(input || ''), 'utf8');
+  const right = Buffer.from(String(expected || ''), 'utf8');
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+}
+
+function cleanString(value, maxLength) {
+  return String(value || '').replace(/[<>\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLength);
+}
 
 // ── 發送 LINE 訊息 ──
 async function sendLineMsg(to, text) {
@@ -31,6 +68,68 @@ async function sendLineMsg(to, text) {
 
 // ── 健康檢查 ──
 app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端' }));
+
+// ── 員工註冊（註冊碼只存在 Render 環境變數）──
+app.post('/api/register/employee', registrationLimiter, async (req, res) => {
+  if (!firestore || !EMPLOYEE_REGISTRATION_CODE) {
+    return res.status(503).json({ error: '員工註冊服務尚未完成設定，請聯絡老闆' });
+  }
+
+  const name = cleanString(req.body.name, 80);
+  const id = cleanString(req.body.id, 50);
+  const lineId = cleanString(req.body.lineId, 80);
+  const password = String(req.body.password || '');
+  const registrationCode = String(req.body.registrationCode || '');
+
+  if (!name || !id || !password || !registrationCode) {
+    return res.status(400).json({ error: '請填寫完整資料與員工註冊碼' });
+  }
+  if (!/^[A-Za-z0-9_-]{3,50}$/.test(id)) {
+    return res.status(400).json({ error: '員工帳號限 3–50 位英文字母、數字、底線或連字號' });
+  }
+  if (password.length < 6 || password.length > 128) {
+    return res.status(400).json({ error: '密碼長度需為 6–128 位' });
+  }
+  if (!safeCodeEqual(registrationCode, EMPLOYEE_REGISTRATION_CODE)) {
+    return res.status(403).json({ error: '員工註冊碼錯誤' });
+  }
+
+  try {
+    const ref = firestore.collection('employees').doc(id);
+    await firestore.runTransaction(async transaction => {
+      const snapshot = await transaction.get(ref);
+      if (snapshot.exists) {
+        const error = new Error('EMPLOYEE_EXISTS');
+        error.code = 'employee-exists';
+        throw error;
+      }
+      transaction.create(ref, {
+        id,
+        name,
+        pw: password,
+        role: 'staff',
+        lineId,
+        cases: [],
+        clockIn: null,
+        clockOut: null,
+        clockLog: [],
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdVia: 'registration-code'
+      });
+    });
+
+    return res.status(201).json({
+      ok: true,
+      employee: { id, name, pw: password, role: 'staff', lineId, cases: [], clockIn: null, clockOut: null, clockLog: [] }
+    });
+  } catch (error) {
+    if (error.code === 'employee-exists') {
+      return res.status(409).json({ error: '此員工帳號已被使用' });
+    }
+    console.error('員工註冊失敗:', error.message);
+    return res.status(500).json({ error: '員工帳號建立失敗，請稍後再試' });
+  }
+});
 
 // ── 客人預約通知 ──
 app.post('/api/notify/new-booking', async (req, res) => {

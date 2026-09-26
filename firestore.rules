@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 員工帳號只能由 Render 後端的 Firebase Admin 建立。
+    // 既有前端仍會讀取及更新員工案件資料，因此暫時保留 read/update。
+    match /employees/{employeeId} {
+      allow read, update: if true;
+      allow create, delete: if false;
+    }
+
+    // v2.1.1 尚未重構的既有集合；下一版應改成 Firebase Auth 權限規則。
+    match /bookings/{id} {
+      allow read, write: if true;
+    }
+    match /customers/{id} {
+      allow read, write: if true;
+    }
+    match /clocks/{id} {
+      allow read, write: if true;
+    }
+    match /settings/{id} {
+      allow read, write: if true;
+    }
+    match /schedules/{id} {
+      allow read, write: if true;
+    }
+    match /bedLocks/{id} {
+      allow read, write: if true;
+    }
+  }
+}
