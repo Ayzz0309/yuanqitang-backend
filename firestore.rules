@@ -4,7 +4,10 @@ service cloud.firestore {
     // 員工帳號只能由 Render 後端的 Firebase Admin 建立。
     // 既有前端仍會讀取及更新員工案件資料，因此暫時保留 read/update。
     match /employees/{employeeId} {
-      allow read, update: if true;
+      allow read: if true;
+      // 過渡期仍允許既有前端寫入打卡關聯資料，但禁止自行改成老闆或換帳號 ID。
+      allow update: if request.resource.data.role == resource.data.role
+                    && request.resource.data.id == resource.data.id;
       allow create, delete: if false;
     }
 

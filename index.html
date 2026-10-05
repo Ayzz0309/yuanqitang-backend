@@ -341,7 +341,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261005-1215</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261005-1315</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -431,6 +431,15 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         <div class="auth-inp-wrap">
           <label class="auth-lbl">真實姓名</label>
           <input class="auth-inp" id="re-name" placeholder="姓名">
+        </div>
+        <div class="auth-inp-wrap">
+          <label class="auth-lbl">對應班表身分</label>
+          <select class="auth-inp" id="re-therapist">
+            <option value="">請選擇自己在班表上的名字</option>
+            <option value="T_GUO">郭老師</option><option value="T_HON">洪老師</option>
+            <option value="T031">31號</option><option value="T026">26號</option>
+            <option value="T043">43號</option><option value="T007">7號</option>
+          </select>
         </div>
         <div class="auth-inp-wrap">
           <label class="auth-lbl">設定員工帳號</label>
@@ -1100,11 +1109,12 @@ async function regCust(){
 }
 async function regEmp(){
   const name=cleanText(document.getElementById('re-name').value,80);
+  const therapistId=document.getElementById('re-therapist').value;
   const id=cleanText(document.getElementById('re-id').value,50);
   const line=cleanText(document.getElementById('re-line').value,80);
   const pw=document.getElementById('re-pw').value;
   const registrationCode=document.getElementById('re-code').value.trim();
-  if(!name||!id||!pw||!registrationCode){showErr('re-err','請填寫所有必填欄位與員工註冊碼');return;}
+  if(!name||!therapistId||!id||!pw||!registrationCode){showErr('re-err','請填寫所有必填欄位、班表身分與員工註冊碼');return;}
   if(pw.length<6){showErr('re-err','密碼至少6位');return;}
   if(employees.find(e=>e.id===id)){showErr('re-err','此帳號已被使用');return;}
   const btn=document.querySelector('#form-reg-emp .auth-submit');
@@ -1114,7 +1124,7 @@ async function regEmp(){
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/register/employee',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,id,lineId:line,password:pw,registrationCode})
+      body:JSON.stringify({name,id,lineId:line,password:pw,registrationCode,therapistId})
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(result.error||'員工帳號建立失敗');
@@ -1790,9 +1800,17 @@ function initStaffApp(){
   renderStaffContent();
 }
 
+const STAFF_TABS=new Set(['pending','accepted','schedule','timeline','today','manual']);
+const BOSS_ONLY_TABS=new Set(['linelog','stats','customers','liveboard','employees','holidays']);
+function isBossSession(){return !!(cur&&cur.type==='emp'&&cur.user&&cur.user.role==='boss');}
+function requireBoss(action){if(isBossSession())return true;alert('只有老闆可以'+(action||'執行這項操作'));return false;}
+function bossOnlyMessage(){return '<div class="empty"><div class="empty-ico">🔒</div>此頁面僅限老闆查看與修改</div>';}
+function canUseStaffTab(tab){return STAFF_TABS.has(tab)||(isBossSession()&&BOSS_ONLY_TABS.has(tab));}
+
 function renderStaffNav(){
-  const isBoss=cur.user.role==='boss';
-  const newCount=bookings.filter(b=>b.status==='new').length;
+  const isBoss=isBossSession();
+  const myTid=employeeTherapistId(cur.user);
+  const newCount=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid)).length;
   const tabs=[
     {k:'pending',l:'待確認',dot:newCount>0},
     {k:'accepted',l:'已接受'},
@@ -1800,36 +1818,36 @@ function renderStaffNav(){
     {k:'timeline',l:'床位表'},
     {k:'today',l:'今日'},
     {k:'manual',l:'手動預約'},
-    {k:'linelog',l:'LINE'},
-    {k:'stats',l:'報表'},
-    {k:'customers',l:'客人'},
   ];
-  if(isBoss) tabs.push({k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
+  if(isBoss) tabs.push({k:'linelog',l:'LINE'},{k:'stats',l:'報表'},{k:'customers',l:'客人'},{k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
   document.getElementById('staff-nav').innerHTML=tabs.map(t=>`
     <button class="snav-btn ${staffTab===t.k?'act':''}" onclick="swStaffTab('${t.k}')">${t.l}${t.dot?'<span class="ndot"></span>':''}</button>`).join('');
 }
 
 function swStaffTab(t){
-  staffTab=t;
+  if(!canUseStaffTab(t)){staffTab='pending';alert('此功能僅限老闆使用');}
+  else staffTab=t;
   renderStaffNav();
   renderStaffContent();
 }
 
 function renderStaffContent(){
+  if(!canUseStaffTab(staffTab))staffTab='pending';
   let html='';
-  const isBoss=cur.user.role==='boss';
+  const isBoss=isBossSession();
+  const myTid=employeeTherapistId(cur.user),myEmpId=cur.user.id;
   const _td=new Date(); const todayStr=todayKey();
 
   const _tnow=new Date(); const _todayStr2=todayKey();
   const _isBoss=cur.user.role==='boss';
   if(staffTab==='pending'){
-    const list=bookings.filter(b=>b.status==='new');
+    const list=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid));
     html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>${_isBoss?'目前沒有待確認預約':'今天沒有待確認的預約'}</div>`);
   } else if(staffTab==='accepted'){
-    const list=bookings.filter(b=>b.status==='accepted');
+    const list=bookings.filter(b=>b.status==='accepted'&&(isBoss||b.acceptedBy===myEmpId));
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">📋</div>目前沒有已接受預約</div>`;
   } else if(staffTab==='today'){
-    const list=bookings.filter(b=>bookingDateKey(b)===todayStr);
+    const list=bookings.filter(b=>bookingDateKey(b)===todayStr&&(isBoss||b.acceptedBy===myEmpId));
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">☀️</div>今天沒有排程</div>`;
   } else if(staffTab==='schedule'){
     html=renderSchedule();
@@ -1840,9 +1858,9 @@ function renderStaffContent(){
   } else if(staffTab==='linelog'){
     html=renderLineLog();
   } else if(staffTab==='stats'){
-    html=renderStats(isBoss);
+    html=renderStats();
   } else if(staffTab==='customers'){
-    html=renderCustomers(isBoss);
+    html=renderCustomers();
   } else if(staffTab==='employees'&&isBoss){
     html=renderEmployees();
   } else if(staffTab==='liveboard'&&isBoss){
@@ -1895,10 +1913,11 @@ function bindEasyInputEvents(){
 }
 
 function statsRow(){
-  const newC=bookings.filter(b=>b.status==='new').length;
-  const accC=bookings.filter(b=>b.status==='accepted').length;
+  const isBoss = isBossSession();
+  const myTid=employeeTherapistId(cur.user);
+  const newC=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid)).length;
+  const accC=bookings.filter(b=>b.status==='accepted'&&(isBoss||b.acceptedBy===cur.user.id)).length;
   const total=bookings.filter(b=>b.status!=='declined').reduce((s,b)=>s+effectivePrice(b),0);
-  const isBoss = cur.user.role==='boss';
 
   let clockCard = '';
   if(isBoss){
@@ -1951,8 +1970,8 @@ function statsRow(){
   return clockCard
     +'<div class="stats-grid">'
     +'<div class="stat-c"><div class="stat-n">'+newC+'</div><div class="stat-l">待確認</div></div>'
-    +'<div class="stat-c"><div class="stat-n">'+accC+'</div><div class="stat-l">進行中</div></div>'
-    +'<div class="stat-c"><div class="stat-n">$'+(total/1000).toFixed(1)+'k</div><div class="stat-l">總金額</div></div>'
+    +'<div class="stat-c"><div class="stat-n">'+accC+'</div><div class="stat-l">'+(isBoss?'進行中':'我的預約')+'</div></div>'
+    +(isBoss?'<div class="stat-c"><div class="stat-n">$'+(total/1000).toFixed(1)+'k</div><div class="stat-l">總金額</div></div>':'')
     +'</div>';
 }
 
@@ -1996,12 +2015,12 @@ function bCard(b){
     </div>
   </div>` : '';
 
-  const editBtn = `<button class="abtn" style="background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:12px" onclick="openEditBooking('${b.id}')">✏️ 修改</button>`;
+  const editBtn = isBoss?`<button class="abtn" style="background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:12px" onclick="openEditBooking('${b.id}')">✏️ 修改</button>`:'';
   const actions = b.status==='new'
     ? `<div class="bcard-acts">
         ${canAccept
           ? `<button class="abtn abtn-acc" onclick="acceptBook('${b.id}')">✓ 我接這件</button>
-             <button class="abtn abtn-dec" onclick="declineBook('${b.id}')">✗ 婉拒</button>`
+             ${isBoss?`<button class="abtn abtn-dec" onclick="declineBook('${b.id}')">✗ 婉拒</button>`:''}`
           : `<div style="flex:1;text-align:center;font-size:12px;color:var(--text3);padding:8px">🔒 客人已指定 ${designatedName}</div>`
         }
         ${editBtn}
@@ -2083,6 +2102,7 @@ async function acceptBook(id){
   finally{ endAction('accept_'+id); }
 }
 async function declineBook(id){
+  if(!requireBoss('婉拒預約'))return;
   if(!beginAction('decline_'+id)) return; const b=bookings.find(x=>x.id===id); if(!b){endAction('decline_'+id);return;}
   try{
     const updated=await updateBookingAtomic(id,current=>{if(current.status!=='new'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',declinedAt:now(),declinedTimestamp:Date.now()};});
@@ -2351,6 +2371,7 @@ function changeScheduleMonth(dir){
 let easyState = {teacher: null, teacherName: '', dates: [], shift: null};
 
 function easySelectTeacher(id, name){
+  if(!requireBoss('修改班表'))return;
   easyState.teacher = id;
   easyState.teacherName = name;
   document.querySelectorAll('[id^="easy-t-"]').forEach(function(b){
@@ -2363,6 +2384,7 @@ function easySelectTeacher(id, name){
 }
 
 function easyToggleDate(d, el){
+  if(!requireBoss('修改班表'))return;
   const idx = easyState.dates.indexOf(d);
   if(idx >= 0){
     easyState.dates.splice(idx,1);
@@ -2378,6 +2400,7 @@ function easyToggleDate(d, el){
 }
 
 function easySelectShift(val){
+  if(!requireBoss('修改班表'))return;
   easyState.shift = val;
   document.querySelectorAll('[id^="easy-s-"]').forEach(function(b){
     b.style.borderColor = 'transparent';
@@ -2388,6 +2411,7 @@ function easySelectShift(val){
 }
 
 async function easyApply(){
+  if(!requireBoss('修改班表'))return;
   if(!easyState.teacher){ alert('請先選擇師傅'); return; }
   if(easyState.dates.length===0){ alert('請選擇日期（可多選）'); return; }
 
@@ -2476,6 +2500,7 @@ function initShiftModal(){
 let editingShift = {tid: null, day: null};
 
 function editShift(tid, day){
+  if(!requireBoss('修改班表'))return;
   editingShift = {tid, day};
   const tNames = {'T043':'43號','T031':'31號','T026':'26號','T_GUO':'郭老師','T_HON':'洪老師','T007':'7號'};
   document.getElementById('shift-modal-title').textContent = '修改班別 — ' + tNames[tid];
@@ -2497,11 +2522,13 @@ function editShift(tid, day){
 }
 
 async function setShift(val){
+  if(!requireBoss('修改班表'))return;
   const {tid,day}=editingShift; const y=scheduleViewYear,m=scheduleViewMonth; const sched=getScheduleForMonth(y,m); if(!sched[tid])sched[tid]={}; const old=sched[tid][day]; sched[tid][day]=val;
   try{ await updateScheduleDaysAtomic(y,m,tid,{[day]:val}); closeShiftModal(); const lblMap={'17':'早班 09:30–14:00','18':'晚班 19:00–22:00','全':'全天班','OFF':'休假 △','10-22':'10–22 全天長班','14-21':'14–21 下午班'}; toast('✅ 已更新 '+day+' 日：'+(lblMap[val]||val),'sys','班表更新'); renderStaffContent(); }
   catch(e){ sched[tid][day]=old; alert('班表儲存失敗'); }
 }
 async function setCustomShift(){
+  if(!requireBoss('修改班表'))return;
   const s=document.getElementById('shift-start').value.trim(),e=document.getElementById('shift-end').value.trim(); if(!s||!e){alert('請填寫開始和結束時間');return;} const sv=parseShiftClock(s,false),ev=parseShiftClock(e,true);if(sv===null||ev===null||sv>=ev){alert('時間格式不對，且結束時間必須晚於開始時間');return;}
   const val=formatShiftClock(sv)+'-'+formatShiftClock(ev),{tid,day}=editingShift,y=scheduleViewYear,m=scheduleViewMonth,sched=getScheduleForMonth(y,m),old=(sched[tid]||{})[day]; if(!sched[tid])sched[tid]={}; sched[tid][day]=val;
   try{ await updateScheduleDaysAtomic(y,m,tid,{[day]:val}); closeShiftModal(); toast('✅ 已更新 '+day+' 日：'+formatShiftClock(sv)+'–'+formatShiftClock(ev),'sys','班表更新'); renderStaffContent(); }
@@ -2624,6 +2651,16 @@ function renderTimeline(){
 let manualState = {svc:null,price:null,date:'',time:'',bed:null,therapist:'none'};
 
 function renderManualBook(){
+  const isBoss=isBossSession(),myTid=employeeTherapistId(cur.user),myT=THERAPISTS.find(t=>t.id===myTid);
+  const customSvcEditor=isBoss?`<button type="button" onclick="showAddSvcForm()" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1.5px dashed var(--pu-mid);background:var(--pu-pale);color:var(--pu);font-size:13px;cursor:pointer;font-family:inherit">＋ 新增自訂服務</button>
+      <div id="add-svc-form" style="display:none;background:var(--pu-pale);border-radius:10px;padding:0.9rem;margin-top:8px;border:1px solid var(--pu-mid)">
+        <div style="font-size:13px;font-weight:600;color:var(--pu);margin-bottom:8px">新增服務項目</div>
+        <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:6px;align-items:end">
+          <div><label class="flbl">服務名稱</label><input class="finp" id="ns-name" placeholder="例：熱石放鬆"></div>
+          <div><label class="flbl">時間(分)</label><input class="finp" id="ns-dur" type="number" placeholder="60"></div>
+          <div><label class="flbl">價格</label><input class="finp" id="ns-price" type="number" placeholder="1500"></div>
+        </div><button onclick="addCustomSvc()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認新增</button></div>`:'';
+  const assignmentFields=isBoss?`<div class="fg"><label class="flbl">師傅</label><select class="finp" id="mb-therapist"><option value="none">不指定</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div><div class="fg"><label class="flbl">支援師傅（選填）</label><select class="finp" id="mb-support"><option value="">無</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>`:`<div class="fg"><label class="flbl">承接員工</label><input class="finp" value="${esc(myT?myT.name:'尚未綁定班表身分')}" disabled><input type="hidden" id="mb-therapist" value="${esc(myTid||'')}"><input type="hidden" id="mb-support" value=""></div>`;
   return `<div class="section-title">手動預約</div>
   <div style="background:#fff8e0;border:1px solid #ffe082;border-radius:10px;padding:0.75rem 1rem;margin:0 0 1rem;font-size:13px;color:#7a5a00;line-height:1.7">
     📞 <strong>適用情境：</strong>現場來客、電話預約、長者無手機<br>
@@ -2639,16 +2676,7 @@ function renderManualBook(){
         ${SVCS.map(s=>s.prices.map(p=>`<option value="${s.id}_${p.p}">${s.name} ${p.l} / $${p.p}</option>`).join('')).join('')}
         ${customSvcs.map(s=>`<option value="custom_${Number(s.id)}">${esc(s.name)} ${Number(s.dur)}分 / $${Number(s.price)}</option>`).join('')}
       </select>
-      <button type="button" onclick="showAddSvcForm()" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1.5px dashed var(--pu-mid);background:var(--pu-pale);color:var(--pu);font-size:13px;cursor:pointer;font-family:inherit">＋ 新增自訂服務</button>
-      <div id="add-svc-form" style="display:none;background:var(--pu-pale);border-radius:10px;padding:0.9rem;margin-top:8px;border:1px solid var(--pu-mid)">
-        <div style="font-size:13px;font-weight:600;color:var(--pu);margin-bottom:8px">新增服務項目</div>
-        <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:6px;align-items:end">
-          <div><label class="flbl">服務名稱</label><input class="finp" id="ns-name" placeholder="例：熱石放鬆"></div>
-          <div><label class="flbl">時間(分)</label><input class="finp" id="ns-dur" type="number" placeholder="60"></div>
-          <div><label class="flbl">價格</label><input class="finp" id="ns-price" type="number" placeholder="1500"></div>
-        </div>
-        <button onclick="addCustomSvc()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認新增</button>
-      </div>
+      ${customSvcEditor}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="fg"><label class="flbl">日期 *</label><input class="finp" id="mb-date" placeholder="9/11 或 2026-09-11" ></div>
@@ -2668,18 +2696,7 @@ function renderManualBook(){
           <option value="3">3號床</option>
         </select>
       </div>
-      <div class="fg"><label class="flbl">師傅</label>
-        <select class="finp" id="mb-therapist">
-          <option value="none">不指定</option>
-          ${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="fg"><label class="flbl">支援師傅（選填）</label>
-        <select class="finp" id="mb-support">
-          <option value="">無</option>
-          ${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
-        </select>
-      </div>
+      ${assignmentFields}
     </div>
     <div class="fg"><label class="flbl">備註</label><input class="finp" id="mb-note" placeholder=""></div>
     <div class="fg"><label class="flbl">是否為首次來訪</label>
@@ -2699,7 +2716,9 @@ async function submitManual(){
   try{
     const name=cleanText(document.getElementById('mb-name').value,80),phone=cleanText(document.getElementById('mb-phone').value,30),svcVal=document.getElementById('mb-svc').value;
     const dateRaw=document.getElementById('mb-date').value.trim(),time=document.getElementById('mb-time').value,bed=parseInt(document.getElementById('mb-bed').value)||null;
-    const therapistId=document.getElementById('mb-therapist').value,supportId=document.getElementById('mb-support').value||'',supportObj=THERAPISTS.find(t=>t.id===supportId),note=cleanText(document.getElementById('mb-note').value,500),isnewVal=document.getElementById('mb-isnew').value,isNew=isnewVal==='1',isMember=isnewVal==='2';
+    let therapistId=document.getElementById('mb-therapist').value,supportId=document.getElementById('mb-support').value||'';
+    if(!isBossSession()){therapistId=employeeTherapistId(cur.user)||'';supportId='';if(!therapistId){alert('此員工帳號尚未綁定班表身分，請老闆協助設定');return;}}
+    const supportObj=THERAPISTS.find(t=>t.id===supportId),note=cleanText(document.getElementById('mb-note').value,500),isnewVal=document.getElementById('mb-isnew').value,isNew=isnewVal==='1',isMember=isnewVal==='2';
     if(!name||!svcVal||!dateRaw||!time){alert('請填寫必填欄位（姓名、服務項目、日期、時段）');return;}
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){alert('時間格式請使用 HH:MM，例如 14:30');return;}
     const dp=parseDateInput(dateRaw,new Date().getFullYear()); if(!dp){alert('日期格式請輸入 9/11 或 2026-09-11');return;}
@@ -2707,7 +2726,7 @@ async function submitManual(){
     if(svcId==='custom'){ const cust=customSvcs.find(s=>s.id===parseInt(priceStr)); if(!cust){alert('找不到自訂服務');return;} svcName=cust.name;durationMinutes=Number(cust.dur)||60;durVal=durationMinutes+'分';priceVal=cust.price; }
     else{ const svcObj=SVCS.find(s=>s.id===parseInt(svcId)); if(!svcObj){alert('找不到服務項目');return;} const priceObj=svcObj.prices.find(p=>p.p===parseInt(priceStr)); if(!priceObj){alert('找不到價格');return;} svcName=svcObj.name;durationMinutes=selectedSvcDurationMinutes({...svcObj,selectedPrice:priceObj});durVal=durationMinutes+'分';priceVal=priceObj.p; }
     if(bed && findBedConflicts({dateKey:dp.key,time,durationMinutes,bed}).length){alert('這個床位與現有預約時段重疊，請換床位或時間');return;}
-    const thObj=THERAPISTS.find(t=>t.id===therapistId),assignedEmp=therapistId!=='none'?employees.find(e=>employeeTherapistId(e)===therapistId):null,acceptEmp=assignedEmp||cur.user,bId='B'+Date.now().toString(36).toUpperCase()+'M';
+    const thObj=THERAPISTS.find(t=>t.id===therapistId),assignedEmp=therapistId!=='none'?employees.find(e=>employeeTherapistId(e)===therapistId):null,acceptEmp=isBossSession()?(assignedEmp||cur.user):cur.user,bId='B'+Date.now().toString(36).toUpperCase()+'M';
     b={id:bId,custId:'MANUAL',name,phone,svc:cleanText(svcName,180),dur:durVal,durationMinutes,price:priceVal,date:dp.display,dateKey:dp.key,year:dp.y,time,bed,therapistId:therapistId==='none'?null:therapistId,therapistName:thObj?thObj.name:null,supportId:supportId||null,supportName:supportObj?supportObj.name:null,startTime:null,endTime:null,extraMins:0,status:'accepted',lineId:cleanText(document.getElementById('mb-line').value,80),note:note+(isNew?' ★新客人':isMember?' ★會員':''),acceptedBy:acceptEmp.id,acceptedAt:now(),acceptedAtTimestamp:Date.now(),isNew};
     await createBookingAtomic(b);bookings.unshift(b);
     let c=customers.find(c=>c.phone===phone);
@@ -2727,7 +2746,9 @@ function effectivePrice(b){
   return Number.isFinite(value)&&value>=0?value:0;
 }
 
-function renderStats(isBoss){
+function renderStats(){
+  if(!isBossSession())return bossOnlyMessage();
+  const isBoss=true;
   const myId=cur.user.id;
   const showList=isBoss?employees:employees.filter(function(e){return e.id===myId;});
   const allDone=bookings.filter(function(b){return b.status==='done';});
@@ -2791,6 +2812,12 @@ function renderStats(isBoss){
   });
   html+='</tbody></table></div>';
 
+  const recentDone=allDone.slice().sort(function(a,b){return Number(b.endTimestamp||0)-Number(a.endTimestamp||0);}).slice(0,30);
+  html+='<div class="section-title">完成紀錄（老闆可修正報表金額）</div><div style="margin:0 .9rem;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden">';
+  if(!recentDone.length)html+='<div class="empty">尚無完成紀錄</div>';
+  recentDone.forEach(function(b){html+='<div style="display:flex;align-items:center;gap:8px;padding:.75rem;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:700;font-size:13px">'+esc(b.name)+' ・ '+esc(b.svc)+'</div><div style="font-size:11px;color:var(--text3)">'+esc(displayBookingDate(b))+' '+esc(b.time)+' ・ '+esc(b.acceptedBy||'未指定')+'</div></div><div style="font-weight:700;color:var(--green)">$'+effectivePrice(b).toLocaleString()+'</div><button onclick="editReportAmount(\''+b.id+'\')" style="padding:6px 9px;border:1px solid var(--pu-mid);border-radius:8px;background:var(--pu-pale);color:var(--pu);font-size:11px;cursor:pointer">修改金額</button></div>';});
+  html+='</div>';
+
   if(isBoss){
     const totalAll=bookings.filter(function(b){return b.status==='done';}).reduce(function(s,b){return s+effectivePrice(b);},0);
     const totalCases=bookings.filter(function(b){return b.acceptedBy;}).length;
@@ -2803,9 +2830,20 @@ function renderStats(isBoss){
   return html;
 }
 
+async function editReportAmount(id){
+  if(!requireBoss('修改報表金額'))return;
+  const b=bookings.find(x=>x.id===id);if(!b||b.status!=='done'){alert('只能修改已完成案件的報表金額');return;}
+  const raw=prompt('請輸入「'+b.name+'」的實收金額',String(effectivePrice(b)));if(raw===null)return;
+  const amount=Number(raw);if(!Number.isInteger(amount)||amount<0||amount>1000000){alert('請輸入 0–1000000 的整數金額');return;}
+  if(!beginAction('report_'+id))return;
+  try{const updated=await updateBookingAtomic(id,current=>{if(current.status!=='done'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,finalPrice:amount,priceDiff:amount-(Number(current.price)||0),reportEditedAt:new Date().toISOString(),reportEditedBy:cur.user.id};});Object.assign(b,updated);toast('報表金額已修正為 NT$'+amount.toLocaleString(),'sys','報表更新');renderStaffContent();}
+  catch(e){alert(e&&e.code==='booking-state-changed'?'案件狀態已變更':'報表金額儲存失敗');}
+  finally{endAction('report_'+id);}
+}
+
 // ── 客人名單 ──
-function renderCustomers(isBoss){
-  if(!isBoss) return '<div class="empty"><div class="empty-ico">🔒</div>僅老闆可查看客人名單</div>';
+function renderCustomers(){
+  if(!isBossSession())return bossOnlyMessage();
   const custMap={};
   bookings.forEach(function(b){
     if(!b.phone) return;
@@ -2840,6 +2878,7 @@ function renderCustomers(isBoss){
 let holidays = [];
 
 function renderHolidays(){
+  if(!isBossSession())return bossOnlyMessage();
   return `<div class="section-title">公休日設定</div>
   <div class="manual-form">
     <div class="fg"><label class="flbl">新增公休日</label>
@@ -2859,6 +2898,7 @@ function renderHolidays(){
 }
 
 function renderHolidayChips(){
+  if(!isBossSession())return;
   const el = document.getElementById('hol-list');
   if(!el) return;
   el.innerHTML = '';
@@ -2875,6 +2915,7 @@ function renderHolidayChips(){
 }
 
 async function addHoliday(){
+  if(!requireBoss('修改公休日'))return;
   const raw=document.getElementById('hol-date').value.trim();
   const parsed=parseDateInput(raw,new Date().getFullYear());
   if(!parsed){alert('日期格式請輸入 2026/5/10 或 2026-05-10');return;}
@@ -2887,6 +2928,7 @@ async function addHoliday(){
 }
 
 async function removeHoliday(d){
+  if(!requireBoss('修改公休日'))return;
   try{holidays=await updateHolidaysAtomic(current=>current.filter(x=>x!==d));}catch(e){alert('公休日刪除儲存失敗');return;}
   renderStaffContent();
   setTimeout(renderHolidayChips, 50);
@@ -2895,10 +2937,12 @@ async function removeHoliday(d){
 
 // ── 自訂服務項目 ──
 function showAddSvcForm(){
+  if(!requireBoss('新增服務項目'))return;
   const f = document.getElementById('add-svc-form');
   if(f) f.style.display = f.style.display==='none'?'block':'none';
 }
 async function addCustomSvc(){
+  if(!requireBoss('新增服務項目'))return;
   const name = cleanText(document.getElementById('ns-name').value,80);
   const dur = parseInt(document.getElementById('ns-dur').value);
   const price = parseInt(document.getElementById('ns-price').value);
@@ -2920,11 +2964,18 @@ function todayDateStr(){
 }
 function openClockEntry(clk){
   const log=clk&&Array.isArray(clk.clockLog)?clk.clockLog:[];
-  return log.slice().reverse().find(l=>l&&l.inTime&&!l.outTime)||null;
+  // v2.1.3 前可能殘留多筆沒有 outTime 的舊紀錄。只有頂層狀態仍是
+  // 上班中時，才把最新一筆未結束紀錄視為本次有效打卡，避免舊資料
+  // 永久阻擋下一次上班打卡。
+  if(!clk||!clk.clockIn||clk.clockOut)return null;
+  const open=log.slice().reverse().filter(l=>l&&l.inTime&&!l.outTime);
+  return open.find(l=>Number(l.inTimestamp)>0)||open[0]||null;
 }
-function isClockedIn(clk){ return !!(clk&&clk.clockIn&&!clk.clockOut&&openClockEntry(clk)); }
+function isClockedIn(clk){ return !!openClockEntry(clk); }
 async function clockIn(tid){
-  let targetId=tid; if(!targetId){ if(cur.user.role==='boss')targetId=bossActingAs; else targetId=cur.user.therapistId||(THERAPISTS.find(t=>t.name===cur.user.name)||{}).id||cur.user.id; }
+  const ownId=employeeTherapistId(cur.user);
+  if(!isBossSession()&&tid&&tid!==ownId){alert('員工只能替自己打卡');return;}
+  let targetId=isBossSession()?tid:ownId; if(!targetId&&isBossSession())targetId=bossActingAs;
   if(!targetId){alert('請先選擇要打卡的師傅');return;} if(!beginAction('clock_'+targetId))return;
   const t=now(),ts=Date.now(),dateKey=todayKey();
   try{
@@ -2935,7 +2986,9 @@ async function clockIn(tid){
   finally{endAction('clock_'+targetId);}
 }
 async function clockOut(tid){
-  let targetId=tid; if(!targetId){if(cur.user.role==='boss')targetId=bossActingAs;else targetId=cur.user.therapistId||(THERAPISTS.find(t=>t.name===cur.user.name)||{}).id||cur.user.id;}
+  const ownId=employeeTherapistId(cur.user);
+  if(!isBossSession()&&tid&&tid!==ownId){alert('員工只能替自己打卡');return;}
+  let targetId=isBossSession()?tid:ownId;if(!targetId&&isBossSession())targetId=bossActingAs;
   if(!targetId){alert('請先選擇要打卡的師傅');return;} if(!beginAction('clock_'+targetId))return;
   const t=now(),ts=Date.now();
   try{
@@ -3108,6 +3161,7 @@ async function addTimeCustom(bookId){
 
 // ── 床位緩衝時間設定 ──
 async function setBedBuffer(mins){
+  if(!requireBoss('修改床位緩衝時間'))return;
   const old=bedBuffer; bedBuffer=normalizeBedBuffer(mins);
   try{await fbSet('settings','appConfig',{bedBuffer});toast('🛏️ 床位緩衝時間設為 '+bedBuffer+' 分鐘','sys','床位設定');renderStaffContent();}
   catch(e){bedBuffer=old;alert('床位緩衝設定儲存失敗');}
@@ -3115,6 +3169,7 @@ async function setBedBuffer(mins){
 
 
 function renderLineLog(){
+  if(!isBossSession())return bossOnlyMessage();
   if(!lineLog.length) return '<div class="empty"><div class="empty-ico">💬</div>尚無 LINE 通知紀錄</div>';
   let out = '<div class="section-title">LINE 通知紀錄</div><div class="line-log"><div class="line-log-hdr"><span>🟢 LINE 訊息紀錄</span></div>';
   lineLog.forEach(function(l){
@@ -3125,6 +3180,7 @@ function renderLineLog(){
 }
 // ── 老闆直播看板 ──
 function renderBossBoard(){
+  if(!isBossSession())return bossOnlyMessage();
   const active = bookings.filter(b=>b.status==='accepted'&&b.startTime&&!b.endTime);
   const accepted_notstarted = bookings.filter(b=>b.status==='accepted'&&!b.startTime);
   const todayBkgs=bookings.filter(b=>bookingDateKey(b)===todayKey()&&b.status!=='declined');
@@ -3208,6 +3264,7 @@ function renderBossBoard(){
 
 
 function renderLineConfig(){
+  if(!isBossSession())return bossOnlyMessage();
   const on = LINE_CONFIG.enabled;
   const borderColor = on ? '#06c755' : 'var(--border)';
   const iconBg = on ? '#06c755' : 'var(--border)';
@@ -3232,6 +3289,7 @@ function employeeTherapistId(e){
   return e.therapistId || (THERAPISTS.find(t=>t.name===e.name)||{}).id || (THERAPISTS.find(t=>t.id===e.id)||{}).id || null;
 }
 function renderEmployees(){
+  if(!isBossSession())return bossOnlyMessage();
   let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>';
   employees.forEach(function(e){
     const bossTag=e.role==='boss'?'<span class="boss-mark">老闆</span>':'';
@@ -3267,6 +3325,7 @@ function clockDurationMinutes(inEntry,outEntry){
 }
 
 function showClockLog(empId){
+  if(!requireBoss('查看員工打卡記錄'))return;
   const e=employees.find(x=>x.id===empId); if(!e)return;
   const tid=employeeTherapistId(e);
   const clk=tid&&therapistClock[tid]?therapistClock[tid]:{clockLog:[]};
@@ -3321,6 +3380,7 @@ function buildNewBookingStaffMsg(b) {
 let editingBookId = null;
 
 function openEditBooking(id){
+  if(!requireBoss('修改預約與報表資料'))return;
   const b = bookings.find(function(x){return x.id===id;});
   if(!b) return;
   if(b.status==='accepted'&&cur.user.role!=='boss'&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
@@ -3344,6 +3404,7 @@ function closeEditModal(){ document.getElementById('edit-modal').classList.add('
 function closeEditIfOutside(e){ if(e.target===document.getElementById('edit-modal')) closeEditModal(); }
 
 function saveEditBooking(){
+  if(!requireBoss('修改預約與報表資料'))return;
   const b=bookings.find(x=>x.id===editingBookId);if(!b)return;
   const rawDate=document.getElementById('em-date').value.trim();const dp=parseDateInput(rawDate,b.year||new Date().getFullYear());if(!dp){alert('日期格式請輸入 9/11 或 2026-09-11');return;}
   const newTime=document.getElementById('em-time').value.trim(),newBed=parseInt(document.getElementById('em-bed').value)||null,newName=cleanText(document.getElementById('em-name').value||b.name,80),newPhone=cleanText(document.getElementById('em-phone').value||b.phone,30),newSvc=cleanText(document.getElementById('em-svc').value||b.svc,180),newNote=cleanText(document.getElementById('em-note').value,500),newThId=document.getElementById('em-therapist').value||null,newThName=newThId?(THERAPISTS.find(t=>t.id===newThId)||{}).name||'':'';
@@ -3357,6 +3418,7 @@ function forceSaveEdit(){
   doSaveEdit(cleanText(document.getElementById('em-name').value||b.name,80),cleanText(document.getElementById('em-phone').value||b.phone,30),cleanText(document.getElementById('em-svc').value||b.svc,180),dp,document.getElementById('em-time').value.trim()||b.time,parseInt(document.getElementById('em-bed').value)||null,cleanText(document.getElementById('em-note').value,500),document.getElementById('em-therapist').value||null,(document.getElementById('em-therapist').value?(THERAPISTS.find(t=>t.id===document.getElementById('em-therapist').value)||{}).name||'':''),true);
 }
 async function doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,force){
+  if(!requireBoss('修改預約與報表資料'))return;
   if(!beginAction('edit_'+editingBookId))return;const b=bookings.find(x=>x.id===editingBookId);if(!b){endAction('edit_'+editingBookId);return;}const old=JSON.parse(JSON.stringify(b));let reserved=false,candidate=null,changedLockDoc=false;
   try{
     if(b.status==='accepted'&&cur.user.role!=='boss'&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
@@ -3453,6 +3515,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜穩定強化版｜Build 20261005-1215</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜員工權限修正版｜Build 20261005-1315</div>
 </body>
 </html>

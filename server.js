@@ -47,6 +47,10 @@ const STAFF_GROUP_ID = process.env.STAFF_GROUP_ID || '';
 const CUSTOMER_GROUP_ID = process.env.CUSTOMER_GROUP_ID || '';
 const EMPLOYEE_REGISTRATION_CODE = process.env.EMPLOYEE_REGISTRATION_CODE || '';
 const LOG_LINE_SOURCE_IDS = process.env.LOG_LINE_SOURCE_IDS === 'true';
+const THERAPIST_IDENTITIES = Object.freeze({
+  T_GUO: '郭老師', T_HON: '洪老師', T031: '31號',
+  T026: '26號', T043: '43號', T007: '7號'
+});
 
 let firestore = null;
 try {
@@ -153,11 +157,15 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
   const name = cleanString(body.name, 80);
   const id = cleanString(body.id, 50);
   const lineId = cleanString(body.lineId, 80);
+  const therapistId = cleanString(body.therapistId, 20);
   const password = String(body.password || '');
   const registrationCode = String(body.registrationCode || '');
 
-  if (!name || !id || !password || !registrationCode) {
-    return res.status(400).json({ error: '請填寫完整資料與員工註冊碼' });
+  if (!name || !therapistId || !id || !password || !registrationCode) {
+    return res.status(400).json({ error: '請填寫完整資料、班表身分與員工註冊碼' });
+  }
+  if (!THERAPIST_IDENTITIES[therapistId]) {
+    return res.status(400).json({ error: '班表身分無效，請重新選擇' });
   }
   if (!/^[A-Za-z0-9_-]{3,50}$/.test(id)) {
     return res.status(400).json({ error: '員工帳號限 3–50 位英文字母、數字、底線或連字號' });
@@ -173,14 +181,26 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
     const ref = firestore.collection('employees').doc(id);
     await firestore.runTransaction(async transaction => {
       const snapshot = await transaction.get(ref);
+      const linked = await transaction.get(
+        firestore.collection('employees').where('therapistId', '==', therapistId).limit(1)
+      );
+      const legacyLinked = await transaction.get(
+        firestore.collection('employees').where('name', '==', THERAPIST_IDENTITIES[therapistId]).limit(1)
+      );
       if (snapshot.exists) {
         const error = new Error('EMPLOYEE_EXISTS');
         error.code = 'employee-exists';
         throw error;
       }
+      if (!linked.empty || !legacyLinked.empty) {
+        const error = new Error('THERAPIST_TAKEN');
+        error.code = 'therapist-taken';
+        throw error;
+      }
       transaction.create(ref, {
         id,
         name,
+        therapistId,
         pw: password,
         role: 'staff',
         lineId,
@@ -195,11 +215,14 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      employee: { id, name, role: 'staff', lineId, cases: [], clockIn: null, clockOut: null, clockLog: [] }
+      employee: { id, name, therapistId, role: 'staff', lineId, cases: [], clockIn: null, clockOut: null, clockLog: [] }
     });
   } catch (error) {
     if (error.code === 'employee-exists') {
       return res.status(409).json({ error: '此員工帳號已被使用' });
+    }
+    if (error.code === 'therapist-taken') {
+      return res.status(409).json({ error: '此班表身分已綁定其他員工帳號，請聯絡老闆' });
     }
     console.error('員工註冊失敗:', error.message);
     return res.status(500).json({ error: '員工帳號建立失敗，請稍後再試' });
