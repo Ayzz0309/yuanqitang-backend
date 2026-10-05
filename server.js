@@ -7,14 +7,45 @@ const admin = require('firebase-admin');
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(cors());
-app.use(express.json());
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://ayzz0309.github.io')
+  .split(',')
+  .map(value => value.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || origin === 'null' || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      return callback(null, true);
+    }
+    const error = new Error('CORS_ORIGIN_DENIED');
+    error.status = 403;
+    return callback(error);
+  },
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'X-Line-Signature'],
+  maxAge: 86400
+}));
+app.use(express.json({
+  limit: '32kb',
+  verify(req, res, buffer) {
+    req.rawBody = Buffer.from(buffer);
+  }
+}));
 
 const LINE_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 const LINE_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const STAFF_GROUP_ID = process.env.STAFF_GROUP_ID || '';
 const CUSTOMER_GROUP_ID = process.env.CUSTOMER_GROUP_ID || '';
 const EMPLOYEE_REGISTRATION_CODE = process.env.EMPLOYEE_REGISTRATION_CODE || '';
+const LOG_LINE_SOURCE_IDS = process.env.LOG_LINE_SOURCE_IDS === 'true';
 
 let firestore = null;
 try {
@@ -38,6 +69,14 @@ const registrationLimiter = rateLimit({
   message: { error: '嘗試次數過多，請 15 分鐘後再試' }
 });
 
+const notificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '通知請求過於頻繁，請稍後再試' }
+});
+
 function safeCodeEqual(input, expected) {
   const left = Buffer.from(String(input || ''), 'utf8');
   const right = Buffer.from(String(expected || ''), 'utf8');
@@ -48,9 +87,40 @@ function cleanString(value, maxLength) {
   return String(value || '').replace(/[<>\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLength);
 }
 
+function normalizeNotice(body = {}) {
+  const price = Number(body.price);
+  const notice = {
+    name: cleanString(body.name, 80),
+    phone: cleanString(body.phone, 30),
+    svc: cleanString(body.svc, 300),
+    dur: cleanString(body.dur, 40),
+    date: cleanString(body.date, 30),
+    time: cleanString(body.time, 20),
+    note: cleanString(body.note, 500),
+    empId: cleanString(body.empId, 50),
+    empName: cleanString(body.empName, 80),
+    price: Number.isFinite(price) && price >= 0 && price <= 1000000 ? Math.round(price) : null
+  };
+  if (!notice.name || !notice.svc || !notice.date || !notice.time || notice.price === null) {
+    const error = new Error('INVALID_NOTICE');
+    error.status = 400;
+    throw error;
+  }
+  return notice;
+}
+
+function validLineSignature(req) {
+  if (!LINE_SECRET || !req.rawBody) return false;
+  const received = String(req.get('x-line-signature') || '');
+  const expected = crypto.createHmac('sha256', LINE_SECRET).update(req.rawBody).digest('base64');
+  const left = Buffer.from(received, 'utf8');
+  const right = Buffer.from(expected, 'utf8');
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+}
+
 // ── 發送 LINE 訊息 ──
 async function sendLineMsg(to, text) {
-  if (!LINE_TOKEN || !to) return;
+  if (!LINE_TOKEN || !to) return { sent: false, reason: 'not-configured' };
   try {
     await axios.post('https://api.line.me/v2/bot/message/push', {
       to,
@@ -59,15 +129,18 @@ async function sendLineMsg(to, text) {
       headers: {
         'Authorization': `Bearer ${LINE_TOKEN}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 10000
     });
+    return { sent: true };
   } catch (e) {
     console.error('LINE 發送失敗:', e.response?.data || e.message);
+    throw e;
   }
 }
 
 // ── 健康檢查 ──
-app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端' }));
+app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.3' }));
 
 // ── 員工註冊（註冊碼只存在 Render 環境變數）──
 app.post('/api/register/employee', registrationLimiter, async (req, res) => {
@@ -75,11 +148,12 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
     return res.status(503).json({ error: '員工註冊服務尚未完成設定，請聯絡老闆' });
   }
 
-  const name = cleanString(req.body.name, 80);
-  const id = cleanString(req.body.id, 50);
-  const lineId = cleanString(req.body.lineId, 80);
-  const password = String(req.body.password || '');
-  const registrationCode = String(req.body.registrationCode || '');
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const name = cleanString(body.name, 80);
+  const id = cleanString(body.id, 50);
+  const lineId = cleanString(body.lineId, 80);
+  const password = String(body.password || '');
+  const registrationCode = String(body.registrationCode || '');
 
   if (!name || !id || !password || !registrationCode) {
     return res.status(400).json({ error: '請填寫完整資料與員工註冊碼' });
@@ -120,7 +194,7 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
 
     return res.status(201).json({
       ok: true,
-      employee: { id, name, pw: password, role: 'staff', lineId, cases: [], clockIn: null, clockOut: null, clockLog: [] }
+      employee: { id, name, role: 'staff', lineId, cases: [], clockIn: null, clockOut: null, clockLog: [] }
     });
   } catch (error) {
     if (error.code === 'employee-exists') {
@@ -132,15 +206,21 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
 });
 
 // ── 客人預約通知 ──
-app.post('/api/notify/new-booking', async (req, res) => {
-  const { name, phone, svc, dur, date, time, price, note } = req.body;
-  const now = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+app.post('/api/notify/new-booking', notificationLimiter, async (req, res) => {
+  let notice;
+  try {
+    notice = normalizeNotice(req.body);
+  } catch (error) {
+    return res.status(error.status || 400).json({ error: '通知資料格式不完整或超出限制' });
+  }
+  const { name, phone, svc, dur, date, time, price, note } = notice;
+  const sentAt = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Taipei' });
 
-  const staffMsg = `【元氣堂】新預約通知 ${now} 📋
+  const staffMsg = `【元氣堂】新預約通知 ${sentAt} 📋
 ━━━━━━━━━━━━━
 客人：${name}
 電話：${phone}
-療程：${svc} ${dur}
+服務項目：${svc} ${dur}
 日期：${date} ${time}
 費用：NT$${price}
 ${note ? '備註：' + note : ''}
@@ -149,38 +229,48 @@ ${note ? '備註：' + note : ''}
 
   const custMsg = `【元氣堂】預約成功！✅
 ━━━━━━━━━━━━━
-療程：${svc} ${dur}
+服務項目：${svc} ${dur}
 日期：${date} ${time}
 費用：NT$${price}
 ━━━━━━━━━━━━━
 我們會盡快確認，敬請稍候
 如需修改請來電：0987-450-468`;
 
-  await Promise.all([
-    sendLineMsg(STAFF_GROUP_ID, staffMsg),
-    sendLineMsg(CUSTOMER_GROUP_ID, custMsg)
-  ]);
-
-  res.json({ ok: true });
+  try {
+    const results = await Promise.all([
+      sendLineMsg(STAFF_GROUP_ID, staffMsg),
+      sendLineMsg(CUSTOMER_GROUP_ID, custMsg)
+    ]);
+    return res.json({ ok: true, sent: results.filter(result => result.sent).length });
+  } catch (error) {
+    return res.status(502).json({ error: 'LINE 通知傳送失敗，預約資料不受影響' });
+  }
 });
 
 // ── 員工接案通知 ──
-app.post('/api/notify/accepted', async (req, res) => {
-  const { empId, empName, name, phone, svc, dur, date, time, price, note } = req.body;
-  const now = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+app.post('/api/notify/accepted', notificationLimiter, async (req, res) => {
+  let notice;
+  try {
+    notice = normalizeNotice(req.body);
+    if (!notice.empId || !notice.empName) throw Object.assign(new Error('INVALID_EMPLOYEE'), { status: 400 });
+  } catch (error) {
+    return res.status(error.status || 400).json({ error: '通知資料格式不完整或超出限制' });
+  }
+  const { empId, empName, name, phone, svc, dur, date, time, price } = notice;
+  const sentAt = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Taipei' });
 
-  const staffMsg = `【元氣堂後台】接案確認 ${now} ✅
+  const staffMsg = `【元氣堂後台】接案確認 ${sentAt} ✅
 ━━━━━━━━━━━━━
 員工：${empName}（${empId}）已接案
 客人：${name} ／ ${phone}
-療程：${svc} ${dur}
+服務項目：${svc} ${dur}
 日期：${date} ${time}
 費用：NT$${price}
 ━━━━━━━━━━━━━`;
 
   const custMsg = `【元氣堂】您的預約已確認 🎉
 ━━━━━━━━━━━━━
-療程：${svc} ${dur}
+服務項目：${svc} ${dur}
 日期：${date} ${time}
 費用：NT$${price}
 接待師傅：${empName}
@@ -188,25 +278,30 @@ app.post('/api/notify/accepted', async (req, res) => {
 請準時到場，期待為您服務！
 如有疑問：0987-450-468`;
 
-  await Promise.all([
-    sendLineMsg(STAFF_GROUP_ID, staffMsg),
-    sendLineMsg(CUSTOMER_GROUP_ID, custMsg)
-  ]);
-
-  res.json({ ok: true });
+  try {
+    const results = await Promise.all([
+      sendLineMsg(STAFF_GROUP_ID, staffMsg),
+      sendLineMsg(CUSTOMER_GROUP_ID, custMsg)
+    ]);
+    return res.json({ ok: true, sent: results.filter(result => result.sent).length });
+  } catch (error) {
+    return res.status(502).json({ error: 'LINE 通知傳送失敗，接案資料不受影響' });
+  }
 });
 
 // ── LINE Webhook（拿 Group ID 用）──
 app.post('/webhook', (req, res) => {
+  if (!LINE_SECRET) return res.status(503).json({ error: 'LINE_CHANNEL_SECRET 尚未設定' });
+  if (!validLineSignature(req)) return res.status(401).json({ error: 'LINE 簽章驗證失敗' });
   res.sendStatus(200);
-  const events = req.body.events || [];
+  const events = req.body && Array.isArray(req.body.events) ? req.body.events : [];
   events.forEach(event => {
-    const src = event.source;
+    const src = event && event.source ? event.source : {};
     if (src.type === 'group') {
-      console.log('GROUP ID:', src.groupId);
+      console.log(LOG_LINE_SOURCE_IDS ? `GROUP ID: ${src.groupId}` : `收到群組事件（ID 尾碼：${String(src.groupId || '').slice(-6)}）`);
     }
     if (src.type === 'room') {
-      console.log('ROOM ID:', src.roomId);
+      console.log(LOG_LINE_SOURCE_IDS ? `ROOM ID: ${src.roomId}` : `收到聊天室事件（ID 尾碼：${String(src.roomId || '').slice(-6)}）`);
     }
   });
 });
@@ -214,10 +309,21 @@ app.post('/webhook', (req, res) => {
 // ── 查詢 Group ID（給老闆用）──
 app.get('/api/check-groups', (req, res) => {
   res.json({
-    staffGroupId: STAFF_GROUP_ID || '尚未設定',
-    customerGroupId: CUSTOMER_GROUP_ID || '尚未設定',
+    staffGroupConfigured: !!STAFF_GROUP_ID,
+    customerGroupConfigured: !!CUSTOMER_GROUP_ID,
     tokenSet: !!LINE_TOKEN
   });
+});
+
+app.use((error, req, res, next) => {
+  if (error && error.message === 'CORS_ORIGIN_DENIED') {
+    return res.status(403).json({ error: '此網站來源未獲允許' });
+  }
+  if (error && error.type === 'entity.too.large') {
+    return res.status(413).json({ error: '請求內容過大' });
+  }
+  console.error('未處理的伺服器錯誤:', error && error.message ? error.message : error);
+  return res.status(500).json({ error: '伺服器暫時無法處理請求' });
 });
 
 const PORT = process.env.PORT || 3000;
