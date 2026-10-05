@@ -3,7 +3,8 @@ const cors = require('cors');
 const axios = require('axios');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -51,8 +52,8 @@ let firestore = null;
 try {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (serviceAccountJson) {
-    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(serviceAccountJson)) });
-    firestore = admin.firestore();
+    initializeApp({ credential: cert(JSON.parse(serviceAccountJson)) });
+    firestore = getFirestore();
     console.log('Firebase Admin 已連線');
   } else {
     console.warn('尚未設定 FIREBASE_SERVICE_ACCOUNT_JSON，員工註冊 API 將停用');
@@ -187,7 +188,7 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
         clockIn: null,
         clockOut: null,
         clockLog: [],
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
         createdVia: 'registration-code'
       });
     });
