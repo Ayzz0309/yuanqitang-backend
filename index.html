@@ -341,7 +341,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1126</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1530</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -455,7 +455,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         </div>
         <div class="auth-inp-wrap">
           <label class="auth-lbl">員工註冊碼</label>
-          <input class="auth-inp" id="re-code" placeholder="請向老闆索取" type="password" autocomplete="off">
+          <input class="auth-inp" id="re-code" placeholder="請向店長索取" type="password" autocomplete="off">
         </div>
 
         <div id="re-err" class="auth-err hidden"></div>
@@ -1179,9 +1179,9 @@ async function forgotReset(){
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/reset-boss-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,recoveryCode,password})});
     const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'重設失敗');
     closeForgotModal();document.getElementById('le-id').value=result.bossId||employeeId;document.getElementById('le-pw').value='';
-    alert('老闆密碼已重設成功。\n老闆帳號：'+(result.bossId||employeeId)+'\n請使用新密碼登入。');
+    alert('店長密碼已重設成功。\n店長帳號：'+(result.bossId||employeeId)+'\n請使用新密碼登入。');
   }catch(e){showErr('fp-err',e.message||'重設失敗，請稍後再試');}
-  finally{if(btn){btn.disabled=false;btn.textContent='確認重設老闆密碼';}}
+  finally{if(btn){btn.disabled=false;btn.textContent='確認重設店長密碼';}}
 }
 
 function enterApp(){
@@ -1193,10 +1193,11 @@ function enterApp(){
     document.getElementById('hdr-badge').className='hdr-badge badge-cust';
     document.getElementById('hdr-badge').textContent='客人';
   } else {
-    const isBoss = u.role==='boss';
-    document.getElementById('hdr-user-text').textContent=u.name+'・'+(isBoss?'老闆':'員工')+' ['+u.id+']';
+    const isBoss = u.role==='boss',isManager=u.role==='manager';
+    const roleLabel=isBoss?'店長':isManager?'管理人員':'員工';
+    document.getElementById('hdr-user-text').textContent=u.name+'・'+roleLabel+' ['+u.id+']';
     document.getElementById('hdr-badge').className='hdr-badge '+(isBoss?'badge-boss':'badge-staff');
-    document.getElementById('hdr-badge').textContent=isBoss?'老闆':'員工';
+    document.getElementById('hdr-badge').textContent=roleLabel;
   }
   // 顯示載入畫面
   var ld = document.createElement('div');
@@ -1813,32 +1814,34 @@ function initStaffApp(){
   renderStaffContent();
 }
 
-const STAFF_TABS=new Set(['pending','accepted','schedule','timeline','today','manual']);
+const STAFF_TABS=new Set(['pending','accepted','schedule','timeline','today']);
 const BOSS_ONLY_TABS=new Set(['linelog','stats','customers','liveboard','employees','holidays']);
 function isBossSession(){return !!(cur&&cur.type==='emp'&&cur.user&&cur.user.role==='boss');}
-function requireBoss(action){if(isBossSession())return true;alert('只有老闆可以'+(action||'執行這項操作'));return false;}
-function bossOnlyMessage(){return '<div class="empty"><div class="empty-ico">🔒</div>此頁面僅限老闆查看與修改</div>';}
-function canUseStaffTab(tab){return STAFF_TABS.has(tab)||(isBossSession()&&BOSS_ONLY_TABS.has(tab));}
+function isManagerSession(){return !!(cur&&cur.type==='emp'&&cur.user&&cur.user.role==='manager');}
+function canManageBookingsSession(){return isBossSession()||isManagerSession();}
+function requireBoss(action){if(isBossSession())return true;alert('只有店長可以'+(action||'執行這項操作'));return false;}
+function requireBookingManager(action){if(canManageBookingsSession())return true;alert('只有店長或管理人員可以'+(action||'執行這項操作'));return false;}
+function bossOnlyMessage(){return '<div class="empty"><div class="empty-ico">🔒</div>此頁面僅限店長查看與修改</div>';}
+function canUseStaffTab(tab){return STAFF_TABS.has(tab)||(tab==='manual'&&canManageBookingsSession())||(isBossSession()&&BOSS_ONLY_TABS.has(tab));}
 
 function renderStaffNav(){
-  const isBoss=isBossSession();
-  const myTid=employeeTherapistId(cur.user);
-  const newCount=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid)).length;
+  const isBoss=isBossSession(),canManageBookings=canManageBookingsSession();
+  const newCount=bookings.filter(b=>b.status==='new').length;
   const tabs=[
     {k:'pending',l:'待確認',dot:newCount>0},
     {k:'accepted',l:'已接受'},
     {k:'schedule',l:'班表'},
     {k:'timeline',l:'床位表'},
     {k:'today',l:'今日'},
-    {k:'manual',l:'手動預約'},
   ];
+  if(canManageBookings)tabs.push({k:'manual',l:'手動預約'});
   if(isBoss) tabs.push({k:'linelog',l:'LINE'},{k:'stats',l:'報表'},{k:'customers',l:'客人'},{k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
   document.getElementById('staff-nav').innerHTML=tabs.map(t=>`
     <button class="snav-btn ${staffTab===t.k?'act':''}" onclick="swStaffTab('${t.k}')">${t.l}${t.dot?'<span class="ndot"></span>':''}</button>`).join('');
 }
 
 function swStaffTab(t){
-  if(!canUseStaffTab(t)){staffTab='pending';alert('此功能僅限老闆使用');}
+  if(!canUseStaffTab(t)){staffTab='pending';alert('你沒有此功能的操作權限');}
   else staffTab=t;
   renderStaffNav();
   renderStaffContent();
@@ -1847,20 +1850,19 @@ function swStaffTab(t){
 function renderStaffContent(){
   if(!canUseStaffTab(staffTab))staffTab='pending';
   let html='';
-  const isBoss=isBossSession();
+  const isBoss=isBossSession(),canManageBookings=canManageBookingsSession();
   const myTid=employeeTherapistId(cur.user),myEmpId=cur.user.id;
   const _td=new Date(); const todayStr=todayKey();
 
   const _tnow=new Date(); const _todayStr2=todayKey();
-  const _isBoss=cur.user.role==='boss';
   if(staffTab==='pending'){
-    const list=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid));
-    html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>${_isBoss?'目前沒有待確認預約':'今天沒有待確認的預約'}</div>`);
+    const list=bookings.filter(b=>b.status==='new');
+    html=statsRow()+( list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">🎉</div>目前沒有待確認預約</div>`);
   } else if(staffTab==='accepted'){
-    const list=bookings.filter(b=>b.status==='accepted'&&(isBoss||b.acceptedBy===myEmpId));
+    const list=bookings.filter(b=>b.status==='accepted'&&(canManageBookings||b.acceptedBy===myEmpId));
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">📋</div>目前沒有已接受預約</div>`;
   } else if(staffTab==='today'){
-    const list=bookings.filter(b=>bookingDateKey(b)===todayStr&&(isBoss||b.acceptedBy===myEmpId));
+    const list=bookings.filter(b=>bookingDateKey(b)===todayStr&&(canManageBookings||b.acceptedBy===myEmpId));
     html=list.length?list.map(bCard).join(''):`<div class="empty"><div class="empty-ico">☀️</div>今天沒有排程</div>`;
   } else if(staffTab==='schedule'){
     html=renderSchedule();
@@ -1927,9 +1929,10 @@ function bindEasyInputEvents(){
 
 function statsRow(){
   const isBoss = isBossSession();
+  const canManageBookings = canManageBookingsSession();
   const myTid=employeeTherapistId(cur.user);
-  const newC=bookings.filter(b=>b.status==='new'&&(isBoss||!b.therapistId||b.therapistId===myTid)).length;
-  const accC=bookings.filter(b=>b.status==='accepted'&&(isBoss||b.acceptedBy===cur.user.id)).length;
+  const newC=bookings.filter(b=>b.status==='new'&&(canManageBookings||!b.therapistId||b.therapistId===myTid)).length;
+  const accC=bookings.filter(b=>b.status==='accepted'&&(canManageBookings||b.acceptedBy===cur.user.id)).length;
   const total=bookings.filter(b=>b.status!=='declined').reduce((s,b)=>s+effectivePrice(b),0);
 
   let clockCard = '';
@@ -1944,7 +1947,7 @@ function statsRow(){
         ? '<span style="color:var(--text3)">已下班（'+clk.clockOut+'）</span>'
         : '<span style="color:var(--text3)">未打卡</span>';
       const roleTag = t.role==='boss'
-        ? '<span style="background:#fff3e0;color:#c07000;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px">老闆</span>'
+        ? '<span style="background:#fff3e0;color:#c07000;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px">店長</span>'
         : '';
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">'
         +'<div style="width:34px;height:34px;border-radius:50%;background:var(--pu-pale);border:1.5px solid var(--pu-mid);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--pu);flex-shrink:0">'+t.avatar+'</div>'
@@ -1983,7 +1986,7 @@ function statsRow(){
   return clockCard
     +'<div class="stats-grid">'
     +'<div class="stat-c"><div class="stat-n">'+newC+'</div><div class="stat-l">待確認</div></div>'
-    +'<div class="stat-c"><div class="stat-n">'+accC+'</div><div class="stat-l">'+(isBoss?'進行中':'我的預約')+'</div></div>'
+    +'<div class="stat-c"><div class="stat-n">'+accC+'</div><div class="stat-l">'+(canManageBookings?'進行中':'我的預約')+'</div></div>'
     +(isBoss?'<div class="stat-c"><div class="stat-n">$'+(total/1000).toFixed(1)+'k</div><div class="stat-l">總金額</div></div>':'')
     +'</div>';
 }
@@ -1997,8 +2000,9 @@ function bCard(b){
   const myTherapistId = employeeTherapistId(cur.user);
   const isDesignated = b.therapistId && b.therapistId !== null;
   const isBoss = cur.user.role === 'boss';
-  const canAccept = isBoss || !isDesignated || b.therapistId === myTherapistId;
-  const canManageAccepted = isBoss || b.acceptedBy === myEmpId;
+  const canManageBookings = canManageBookingsSession();
+  const canAccept = canManageBookings;
+  const canManageAccepted = canManageBookings || b.acceptedBy === myEmpId;
   const designatedName = b.therapistName || '';
   const basePrice=Number(b.price)||0,finalPrice=Number(b.finalPrice)||0,actualMins=Number(b.actualMins)||0;
   const extraInfo = b.extraMins>0 ? `<span class="tag" style="background:#fff8e0;color:#c07000">+${b.extraMins}分</span>` : '';
@@ -2028,13 +2032,15 @@ function bCard(b){
     </div>
   </div>` : '';
 
-  const editBtn = isBoss?`<button class="abtn" style="background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:12px" onclick="openEditBooking('${b.id}')">✏️ 修改</button>`:'';
+  const editBtn = canManageBookings?`<button class="abtn" style="background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);font-size:12px" onclick="openEditBooking('${b.id}')">✏️ 修改</button>`:'';
+  const assignmentOptions=`<option value="none">由店長／管理人員暫代</option>`+THERAPISTS.map(t=>`<option value="${esc(t.id)}" ${b.therapistId===t.id?'selected':''}>${esc(t.name)}</option>`).join('');
   const actions = b.status==='new'
     ? `<div class="bcard-acts">
         ${canAccept
-          ? `<button class="abtn abtn-acc" onclick="acceptBook('${b.id}')">✓ 我接這件</button>
-             ${isBoss?`<button class="abtn abtn-dec" onclick="declineBook('${b.id}')">✗ 婉拒</button>`:''}`
-          : `<div style="flex:1;text-align:center;font-size:12px;color:var(--text3);padding:8px">🔒 客人已指定 ${designatedName}</div>`
+          ? `<select class="finp" id="assign-${b.id}" style="flex:1;min-width:150px;padding:8px;font-size:12px">${assignmentOptions}</select>
+             <button class="abtn abtn-acc" onclick="acceptBook('${b.id}')">✓ 確認安排</button>
+             <button class="abtn abtn-dec" onclick="declineBook('${b.id}')">✗ 婉拒</button>`
+          : `<div style="flex:1;text-align:center;font-size:12px;color:var(--text3);padding:8px">📸 請截圖詢問店長或管理人員是否可以接案</div>`
         }
         ${editBtn}
        </div>`
@@ -2065,7 +2071,7 @@ function bCard(b){
           ${b.supportId?`<span class="tag" style="background:#f0fff4;color:var(--green)">🤝 支援：${esc(b.supportName)}</span>`:''}
           ${extraInfo}
         </div>
-        <div class="bcard-contact">📞 ${esc(b.phone)}${b.lineId?' ・ LINE '+esc(b.lineId):''}</div>
+        ${canManageBookings?`<div class="bcard-contact">📞 ${esc(b.phone)}${b.lineId?' ・ LINE '+esc(b.lineId):''}</div>`:''}
         ${b.note?`<div class="bcard-note">備註：${esc(b.note)}</div>`:''}
       </div>
       <span class="sbadge ${stMap[b.status]}">${stLbl[b.status]}</span>
@@ -2074,7 +2080,7 @@ function bCard(b){
   </div>`;
 }
 
-async function acceptBookingAtomic(id, emp){
+async function acceptBookingAtomic(id, assignee, therapist, manager){
   const d=await db(), f=fs(), ref=f.doc(d,'bookings',id);
   return f.runTransaction(d,async tx=>{
     const snap=await tx.get(ref);
@@ -2085,28 +2091,33 @@ async function acceptBookingAtomic(id, emp){
     if(data.status!=='new'){
       const er=new Error('BOOKING_ALREADY_ACCEPTED'); er.code='booking-taken'; throw er;
     }
-    const next={...data,id,status:'accepted',acceptedBy:emp.id,acceptedAt:now(),acceptedAtTimestamp:Date.now(),_updated:new Date().toISOString()};
+    const next={...data,id,status:'accepted',acceptedBy:assignee.id,acceptedByName:assignee.name,therapistId:therapist?therapist.id:null,therapistName:therapist?therapist.name:null,managedBy:manager.id,managedByName:manager.name,acceptedAt:now(),acceptedAtTimestamp:Date.now(),_updated:new Date().toISOString()};
     tx.set(ref,next);
     return next;
   });
 }
 
 async function acceptBook(id){
+  if(!requireBookingManager('安排或接受預約'))return;
   if(!beginAction('accept_'+id)) return;
   const b=bookings.find(x=>x.id===id); if(!b){ endAction('accept_'+id); return; }
   const emp=cur.user;
   try{
     if(b.status!=='new') throw Object.assign(new Error('BOOKING_ALREADY_ACCEPTED'),{code:'booking-taken'});
-    const tid=employeeTherapistId(emp);
-    if(emp.role!=='boss'&&b.therapistId&&b.therapistId!==tid){ alert('此預約已指定其他師傅'); return; }
-    const accepted=await acceptBookingAtomic(id,emp);
+    const assignmentEl=document.getElementById('assign-'+id),therapistId=assignmentEl?assignmentEl.value:(b.therapistId||'none');
+    const therapist=therapistId!=='none'?THERAPISTS.find(t=>t.id===therapistId):null;
+    const assignedEmp=therapist?employees.find(e=>employeeTherapistId(e)===therapist.id):null;
+    const assignee=assignedEmp||emp;
+    const accepted=await acceptBookingAtomic(id,assignee,therapist,emp);
     const current=bookings.find(x=>x.id===id); if(current)Object.assign(current,accepted);
     if(accepted.bed){try{await reserveBedSlot(accepted,{force:true});}catch(lockErr){console.warn('接案後床位鎖同步失敗',lockErr);toast('接案已完成，但床位狀態同步失敗','sys','床位提醒');}}
     const nowT=accepted.acceptedAt;
-    const custMsg=buildCustConfirmMsg(accepted,emp.name,emp.id); const staffMsg=buildStaffAcceptMsg(accepted,emp);
-    notifyLine('/api/notify/accepted',{empId:emp.id,empName:emp.name,name:accepted.name,phone:accepted.phone,svc:accepted.svc,dur:accepted.dur,date:displayBookingDate(accepted),time:accepted.time,price:accepted.price,note:accepted.note});
-    setTimeout(()=>toast(custMsg,'line',`${accepted.name} 預約確認通知`),250); setTimeout(()=>toast(staffMsg,'line',`接案確認 - ${emp.name}`),600);
-    lineLog.unshift({to:'客人',name:accepted.name,msg:custMsg,time:nowT}); lineLog.unshift({to:'員工',name:emp.name,msg:staffMsg,time:nowT});
+    const assignedName=therapist?therapist.name:assignee.name;
+    const notifyEmp={...assignee,name:assignedName};
+    const custMsg=buildCustConfirmMsg(accepted,assignedName,assignee.id); const staffMsg=buildStaffAcceptMsg(accepted,notifyEmp);
+    notifyLine('/api/notify/accepted',{empId:assignee.id,empName:assignedName,name:accepted.name,phone:accepted.phone,svc:accepted.svc,dur:accepted.dur,date:displayBookingDate(accepted),time:accepted.time,price:accepted.price,note:accepted.note});
+    setTimeout(()=>toast(custMsg,'line',`${accepted.name} 預約確認通知`),250); setTimeout(()=>toast(staffMsg,'line',`安排確認 - ${assignedName}`),600);
+    lineLog.unshift({to:'客人',name:accepted.name,msg:custMsg,time:nowT}); lineLog.unshift({to:'員工',name:assignedName,msg:staffMsg,time:nowT});
     renderStaffNav(); renderStaffContent();
   }catch(e){
     if(e&&e.code==='booking-taken') alert('此預約已被其他員工接走，畫面將自動更新');
@@ -2115,7 +2126,7 @@ async function acceptBook(id){
   finally{ endAction('accept_'+id); }
 }
 async function declineBook(id){
-  if(!requireBoss('婉拒預約'))return;
+  if(!requireBookingManager('婉拒預約'))return;
   if(!beginAction('decline_'+id)) return; const b=bookings.find(x=>x.id===id); if(!b){endAction('decline_'+id);return;}
   try{
     const updated=await updateBookingAtomic(id,current=>{if(current.status!=='new'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',declinedAt:now(),declinedTimestamp:Date.now()};});
@@ -2127,7 +2138,7 @@ let cancelConfirmId=null;
 async function cancelAccepted(id){
   if(cancelConfirmId===id){
     if(!beginAction('cancel_'+id)) return; const b=bookings.find(x=>x.id===id);
-    try{ if(b){const updated=await updateBookingAtomic(id,current=>{if(cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if(current.status!=='accepted'||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now()};});Object.assign(b,updated);await releaseBedSlot(updated);} cancelConfirmId=null; toast('✕ 已取消預約：'+(b?b.name:''),'sys','取消預約'); renderStaffNav(); renderStaffContent(); }
+    try{ if(b){const updated=await updateBookingAtomic(id,current=>{if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if(current.status!=='accepted'||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now()};});Object.assign(b,updated);await releaseBedSlot(updated);} cancelConfirmId=null; toast('✕ 已取消預約：'+(b?b.name:''),'sys','取消預約'); renderStaffNav(); renderStaffContent(); }
     catch(e){ cancelConfirmId=null;if(e&&e.code==='not-owner')alert('只能取消自己承接的預約');else if(e&&e.code==='booking-state-changed')alert('預約已開始或狀態已變更，無法取消');else alert('取消預約儲存失敗'); }
     finally{ endAction('cancel_'+id); }
   }else{
@@ -2664,7 +2675,8 @@ function renderTimeline(){
 let manualState = {svc:null,price:null,date:'',time:'',bed:null,therapist:'none'};
 
 function renderManualBook(){
-  const isBoss=isBossSession(),myTid=employeeTherapistId(cur.user),myT=THERAPISTS.find(t=>t.id===myTid);
+  if(!canManageBookingsSession())return '<div class="empty"><div class="empty-ico">🔒</div>手動預約僅限店長與管理人員使用</div>';
+  const isBoss=isBossSession(),canManage=canManageBookingsSession(),myTid=employeeTherapistId(cur.user),myT=THERAPISTS.find(t=>t.id===myTid);
   const customSvcEditor=isBoss?`<button type="button" onclick="showAddSvcForm()" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1.5px dashed var(--pu-mid);background:var(--pu-pale);color:var(--pu);font-size:13px;cursor:pointer;font-family:inherit">＋ 新增自訂服務</button>
       <div id="add-svc-form" style="display:none;background:var(--pu-pale);border-radius:10px;padding:0.9rem;margin-top:8px;border:1px solid var(--pu-mid)">
         <div style="font-size:13px;font-weight:600;color:var(--pu);margin-bottom:8px">新增服務項目</div>
@@ -2673,7 +2685,7 @@ function renderManualBook(){
           <div><label class="flbl">時間(分)</label><input class="finp" id="ns-dur" type="number" placeholder="60"></div>
           <div><label class="flbl">價格</label><input class="finp" id="ns-price" type="number" placeholder="1500"></div>
         </div><button onclick="addCustomSvc()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認新增</button></div>`:'';
-  const assignmentFields=isBoss?`<div class="fg"><label class="flbl">師傅</label><select class="finp" id="mb-therapist"><option value="none">不指定</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div><div class="fg"><label class="flbl">支援師傅（選填）</label><select class="finp" id="mb-support"><option value="">無</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>`:`<div class="fg"><label class="flbl">承接員工</label><input class="finp" value="${esc(myT?myT.name:'尚未綁定班表身分')}" disabled><input type="hidden" id="mb-therapist" value="${esc(myTid||'')}"><input type="hidden" id="mb-support" value=""></div>`;
+  const assignmentFields=canManage?`<div class="fg"><label class="flbl">師傅</label><select class="finp" id="mb-therapist"><option value="none">不指定</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div><div class="fg"><label class="flbl">支援師傅（選填）</label><select class="finp" id="mb-support"><option value="">無</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>`:`<div class="fg"><label class="flbl">承接員工</label><input class="finp" value="${esc(myT?myT.name:'尚未綁定班表身分')}" disabled><input type="hidden" id="mb-therapist" value="${esc(myTid||'')}"><input type="hidden" id="mb-support" value=""></div>`;
   return `<div class="section-title">手動預約</div>
   <div style="background:#fff8e0;border:1px solid #ffe082;border-radius:10px;padding:0.75rem 1rem;margin:0 0 1rem;font-size:13px;color:#7a5a00;line-height:1.7">
     📞 <strong>適用情境：</strong>現場來客、電話預約、長者無手機<br>
@@ -2724,13 +2736,14 @@ function renderManualBook(){
 }
 
 async function submitManual(){
+  if(!requireBookingManager('建立手動預約'))return;
   if(!beginAction('manual')) return;
   let b=null;
   try{
     const name=cleanText(document.getElementById('mb-name').value,80),phone=cleanText(document.getElementById('mb-phone').value,30),svcVal=document.getElementById('mb-svc').value;
     const dateRaw=document.getElementById('mb-date').value.trim(),time=document.getElementById('mb-time').value,bed=parseInt(document.getElementById('mb-bed').value)||null;
     let therapistId=document.getElementById('mb-therapist').value,supportId=document.getElementById('mb-support').value||'';
-    if(!isBossSession()){therapistId=employeeTherapistId(cur.user)||'';supportId='';if(!therapistId){alert('此員工帳號尚未綁定班表身分，請老闆協助設定');return;}}
+    if(!canManageBookingsSession()){therapistId=employeeTherapistId(cur.user)||'';supportId='';if(!therapistId){alert('此員工帳號尚未綁定班表身分，請店長協助設定');return;}}
     const supportObj=THERAPISTS.find(t=>t.id===supportId),note=cleanText(document.getElementById('mb-note').value,500),isnewVal=document.getElementById('mb-isnew').value,isNew=isnewVal==='1',isMember=isnewVal==='2';
     if(!name||!svcVal||!dateRaw||!time){alert('請填寫必填欄位（姓名、服務項目、日期、時段）');return;}
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){alert('時間格式請使用 HH:MM，例如 14:30');return;}
@@ -2739,7 +2752,7 @@ async function submitManual(){
     if(svcId==='custom'){ const cust=customSvcs.find(s=>s.id===parseInt(priceStr)); if(!cust){alert('找不到自訂服務');return;} svcName=cust.name;durationMinutes=Number(cust.dur)||60;durVal=durationMinutes+'分';priceVal=cust.price; }
     else{ const svcObj=SVCS.find(s=>s.id===parseInt(svcId)); if(!svcObj){alert('找不到服務項目');return;} const priceObj=svcObj.prices.find(p=>p.p===parseInt(priceStr)); if(!priceObj){alert('找不到價格');return;} svcName=svcObj.name;durationMinutes=selectedSvcDurationMinutes({...svcObj,selectedPrice:priceObj});durVal=durationMinutes+'分';priceVal=priceObj.p; }
     if(bed && findBedConflicts({dateKey:dp.key,time,durationMinutes,bed}).length){alert('這個床位與現有預約時段重疊，請換床位或時間');return;}
-    const thObj=THERAPISTS.find(t=>t.id===therapistId),assignedEmp=therapistId!=='none'?employees.find(e=>employeeTherapistId(e)===therapistId):null,acceptEmp=isBossSession()?(assignedEmp||cur.user):cur.user,bId='B'+Date.now().toString(36).toUpperCase()+'M';
+    const thObj=THERAPISTS.find(t=>t.id===therapistId),assignedEmp=therapistId!=='none'?employees.find(e=>employeeTherapistId(e)===therapistId):null,acceptEmp=canManageBookingsSession()?(assignedEmp||cur.user):cur.user,bId='B'+Date.now().toString(36).toUpperCase()+'M';
     b={id:bId,custId:'MANUAL',name,phone,svc:cleanText(svcName,180),dur:durVal,durationMinutes,price:priceVal,date:dp.display,dateKey:dp.key,year:dp.y,time,bed,therapistId:therapistId==='none'?null:therapistId,therapistName:thObj?thObj.name:null,supportId:supportId||null,supportName:supportObj?supportObj.name:null,startTime:null,endTime:null,extraMins:0,status:'accepted',lineId:cleanText(document.getElementById('mb-line').value,80),note:note+(isNew?' ★新客人':isMember?' ★會員':''),acceptedBy:acceptEmp.id,acceptedAt:now(),acceptedAtTimestamp:Date.now(),isNew};
     await createBookingAtomic(b);bookings.unshift(b);
     let c=customers.find(c=>c.phone===phone);
@@ -2759,18 +2772,28 @@ function effectivePrice(b){
   return Number.isFinite(value)&&value>=0?value:0;
 }
 
+let reportMonth=todayKey().slice(0,7);
+function setReportMonth(value){reportMonth=value||todayKey().slice(0,7);renderStaffContent();}
+function reportMonthText(value){
+  if(value==='all')return '全部月份';
+  const p=String(value||'').split('-');
+  return p.length===2?(Number(p[0])+'年'+Number(p[1])+'月'):value;
+}
+
 function renderStats(){
   if(!isBossSession())return bossOnlyMessage();
   const isBoss=true;
   const myId=cur.user.id;
   const showList=isBoss?employees:employees.filter(function(e){return e.id===myId;});
-  const allDone=bookings.filter(function(b){return b.status==='done';});
+  const monthKeys=[...new Set(bookings.map(b=>bookingDateKey(b).slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)))].sort().reverse();
+  const currentMonth=todayKey().slice(0,7);if(!monthKeys.includes(currentMonth))monthKeys.unshift(currentMonth);
+  if(reportMonth!=='all'&&!monthKeys.includes(reportMonth))reportMonth=currentMonth;
+  const selectedBookings=reportMonth==='all'?bookings:bookings.filter(b=>bookingDateKey(b).slice(0,7)===reportMonth);
+  const allDone=selectedBookings.filter(function(b){return b.status==='done';});
   const totalRev=allDone.reduce(function(s,b){
     return s+(b.status==='done'&&b.finalPrice!==undefined ? b.finalPrice : b.price);
   },0);
-  const _tds=new Date(); const todayStr=todayKey();
-  const todayRev=bookings.filter(function(b){return bookingDateKey(b)===todayStr&&b.status==='done';}).reduce(function(s,b){return s+effectivePrice(b);},0);
-  const newCount=bookings.filter(function(b){return b.status==='new';}).length;
+  const newCount=selectedBookings.filter(function(b){return b.status==='new';}).length;
 
   const svcMap={};
   allDone.forEach(function(b){
@@ -2785,11 +2808,13 @@ function renderStats(){
   const svcList=Object.entries(svcMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   const maxRev=svcList[0]?svcList[0][1]:1;
 
-  let html='<div class="report-cards">'
-    +'<div class="report-card"><div class="rc-num">$'+(totalRev/1000).toFixed(1)+'k</div><div class="rc-lbl">總累積收入</div></div>'
-    +'<div class="report-card"><div class="rc-num">$'+todayRev.toLocaleString()+'</div><div class="rc-lbl">今日收入</div></div>'
-    +'<div class="report-card"><div class="rc-num">'+bookings.length+'</div><div class="rc-lbl">總預約數</div><div class="rc-sub">'+newCount+' 待確認</div></div>'
+  let html='<div style="margin:0 .9rem 1rem;padding:.85rem;background:#fff;border:1px solid var(--border);border-radius:12px"><label class="flbl" for="report-month">報表月份</label><select class="finp" id="report-month" onchange="setReportMonth(this.value)"><option value="all" '+(reportMonth==='all'?'selected':'')+'>全部月份</option>'+monthKeys.map(m=>'<option value="'+m+'" '+(reportMonth===m?'selected':'')+'>'+reportMonthText(m)+'</option>').join('')+'</select></div>'
+    +'<div style="padding:0 .9rem .6rem;font-size:13px;font-weight:700;color:var(--pu)">'+reportMonthText(reportMonth)+'報表</div>'
+    +'<div class="report-cards">'
+    +'<div class="report-card"><div class="rc-num">$'+totalRev.toLocaleString()+'</div><div class="rc-lbl">期間收入</div></div>'
+    +'<div class="report-card"><div class="rc-num">'+selectedBookings.length+'</div><div class="rc-lbl">期間預約數</div></div>'
     +'<div class="report-card"><div class="rc-num">'+allDone.length+'</div><div class="rc-lbl">已完成案件</div></div>'
+    +'<div class="report-card"><div class="rc-num">'+newCount+'</div><div class="rc-lbl">待確認</div></div>'
     +'</div>';
 
   html+='<div class="section-title">熱門服務排行</div><div class="chart-bar-wrap">';
@@ -2807,13 +2832,13 @@ function renderStats(){
     +'<table class="staff-tbl" style="min-width:320px;"><thead><tr><th>員工</th><th>接案</th><th>完成</th><th>金額</th></tr></thead><tbody>';
 
   showList.forEach(function(e){
-    const myBooks=bookings.filter(function(b){return b.acceptedBy===e.id;});
+    const myBooks=selectedBookings.filter(function(b){return b.acceptedBy===e.id;});
     const done=myBooks.filter(function(b){return b.status==='done';}).length;
     const doneBooks=myBooks.filter(function(b){return b.status==='done';});
     const total=doneBooks.reduce(function(s,b){return s+effectivePrice(b);},0);
     const origTotal=doneBooks.reduce(function(s,b){return s+b.price;},0);
     const hasDiff = total !== origTotal;
-    const bossTag=e.role==='boss'?'<span class="boss-mark">老闆</span>':'';
+    const bossTag=e.role==='boss'?'<span class="boss-mark">店長</span>':e.role==='manager'?'<span class="boss-mark" style="background:#e8f4ff;color:#245a9b">管理人員</span>':'';
     html+='<tr class="staff-row">'
       +'<td><div style="display:flex;align-items:center;gap:6px"><div class="emp-av">'+esc((e.name||'?')[0])+'</div>'+esc(e.name)+bossTag+'</div></td>'
       +'<td style="font-weight:700;color:var(--pu)">'+myBooks.length+'</td>'
@@ -2826,16 +2851,16 @@ function renderStats(){
   html+='</tbody></table></div>';
 
   const recentDone=allDone.slice().sort(function(a,b){return Number(b.endTimestamp||0)-Number(a.endTimestamp||0);}).slice(0,30);
-  html+='<div class="section-title">完成紀錄（老闆可修正報表金額）</div><div style="margin:0 .9rem;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden">';
+  html+='<div class="section-title">完成紀錄（店長可修正報表金額）</div><div style="margin:0 .9rem;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden">';
   if(!recentDone.length)html+='<div class="empty">尚無完成紀錄</div>';
   recentDone.forEach(function(b){html+='<div style="display:flex;align-items:center;gap:8px;padding:.75rem;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:700;font-size:13px">'+esc(b.name)+' ・ '+esc(b.svc)+'</div><div style="font-size:11px;color:var(--text3)">'+esc(displayBookingDate(b))+' '+esc(b.time)+' ・ '+esc(b.acceptedBy||'未指定')+'</div></div><div style="font-weight:700;color:var(--green)">$'+effectivePrice(b).toLocaleString()+'</div><button onclick="editReportAmount(\''+b.id+'\')" style="padding:6px 9px;border:1px solid var(--pu-mid);border-radius:8px;background:var(--pu-pale);color:var(--pu);font-size:11px;cursor:pointer">修改金額</button></div>';});
   html+='</div>';
 
   if(isBoss){
-    const totalAll=bookings.filter(function(b){return b.status==='done';}).reduce(function(s,b){return s+effectivePrice(b);},0);
-    const totalCases=bookings.filter(function(b){return b.acceptedBy;}).length;
+    const totalAll=selectedBookings.filter(function(b){return b.status==='done';}).reduce(function(s,b){return s+effectivePrice(b);},0);
+    const totalCases=selectedBookings.filter(function(b){return b.acceptedBy;}).length;
     html+='<div class="stats-grid" style="margin-top:0.5rem">'
-      +'<div class="stat-c"><div class="stat-n">'+bookings.length+'</div><div class="stat-l">總預約數</div></div>'
+      +'<div class="stat-c"><div class="stat-n">'+selectedBookings.length+'</div><div class="stat-l">期間預約數</div></div>'
       +'<div class="stat-c"><div class="stat-n">'+totalCases+'</div><div class="stat-l">已接案數</div></div>'
       +'<div class="stat-c"><div class="stat-n">$'+(totalAll/1000).toFixed(1)+'k</div><div class="stat-l">總金額</div></div>'
       +'</div>';
@@ -3053,7 +3078,7 @@ async function startService(bookId){
   try{
     const startedAt=Date.now(),startedTime=now(),updated=await updateBookingAtomic(bookId,current=>{
       if(current.status!=='accepted'||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}
-      if(cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
+      if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
       const duration=bookingDurationMins(current);
       return {...current,startTime:startedTime,startTimestamp:startedAt,startDateKey:todayKey(),endTime:null,endTimestamp:null,durMins:duration,durationMinutes:duration,extraMins:Number(current.extraMins)||0};
     });
@@ -3075,7 +3100,7 @@ async function endService(bookId){
   try{
     const endedAt=Date.now(),endedTime=now(),updated=await updateBookingAtomic(bookId,current=>{
       if(current.status!=='accepted'||!current.startTime||current.endTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}
-      if(cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
+      if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
       const startMs=bookingStartMs(current),basePrice=Number(current.price)||0,bookedMins=bookingDurationMins(current)+(Number(current.extraMins)||0);
       // 切單代表整套服務完成：不因提早切單而按分鐘比例減價。
       // 實際經過時間另存供查核；報表工時與應收金額一律採預約完整時數及原價。
@@ -3151,7 +3176,7 @@ async function addTime(bookId, mins){
   try{
     const updated=await updateBookingAtomic(bookId,current=>{
       if(current.status!=='accepted'||current.endTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}
-      if(cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
+      if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
       const extra=(Number(current.extraMins)||0)+mins;if(extra>1440){const er=new Error('TOO_MUCH_TIME');er.code='too-much-time';throw er;}return {...current,extraMins:extra};
     });
     Object.assign(b,updated);
@@ -3200,7 +3225,7 @@ function renderBossBoard(){
   const accepted_notstarted = bookings.filter(b=>b.status==='accepted'&&!b.startTime);
   const todayBkgs=bookings.filter(b=>bookingDateKey(b)===todayKey()&&b.status!=='declined');
 
-  let html = '<div class="section-title">🔴 直播看板 <span style="font-size:11px;color:var(--text3);font-weight:400">老闆即時監控</span></div>';
+  let html = '<div class="section-title">🔴 直播看板 <span style="font-size:11px;color:var(--text3);font-weight:400">店長即時監控</span></div>';
 
   // Summary stats
   html += '<div class="stats-grid" style="margin-bottom:0">';
@@ -3306,9 +3331,10 @@ function employeeTherapistId(e){
 function renderEmployees(){
   if(!isBossSession())return bossOnlyMessage();
   let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>'
-    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff5f5;border:1px solid #e8b0b0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:5px">清除舊員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:9px">只會刪除一般員工（staff），老闆帳號（boss）、預約、班表、打卡及客人資料都會保留。</div><button onclick="deleteOldStaffAccounts()" style="padding:8px 14px;border-radius:8px;background:var(--red);color:#fff;border:none;font-weight:700;cursor:pointer">刪除全部舊員工</button></div>';
+    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#eef7ff;border:1px solid #b8d8f0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:#245a9b;margin-bottom:5px">管理人員權限</div><div style="font-size:11px;color:var(--text2);line-height:1.6">管理人員可以建立、接受、安排、修改及取消預約；報表、員工帳號與系統設定仍只有店長可操作。</div></div>'
+    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff5f5;border:1px solid #e8b0b0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:5px">清除舊員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:9px">只會刪除一般員工（staff），店長帳號（boss）及管理人員（manager）、預約、班表、打卡及客人資料都會保留。</div><button onclick="deleteOldStaffAccounts()" style="padding:8px 14px;border-radius:8px;background:var(--red);color:#fff;border:none;font-weight:700;cursor:pointer">刪除全部舊員工</button></div>';
   employees.forEach(function(e){
-    const bossTag=e.role==='boss'?'<span class="boss-mark">老闆</span>':'';
+    const bossTag=e.role==='boss'?'<span class="boss-mark">店長</span>':e.role==='manager'?'<span class="boss-mark" style="background:#e8f4ff;color:#245a9b">管理人員</span>':'';
     const caseCount=bookings.filter(b=>b.acceptedBy===e.id).length;
     const doneBooks=bookings.filter(b=>b.acceptedBy===e.id&&b.status==='done');
     const doneCount=doneBooks.length;
@@ -3324,6 +3350,7 @@ function renderEmployees(){
       +'<span style="font-size:14px;font-weight:700">'+esc(e.name)+'</span>'+bossTag+onlineTag+'</div>'
       +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+esc(e.id)
       +(clk.clockIn?' ・ 上班：'+esc(clk.clockIn):'')+(clk.clockOut?' ・ 下班：'+esc(clk.clockOut):'')+'</div></div>'
+      +(e.role!=='boss'?'<button onclick="setEmployeeRole(\''+esc(e.id)+'\',\''+(e.role==='manager'?'staff':'manager')+'\')" style="flex-shrink:0;background:'+(e.role==='manager'?'#f5f5f5':'#e8f4ff')+';color:'+(e.role==='manager'?'var(--text2)':'#245a9b')+';border:1px solid '+(e.role==='manager'?'#ddd':'#b8d8f0')+';border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">'+(e.role==='manager'?'改為一般員工':'設為管理人員')+'</button>':'')
       +'<button data-empid="'+esc(e.id)+'" class="clk-log-btn" style="flex-shrink:0;background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">📋 打卡記錄</button>'
       +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)">'
       +'<span>接案數：<strong style="color:var(--pu)">'+caseCount+'</strong></span><span>完成：<strong style="color:var(--green)">'+doneCount+'</strong></span><span>完成營收：<strong style="color:var(--green)">$'+total.toLocaleString()+'</strong></span></div></div>';
@@ -3331,11 +3358,26 @@ function renderEmployees(){
   return out;
 }
 
+async function setEmployeeRole(employeeId,role){
+  if(!requireBoss('調整管理人員權限'))return;
+  const employee=employees.find(e=>e.id===employeeId);if(!employee||employee.role==='boss')return;
+  const label=role==='manager'?'管理人員':'一般員工';
+  if(!confirm('確定將「'+employee.name+'」設為'+label+'？'))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認店長權限');if(!recoveryCode)return;
+  if(!beginAction('employee_role_'+employeeId))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/set-employee-role',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,role,recoveryCode})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'權限更新失敗');
+    employee.role=role;toast(employee.name+' 已設為'+label,'sys','權限更新');renderStaffNav();renderStaffContent();
+  }catch(e){alert(e.message||'權限更新失敗');}
+  finally{endAction('employee_role_'+employeeId);}
+}
+
 async function deleteOldStaffAccounts(){
   if(!requireBoss('清除舊員工帳號'))return;
   const staffCount=employees.filter(e=>e.role==='staff').length;
   if(!staffCount){alert('目前沒有一般員工帳號需要刪除');return;}
-  if(!confirm('將刪除 '+staffCount+' 個一般員工帳號。老闆帳號與其他資料會保留，確定繼續？'))return;
+  if(!confirm('將刪除 '+staffCount+' 個一般員工帳號。店長、管理人員與其他資料會保留，確定繼續？'))return;
   const registrationCode=prompt('請輸入 EMPLOYEE_REGISTRATION_CODE 的實際註冊碼確認');
   if(!registrationCode)return;
   if(!beginAction('delete_staff'))return;
@@ -3343,8 +3385,8 @@ async function deleteOldStaffAccounts(){
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registrationCode})});
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(result.error||'清除失敗');
-    employees=employees.filter(e=>e.role==='boss');
-    toast('已刪除 '+Number(result.deleted||0)+' 個舊員工帳號，老闆帳號已保留','sys','清除完成');
+    employees=employees.filter(e=>e.role==='boss'||e.role==='manager');
+    toast('已刪除 '+Number(result.deleted||0)+' 個舊員工帳號，店長與管理人員帳號已保留','sys','清除完成');
     renderStaffNav();renderStaffContent();
   }catch(e){alert(e.message||'清除舊員工失敗');}
   finally{endAction('delete_staff');}
@@ -3415,10 +3457,10 @@ function buildNewBookingStaffMsg(b) {
 let editingBookId = null;
 
 function openEditBooking(id){
-  if(!requireBoss('修改預約與報表資料'))return;
+  if(!requireBookingManager('修改預約資料'))return;
   const b = bookings.find(function(x){return x.id===id;});
   if(!b) return;
-  if(b.status==='accepted'&&cur.user.role!=='boss'&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
+  if(b.status==='accepted'&&!canManageBookingsSession()&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
   if(b.status!=='new'&&b.status!=='accepted'){alert('此狀態的預約不能修改');return;}
   editingBookId = id;
   document.getElementById('em-name').value = b.name||'';
@@ -3439,31 +3481,31 @@ function closeEditModal(){ document.getElementById('edit-modal').classList.add('
 function closeEditIfOutside(e){ if(e.target===document.getElementById('edit-modal')) closeEditModal(); }
 
 function saveEditBooking(){
-  if(!requireBoss('修改預約與報表資料'))return;
+  if(!requireBookingManager('修改預約資料'))return;
   const b=bookings.find(x=>x.id===editingBookId);if(!b)return;
   const rawDate=document.getElementById('em-date').value.trim();const dp=parseDateInput(rawDate,b.year||new Date().getFullYear());if(!dp){alert('日期格式請輸入 9/11 或 2026-09-11');return;}
   const newTime=document.getElementById('em-time').value.trim(),newBed=parseInt(document.getElementById('em-bed').value)||null,newName=cleanText(document.getElementById('em-name').value||b.name,80),newPhone=cleanText(document.getElementById('em-phone').value||b.phone,30),newSvc=cleanText(document.getElementById('em-svc').value||b.svc,180),newNote=cleanText(document.getElementById('em-note').value,500),newThId=document.getElementById('em-therapist').value||null,newThName=newThId?(THERAPISTS.find(t=>t.id===newThId)||{}).name||'':'';
   if(!newName||!newSvc||!/^([01]\d|2[0-3]):[0-5]\d$/.test(newTime)){alert('請填寫有效的姓名、服務名稱與時間（HH:MM）');return;}
-  if(newBed&&newTime){const conflict=findBedConflicts({dateKey:dp.key,time:newTime,durationMinutes:bookingDurationMins(b),bed:newBed,excludeId:b.id});if(conflict.length){const names=conflict.map(x=>esc(x.name)+'（'+esc(x.time)+'）').join('、');const w=document.getElementById('edit-warn');const forceBtn=cur.user.role==='boss'?'<button onclick="forceSaveEdit()" style="padding:5px 14px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">⚠️ 老闆確認忽略</button>':'';w.innerHTML='⚠️ <strong>床位衝突！</strong>'+esc(dp.display)+' '+esc(newTime)+' 的 '+newBed+'號床 已有：'+names+'<br><div style="display:flex;gap:8px;margin-top:8px">'+forceBtn+'<button onclick="hideEditWarn()" style="padding:5px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">取消重選</button></div>';w.classList.remove('hidden');return;}}
+  if(newBed&&newTime){const conflict=findBedConflicts({dateKey:dp.key,time:newTime,durationMinutes:bookingDurationMins(b),bed:newBed,excludeId:b.id});if(conflict.length){const names=conflict.map(x=>esc(x.name)+'（'+esc(x.time)+'）').join('、');const w=document.getElementById('edit-warn');const forceBtn=cur.user.role==='boss'?'<button onclick="forceSaveEdit()" style="padding:5px 14px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">⚠️ 店長確認忽略</button>':'';w.innerHTML='⚠️ <strong>床位衝突！</strong>'+esc(dp.display)+' '+esc(newTime)+' 的 '+newBed+'號床 已有：'+names+'<br><div style="display:flex;gap:8px;margin-top:8px">'+forceBtn+'<button onclick="hideEditWarn()" style="padding:5px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">取消重選</button></div>';w.classList.remove('hidden');return;}}
   doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,false);
 }
 function forceSaveEdit(){
-  if(cur.user.role!=='boss'){alert('只有老闆可以忽略床位衝突');return;}
+  if(cur.user.role!=='boss'){alert('只有店長可以忽略床位衝突');return;}
   const b=bookings.find(x=>x.id===editingBookId);if(!b)return;const dp=parseDateInput(document.getElementById('em-date').value.trim(),b.year||new Date().getFullYear());if(!dp){alert('日期格式錯誤');return;}
   doSaveEdit(cleanText(document.getElementById('em-name').value||b.name,80),cleanText(document.getElementById('em-phone').value||b.phone,30),cleanText(document.getElementById('em-svc').value||b.svc,180),dp,document.getElementById('em-time').value.trim()||b.time,parseInt(document.getElementById('em-bed').value)||null,cleanText(document.getElementById('em-note').value,500),document.getElementById('em-therapist').value||null,(document.getElementById('em-therapist').value?(THERAPISTS.find(t=>t.id===document.getElementById('em-therapist').value)||{}).name||'':''),true);
 }
 async function doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,force){
-  if(!requireBoss('修改預約與報表資料'))return;
+  if(!requireBookingManager('修改預約資料'))return;
   if(!beginAction('edit_'+editingBookId))return;const b=bookings.find(x=>x.id===editingBookId);if(!b){endAction('edit_'+editingBookId);return;}const old=JSON.parse(JSON.stringify(b));let reserved=false,candidate=null,changedLockDoc=false;
   try{
-    if(b.status==='accepted'&&cur.user.role!=='boss'&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
+    if(b.status==='accepted'&&!canManageBookingsSession()&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
     if(b.status!=='new'&&b.status!=='accepted'){alert('此狀態的預約不能修改');return;}
     const changedSlot=bookingDateKey(b)!==dp.key||b.time!==newTime||Number(b.bed||0)!==Number(newBed||0);
     changedLockDoc=bookingDateKey(b)!==dp.key||Number(b.bed||0)!==Number(newBed||0);
     const changes={name:newName,phone:newPhone,svc:newSvc,date:dp.display,dateKey:dp.key,year:dp.y,time:newTime||b.time,bed:newBed,note:newNote,therapistId:newThId,therapistName:newThName};
     candidate={...b,...changes};
     if(changedSlot&&newBed){await reserveBedSlot(candidate,{force:!!force});reserved=true;}
-    const updated=await updateBookingAtomic(b.id,current=>{if(current.status!=='new'&&current.status!=='accepted'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}if(current.status==='accepted'&&cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}return {...current,...changes};});
+    const updated=await updateBookingAtomic(b.id,current=>{if(current.status!=='new'&&current.status!=='accepted'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}if(current.status==='accepted'&&!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}return {...current,...changes};});
     Object.keys(b).forEach(k=>delete b[k]);Object.assign(b,updated);if(changedLockDoc&&old.bed)await releaseBedSlot(old);
     toast('✅ 已修改：'+b.name+' / '+b.date+' '+b.time+(newThName?' ・ 師傅→'+newThName:''),'sys','修改成功');closeEditModal();renderStaffContent();
   }catch(e){Object.keys(b).forEach(k=>delete b[k]);Object.assign(b,old);if(reserved&&candidate){await releaseBedSlot(candidate);if(!changedLockDoc&&old.bed)try{await reserveBedSlot(old,{force:true});}catch(lockErr){console.warn('修改失敗後還原床位鎖失敗',lockErr);}}if(e&&e.code==='bed-conflict')alert('床位已被其他預約占用，請重新選擇');else if(e&&e.code==='not-owner')alert('只能修改自己承接的預約');else if(e&&e.code==='booking-state-changed')alert('預約狀態已在其他裝置變更，請重新確認');else alert('修改預約儲存失敗，請確認網路後再試一次');}
@@ -3518,12 +3560,12 @@ document.addEventListener('click', function(e){
       <span>🔑 重設密碼</span>
       <button class="modal-close" onclick="closeForgotModal()">✕</button>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">使用 Render 設定的老闆救援碼重設密碼；不知道帳號時可將帳號欄留空。</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">使用 Render 設定的店長救援碼重設密碼；不知道帳號時可將帳號欄留空。</p>
     <div id="forgot-step1">
-      <div class="auth-inp-wrap"><label class="auth-lbl">老闆帳號（不知道可留空）</label>
+      <div class="auth-inp-wrap"><label class="auth-lbl">店長帳號（不知道可留空）</label>
         <input class="auth-inp" id="fp-id" placeholder="選填">
       </div>
-      <div class="auth-inp-wrap"><label class="auth-lbl">老闆救援碼</label>
+      <div class="auth-inp-wrap"><label class="auth-lbl">店長救援碼</label>
         <input class="auth-inp" id="fp-code" type="password" autocomplete="off" placeholder="BOSS_RECOVERY_CODE">
       </div>
       <div class="auth-inp-wrap"><label class="auth-lbl">設定新密碼</label>
@@ -3533,7 +3575,7 @@ document.addEventListener('click', function(e){
         <input class="auth-inp" id="fp-newpw2" type="password" placeholder="再輸入一次">
       </div>
       <div id="fp-err" class="auth-err hidden"></div>
-      <button class="auth-submit" onclick="forgotReset()">確認重設老闆密碼</button>
+      <button class="auth-submit" onclick="forgotReset()">確認重設店長密碼</button>
     </div>
   </div>
 </div>
@@ -3548,6 +3590,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜完整切單計價版｜Build 20261010-1126</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜店長權限月報版｜Build 20261010-1530</div>
 </body>
 </html>

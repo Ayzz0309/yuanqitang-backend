@@ -151,7 +151,7 @@ app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系
 // ── 員工註冊（註冊碼只存在 Render 環境變數）──
 app.post('/api/register/employee', registrationLimiter, async (req, res) => {
   if (!firestore || !EMPLOYEE_REGISTRATION_CODE) {
-    return res.status(503).json({ error: '員工註冊服務尚未完成設定，請聯絡老闆' });
+    return res.status(503).json({ error: '員工註冊服務尚未完成設定，請聯絡店長' });
   }
 
   const body = req.body && typeof req.body === 'object' ? req.body : {};
@@ -223,14 +223,14 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
       return res.status(409).json({ error: '此員工帳號已被使用' });
     }
     if (error.code === 'therapist-taken') {
-      return res.status(409).json({ error: '此班表身分已綁定其他員工帳號，請聯絡老闆' });
+      return res.status(409).json({ error: '此班表身分已綁定其他員工帳號，請聯絡店長' });
     }
     console.error('員工註冊失敗:', error.message);
     return res.status(500).json({ error: '員工帳號建立失敗，請稍後再試' });
   }
 });
 
-// ── 老闆清除舊員工（永遠只刪 role=staff，boss 不會被刪除）──
+// ── 店長清除舊員工（永遠只刪 role=staff，boss/manager 不會被刪除）──
 app.post('/api/admin/delete-staff', registrationLimiter, async (req, res) => {
   if (!firestore || !EMPLOYEE_REGISTRATION_CODE) {
     return res.status(503).json({ error: '員工管理服務尚未完成設定' });
@@ -255,17 +255,50 @@ app.post('/api/admin/delete-staff', registrationLimiter, async (req, res) => {
   }
 });
 
-// ── 老闆帳號救援：使用獨立救援碼重設密碼並取回帳號 ID ──
+// ── 店長調整預約管理權限（boss 本身永遠不會被變更）──
+app.post('/api/admin/set-employee-role', registrationLimiter, async (req, res) => {
+  if (!firestore || !BOSS_RECOVERY_CODE) {
+    return res.status(503).json({ error: '權限管理功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+  }
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const recoveryCode = String(body.recoveryCode || '');
+  const employeeId = cleanString(body.employeeId, 50);
+  const role = cleanString(body.role, 20);
+  if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
+    return res.status(403).json({ error: '店長救援碼錯誤' });
+  }
+  if (!/^[A-Za-z0-9_-]{3,50}$/.test(employeeId)) {
+    return res.status(400).json({ error: '員工帳號格式不正確' });
+  }
+  if (role !== 'manager' && role !== 'staff') {
+    return res.status(400).json({ error: '權限類型只能是管理人員或一般員工' });
+  }
+  try {
+    const ref = firestore.collection('employees').doc(employeeId);
+    const snapshot = await ref.get();
+    if (!snapshot.exists) return res.status(404).json({ error: '找不到此員工帳號' });
+    if (snapshot.data().role === 'boss') {
+      return res.status(403).json({ error: '不可變更店長帳號權限' });
+    }
+    await ref.update({ role, roleUpdatedAt: FieldValue.serverTimestamp() });
+    return res.json({ ok: true, employeeId, role });
+  } catch (error) {
+    console.error('更新員工權限失敗:', error.message);
+    return res.status(500).json({ error: '員工權限更新失敗，請稍後再試' });
+  }
+});
+
+// ── 店長帳號救援：使用獨立救援碼重設密碼並取回帳號 ID ──
 app.post('/api/admin/reset-boss-password', registrationLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '老闆帳號救援功能尚未設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '店長帳號救援功能尚未設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const recoveryCode = String(body.recoveryCode || '');
   const password = String(body.password || '');
   const requestedId = cleanString(body.employeeId, 50);
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '老闆救援碼錯誤' });
+    return res.status(403).json({ error: '店長救援碼錯誤' });
   }
   if (password.length < 6 || password.length > 128) {
     return res.status(400).json({ error: '新密碼長度需為 6–128 位' });
@@ -278,14 +311,14 @@ app.post('/api/admin/reset-boss-password', registrationLimiter, async (req, res)
     } else {
       const snapshot = await firestore.collection('employees').where('role', '==', 'boss').limit(2).get();
       if (snapshot.size === 1) bossDoc = snapshot.docs[0];
-      else if (snapshot.size > 1) return res.status(409).json({ error: '找到多個老闆帳號，請填寫老闆帳號 ID' });
+      else if (snapshot.size > 1) return res.status(409).json({ error: '找到多個店長帳號，請填寫店長帳號 ID' });
     }
-    if (!bossDoc) return res.status(404).json({ error: '找不到符合的老闆帳號' });
+    if (!bossDoc) return res.status(404).json({ error: '找不到符合的店長帳號' });
     await bossDoc.ref.update({ pw: password, passwordResetAt: FieldValue.serverTimestamp() });
     return res.json({ ok: true, bossId: bossDoc.id });
   } catch (error) {
-    console.error('老闆密碼重設失敗:', error.message);
-    return res.status(500).json({ error: '老闆密碼重設失敗，請稍後再試' });
+    console.error('店長密碼重設失敗:', error.message);
+    return res.status(500).json({ error: '店長密碼重設失敗，請稍後再試' });
   }
 });
 
