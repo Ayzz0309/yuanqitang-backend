@@ -341,7 +341,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1530</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1545</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -3332,7 +3332,7 @@ function renderEmployees(){
   if(!isBossSession())return bossOnlyMessage();
   let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>'
     +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#eef7ff;border:1px solid #b8d8f0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:#245a9b;margin-bottom:5px">管理人員權限</div><div style="font-size:11px;color:var(--text2);line-height:1.6">管理人員可以建立、接受、安排、修改及取消預約；報表、員工帳號與系統設定仍只有店長可操作。</div></div>'
-    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff5f5;border:1px solid #e8b0b0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:5px">清除舊員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:9px">只會刪除一般員工（staff），店長帳號（boss）及管理人員（manager）、預約、班表、打卡及客人資料都會保留。</div><button onclick="deleteOldStaffAccounts()" style="padding:8px 14px;border-radius:8px;background:var(--red);color:#fff;border:none;font-weight:700;cursor:pointer">刪除全部舊員工</button></div>';
+    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff8e8;border:1px solid #efd394;border-radius:12px"><div style="font-size:13px;font-weight:700;color:#9a6500;margin-bottom:5px">指定刪除員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6">每個非店長帳號旁都有「刪除帳號」。只會刪除選中的登入帳號，預約、報表、班表及打卡歷史都會保留；刪除後該班表身分即可重新註冊。</div></div>';
   employees.forEach(function(e){
     const bossTag=e.role==='boss'?'<span class="boss-mark">店長</span>':e.role==='manager'?'<span class="boss-mark" style="background:#e8f4ff;color:#245a9b">管理人員</span>':'';
     const caseCount=bookings.filter(b=>b.acceptedBy===e.id).length;
@@ -3351,11 +3351,28 @@ function renderEmployees(){
       +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+esc(e.id)
       +(clk.clockIn?' ・ 上班：'+esc(clk.clockIn):'')+(clk.clockOut?' ・ 下班：'+esc(clk.clockOut):'')+'</div></div>'
       +(e.role!=='boss'?'<button onclick="setEmployeeRole(\''+esc(e.id)+'\',\''+(e.role==='manager'?'staff':'manager')+'\')" style="flex-shrink:0;background:'+(e.role==='manager'?'#f5f5f5':'#e8f4ff')+';color:'+(e.role==='manager'?'var(--text2)':'#245a9b')+';border:1px solid '+(e.role==='manager'?'#ddd':'#b8d8f0')+';border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">'+(e.role==='manager'?'改為一般員工':'設為管理人員')+'</button>':'')
+      +(e.role!=='boss'?'<button onclick="deleteEmployeeAccount(\''+esc(e.id)+'\')" style="flex-shrink:0;background:#fff5f5;color:var(--red);border:1px solid #e8b0b0;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700">🗑 刪除帳號</button>':'')
       +'<button data-empid="'+esc(e.id)+'" class="clk-log-btn" style="flex-shrink:0;background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">📋 打卡記錄</button>'
       +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)">'
       +'<span>接案數：<strong style="color:var(--pu)">'+caseCount+'</strong></span><span>完成：<strong style="color:var(--green)">'+doneCount+'</strong></span><span>完成營收：<strong style="color:var(--green)">$'+total.toLocaleString()+'</strong></span></div></div>';
   });
   return out;
+}
+
+async function deleteEmployeeAccount(employeeId){
+  if(!requireBoss('刪除員工帳號'))return;
+  const employee=employees.find(e=>e.id===employeeId);if(!employee||employee.role==='boss'){alert('店長帳號不可刪除');return;}
+  if(!confirm('確定刪除「'+employee.name+'」的登入帳號（'+employee.id+'）？\n\n預約、報表、班表與打卡歷史會保留，但此帳號將無法再登入。'))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認刪除「'+employee.name+'」');if(!recoveryCode)return;
+  if(!beginAction('delete_employee_'+employeeId))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-employee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,recoveryCode})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'刪除失敗');
+    employees=employees.filter(e=>e.id!==employeeId);
+    toast('已刪除 '+employee.name+' 的帳號，歷史資料保留','sys','帳號刪除完成');
+    renderStaffNav();renderStaffContent();
+  }catch(e){alert(e.message||'員工帳號刪除失敗');}
+  finally{endAction('delete_employee_'+employeeId);}
 }
 
 async function setEmployeeRole(employeeId,role){
@@ -3371,25 +3388,6 @@ async function setEmployeeRole(employeeId,role){
     employee.role=role;toast(employee.name+' 已設為'+label,'sys','權限更新');renderStaffNav();renderStaffContent();
   }catch(e){alert(e.message||'權限更新失敗');}
   finally{endAction('employee_role_'+employeeId);}
-}
-
-async function deleteOldStaffAccounts(){
-  if(!requireBoss('清除舊員工帳號'))return;
-  const staffCount=employees.filter(e=>e.role==='staff').length;
-  if(!staffCount){alert('目前沒有一般員工帳號需要刪除');return;}
-  if(!confirm('將刪除 '+staffCount+' 個一般員工帳號。店長、管理人員與其他資料會保留，確定繼續？'))return;
-  const registrationCode=prompt('請輸入 EMPLOYEE_REGISTRATION_CODE 的實際註冊碼確認');
-  if(!registrationCode)return;
-  if(!beginAction('delete_staff'))return;
-  try{
-    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registrationCode})});
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(result.error||'清除失敗');
-    employees=employees.filter(e=>e.role==='boss'||e.role==='manager');
-    toast('已刪除 '+Number(result.deleted||0)+' 個舊員工帳號，店長與管理人員帳號已保留','sys','清除完成');
-    renderStaffNav();renderStaffContent();
-  }catch(e){alert(e.message||'清除舊員工失敗');}
-  finally{endAction('delete_staff');}
 }
 
 function clockDurationMinutes(inEntry,outEntry){
@@ -3590,6 +3588,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜店長權限月報版｜Build 20261010-1530</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜指定帳號刪除版｜Build 20261010-1545</div>
 </body>
 </html>

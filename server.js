@@ -230,28 +230,33 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
   }
 });
 
-// ── 店長清除舊員工（永遠只刪 role=staff，boss/manager 不會被刪除）──
-app.post('/api/admin/delete-staff', registrationLimiter, async (req, res) => {
-  if (!firestore || !EMPLOYEE_REGISTRATION_CODE) {
-    return res.status(503).json({ error: '員工管理服務尚未完成設定' });
+// ── 店長刪除指定員工帳號（保留預約、報表、班表與打卡歷史）──
+app.post('/api/admin/delete-employee', registrationLimiter, async (req, res) => {
+  if (!firestore || !BOSS_RECOVERY_CODE) {
+    return res.status(503).json({ error: '員工管理功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const registrationCode = String(body.registrationCode || '');
-  if (!safeCodeEqual(registrationCode, EMPLOYEE_REGISTRATION_CODE)) {
-    return res.status(403).json({ error: '員工註冊碼錯誤' });
+  const recoveryCode = String(body.recoveryCode || '');
+  const employeeId = cleanString(body.employeeId, 50);
+  if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
+    return res.status(403).json({ error: '店長救援碼錯誤' });
+  }
+  if (!/^[A-Za-z0-9_-]{3,50}$/.test(employeeId)) {
+    return res.status(400).json({ error: '員工帳號格式不正確' });
   }
   try {
-    const snapshot = await firestore.collection('employees').where('role', '==', 'staff').get();
-    const docs = snapshot.docs.filter(doc => doc.data().role === 'staff');
-    for (let start = 0; start < docs.length; start += 400) {
-      const batch = firestore.batch();
-      docs.slice(start, start + 400).forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+    const ref = firestore.collection('employees').doc(employeeId);
+    const snapshot = await ref.get();
+    if (!snapshot.exists) return res.status(404).json({ error: '找不到此員工帳號，可能已被刪除' });
+    const employee = snapshot.data();
+    if (employee.role === 'boss') {
+      return res.status(403).json({ error: '店長帳號受保護，不可刪除' });
     }
-    return res.json({ ok: true, deleted: docs.length });
+    await ref.delete();
+    return res.json({ ok: true, employeeId, employeeName: cleanString(employee.name, 80) });
   } catch (error) {
-    console.error('清除舊員工失敗:', error.message);
-    return res.status(500).json({ error: '清除舊員工失敗，請稍後再試' });
+    console.error('刪除指定員工失敗:', error.message);
+    return res.status(500).json({ error: '員工帳號刪除失敗，請稍後再試' });
   }
 });
 
