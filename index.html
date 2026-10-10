@@ -341,7 +341,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261005-1315</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1126</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -1157,18 +1157,31 @@ let forgotPwTarget = null;
 function showForgotPw(type){
   forgotPwType = type;
   forgotPwTarget = null;
-  alert(type==='cust'?'為保護帳號安全，請聯絡店家核對身分後協助重設密碼。\n電話：0987-450-468':'為保護員工帳號，請聯絡老闆協助重設密碼。');
+  if(type==='cust'){alert('為保護帳號安全，請聯絡店家核對身分後協助重設密碼。\n電話：0987-450-468');return;}
+  document.getElementById('forgot-modal').classList.remove('hidden');
 }
 function closeForgotModal(){
   document.getElementById('forgot-modal').classList.add('hidden');
 }
 function forgotVerify(){
-  closeForgotModal();
-  showForgotPw(forgotPwType);
+  forgotReset();
 }
 async function forgotReset(){
-  closeForgotModal();
-  showForgotPw(forgotPwType);
+  const employeeId=cleanText(document.getElementById('fp-id').value,50);
+  const recoveryCode=document.getElementById('fp-code').value.trim();
+  const password=document.getElementById('fp-newpw').value;
+  const password2=document.getElementById('fp-newpw2').value;
+  if(!recoveryCode||!password||!password2){showErr('fp-err','請填寫救援碼與兩次新密碼');return;}
+  if(password.length<6){showErr('fp-err','新密碼至少6位');return;}
+  if(password!==password2){showErr('fp-err','兩次新密碼不一致');return;}
+  const btn=document.querySelector('#forgot-step1 .auth-submit');if(btn){btn.disabled=true;btn.textContent='重設中...';}
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/reset-boss-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,recoveryCode,password})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'重設失敗');
+    closeForgotModal();document.getElementById('le-id').value=result.bossId||employeeId;document.getElementById('le-pw').value='';
+    alert('老闆密碼已重設成功。\n老闆帳號：'+(result.bossId||employeeId)+'\n請使用新密碼登入。');
+  }catch(e){showErr('fp-err',e.message||'重設失敗，請稍後再試');}
+  finally{if(btn){btn.disabled=false;btn.textContent='確認重設老闆密碼';}}
 }
 
 function enterApp(){
@@ -3064,13 +3077,15 @@ async function endService(bookId){
       if(current.status!=='accepted'||!current.startTime||current.endTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}
       if(cur.user.role!=='boss'&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
       const startMs=bookingStartMs(current),basePrice=Number(current.price)||0,bookedMins=bookingDurationMins(current)+(Number(current.extraMins)||0);
-      const actualMins=startMs?Math.max(0,Math.round((endedAt-startMs)/60000)):bookedMins;
-      const finalPrice=actualMins>=bookedMins?basePrice:Math.round((actualMins/bookedMins)*basePrice/10)*10;
-      return {...current,endTime:endedTime,endTimestamp:endedAt,status:'done',actualMins,finalPrice,priceDiff:finalPrice-basePrice};
+      // 切單代表整套服務完成：不因提早切單而按分鐘比例減價。
+      // 實際經過時間另存供查核；報表工時與應收金額一律採預約完整時數及原價。
+      const actualElapsedMins=startMs?Math.max(0,Math.round((endedAt-startMs)/60000)):bookedMins;
+      const actualMins=bookedMins,completedMins=bookedMins,finalPrice=basePrice;
+      return {...current,endTime:endedTime,endTimestamp:endedAt,status:'done',actualElapsedMins,actualMins,completedMins,finalPrice,priceDiff:0};
     });
     Object.assign(b,updated);
-    const bookedMins=bookingDurationMins(b)+(Number(b.extraMins)||0),diffStr=b.priceDiff<0?'（少 NT$'+Math.abs(b.priceDiff)+'）':b.priceDiff>0?'（多 NT$'+b.priceDiff+'）':'（足額）';
-    const msg='⏹️ 切單：'+b.name+' ・ 實際 '+b.actualMins+'分／預定 '+bookedMins+'分\n應收：NT$'+b.finalPrice+' '+diffStr;
+    const bookedMins=bookingDurationMins(b)+(Number(b.extraMins)||0);
+    const msg='⏹️ 切單：'+b.name+' ・ 完成 '+bookedMins+'分\n應收：NT$'+b.finalPrice+'（完整計價）';
     if(b.bed){try{await reserveBedSlot(b,{force:true});}catch(lockErr){console.warn('切單後床位鎖同步失敗',lockErr);toast('切單已完成，但床位同步失敗','sys','床位提醒');}}
     timerAlertsShown.delete(bookId);toast(msg,'sys','服務結束');renderStaffContent();startTimerLoop();
   }catch(e){if(e&&e.code==='not-owner')alert('只能結束自己承接的服務');else if(e&&e.code==='booking-state-changed')alert('此服務已在其他裝置結束或狀態已變更');else alert('切單資料儲存失敗，請確認網路後再試一次');}
@@ -3290,7 +3305,8 @@ function employeeTherapistId(e){
 }
 function renderEmployees(){
   if(!isBossSession())return bossOnlyMessage();
-  let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>';
+  let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>'
+    +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff5f5;border:1px solid #e8b0b0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:5px">清除舊員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:9px">只會刪除一般員工（staff），老闆帳號（boss）、預約、班表、打卡及客人資料都會保留。</div><button onclick="deleteOldStaffAccounts()" style="padding:8px 14px;border-radius:8px;background:var(--red);color:#fff;border:none;font-weight:700;cursor:pointer">刪除全部舊員工</button></div>';
   employees.forEach(function(e){
     const bossTag=e.role==='boss'?'<span class="boss-mark">老闆</span>':'';
     const caseCount=bookings.filter(b=>b.acceptedBy===e.id).length;
@@ -3313,6 +3329,25 @@ function renderEmployees(){
       +'<span>接案數：<strong style="color:var(--pu)">'+caseCount+'</strong></span><span>完成：<strong style="color:var(--green)">'+doneCount+'</strong></span><span>完成營收：<strong style="color:var(--green)">$'+total.toLocaleString()+'</strong></span></div></div>';
   });
   return out;
+}
+
+async function deleteOldStaffAccounts(){
+  if(!requireBoss('清除舊員工帳號'))return;
+  const staffCount=employees.filter(e=>e.role==='staff').length;
+  if(!staffCount){alert('目前沒有一般員工帳號需要刪除');return;}
+  if(!confirm('將刪除 '+staffCount+' 個一般員工帳號。老闆帳號與其他資料會保留，確定繼續？'))return;
+  const registrationCode=prompt('請輸入 EMPLOYEE_REGISTRATION_CODE 的實際註冊碼確認');
+  if(!registrationCode)return;
+  if(!beginAction('delete_staff'))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-staff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registrationCode})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||'清除失敗');
+    employees=employees.filter(e=>e.role==='boss');
+    toast('已刪除 '+Number(result.deleted||0)+' 個舊員工帳號，老闆帳號已保留','sys','清除完成');
+    renderStaffNav();renderStaffContent();
+  }catch(e){alert(e.message||'清除舊員工失敗');}
+  finally{endAction('delete_staff');}
 }
 
 function clockDurationMinutes(inEntry,outEntry){
@@ -3483,24 +3518,22 @@ document.addEventListener('click', function(e){
       <span>🔑 重設密碼</span>
       <button class="modal-close" onclick="closeForgotModal()">✕</button>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">輸入您的手機號碼，系統將顯示提示讓您設定新密碼。</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">使用 Render 設定的老闆救援碼重設密碼；不知道帳號時可將帳號欄留空。</p>
     <div id="forgot-step1">
-      <div class="auth-inp-wrap"><label class="auth-lbl">手機號碼 / 帳號</label>
-        <input class="auth-inp" id="fp-id" placeholder="輸入手機或帳號">
+      <div class="auth-inp-wrap"><label class="auth-lbl">老闆帳號（不知道可留空）</label>
+        <input class="auth-inp" id="fp-id" placeholder="選填">
       </div>
-      <div id="fp-err" class="auth-err hidden"></div>
-      <button class="auth-submit" onclick="forgotVerify()">查詢帳號</button>
-    </div>
-    <div id="forgot-step2" class="hidden">
-      <div style="background:var(--pu-pale);border-radius:10px;padding:0.75rem 1rem;font-size:13px;color:var(--pu);margin-bottom:1rem" id="fp-hint"></div>
+      <div class="auth-inp-wrap"><label class="auth-lbl">老闆救援碼</label>
+        <input class="auth-inp" id="fp-code" type="password" autocomplete="off" placeholder="BOSS_RECOVERY_CODE">
+      </div>
       <div class="auth-inp-wrap"><label class="auth-lbl">設定新密碼</label>
         <input class="auth-inp" id="fp-newpw" type="password" placeholder="至少6位數">
       </div>
       <div class="auth-inp-wrap"><label class="auth-lbl">確認新密碼</label>
         <input class="auth-inp" id="fp-newpw2" type="password" placeholder="再輸入一次">
       </div>
-      <div id="fp-err2" class="auth-err hidden"></div>
-      <button class="auth-submit" onclick="forgotReset()">確認設定新密碼</button>
+      <div id="fp-err" class="auth-err hidden"></div>
+      <button class="auth-submit" onclick="forgotReset()">確認重設老闆密碼</button>
     </div>
   </div>
 </div>
@@ -3515,6 +3548,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜員工權限修正版｜Build 20261005-1315</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜完整切單計價版｜Build 20261010-1126</div>
 </body>
 </html>
