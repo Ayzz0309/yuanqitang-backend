@@ -168,8 +168,8 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
   if (!THERAPIST_IDENTITIES[therapistId]) {
     return res.status(400).json({ error: '班表身分無效，請重新選擇' });
   }
-  if (!/^[A-Za-z0-9_-]{3,50}$/.test(id)) {
-    return res.status(400).json({ error: '員工帳號限 3–50 位英文字母、數字、底線或連字號' });
+  if (!/^[A-Za-z0-9_-]{2,50}$/.test(id)) {
+    return res.status(400).json({ error: '員工帳號限 2–50 位英文字母、數字、底線或連字號' });
   }
   if (password.length < 6 || password.length > 128) {
     return res.status(400).json({ error: '密碼長度需為 6–128 位' });
@@ -241,7 +241,7 @@ app.post('/api/admin/delete-employee', registrationLimiter, async (req, res) => 
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
     return res.status(403).json({ error: '店長救援碼錯誤' });
   }
-  if (!/^[A-Za-z0-9_-]{3,50}$/.test(employeeId)) {
+  if (!/^[A-Za-z0-9_-]{2,50}$/.test(employeeId)) {
     return res.status(400).json({ error: '員工帳號格式不正確' });
   }
   try {
@@ -272,7 +272,7 @@ app.post('/api/admin/set-employee-role', registrationLimiter, async (req, res) =
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
     return res.status(403).json({ error: '店長救援碼錯誤' });
   }
-  if (!/^[A-Za-z0-9_-]{3,50}$/.test(employeeId)) {
+  if (!/^[A-Za-z0-9_-]{2,50}$/.test(employeeId)) {
     return res.status(400).json({ error: '員工帳號格式不正確' });
   }
   if (role !== 'manager' && role !== 'staff') {
