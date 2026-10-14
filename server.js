@@ -155,6 +155,10 @@ function couponClaimDocumentId(code, phone) {
   return `${code}_${hash.slice(0, 40)}`;
 }
 
+function phoneBindingDocumentId(phone) {
+  return crypto.createHash('sha256').update(`phone|${phone}`, 'utf8').digest('hex').slice(0, 48);
+}
+
 function validDateKey(value) {
   if (value === '') return true;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -424,7 +428,7 @@ async function sendLineMsg(to, text) {
 }
 
 // ── 健康檢查 ──
-app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.6' }));
+app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.7' }));
 
 // ── 員工註冊（註冊碼只存在 Render 環境變數）──
 app.post('/api/register/employee', registrationLimiter, async (req, res) => {
@@ -786,6 +790,113 @@ app.post('/api/coupons/claim', couponLimiter, async (req, res) => {
     if (error.status) return res.status(error.status).json({ error: error.publicMessage || '優惠券領取失敗' });
     console.error('客人領取優惠券失敗:', error.message);
     return res.status(500).json({ error: '優惠券領取失敗，請稍後再試' });
+  }
+});
+
+// ── 舊會員登入後補登手機：雙重確認、唯一綁定並發送一次性體驗券──
+app.post('/api/customers/complete-phone', couponLimiter, async (req, res) => {
+  if (!firestore) return res.status(503).json({ error: '會員資料服務暫時無法使用' });
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const customerId = cleanDocumentId(body.customerId);
+  const password = String(body.password || '');
+  const phone = normalizePhone(body.phone);
+  const phoneConfirm = normalizePhone(body.phoneConfirm);
+  if (!customerId || !password || password.length > 128) return res.status(400).json({ error: '會員登入資料不完整，請重新登入' });
+  if (!/^09\d{8}$/.test(phone)) return res.status(400).json({ error: '請輸入正確的 09 開頭 10 碼手機號碼' });
+  if (phone !== phoneConfirm) return res.status(400).json({ error: '兩次輸入的手機號碼不一致' });
+  try {
+    await ensureDefaultCouponCampaigns();
+
+    // 先檢查既有資料（包含舊版可能含空格或連字號的電話），再由 phoneBindings 防止同時重複綁定。
+    const customerList = await firestore.collection('customers').get();
+    const conflict = customerList.docs.find(snapshot => snapshot.id !== customerId && normalizePhone(snapshot.data().phone) === phone);
+    if (conflict) return res.status(409).json({ error: '此手機號碼已綁定其他會員，請聯絡店家協助確認' });
+
+    const customerRef = firestore.collection('customers').doc(customerId);
+    const bindingRef = firestore.collection('phoneBindings').doc(phoneBindingDocumentId(phone));
+    const campaignRef = firestore.collection('couponCampaigns').doc('NEW_MEMBER_BOWL90');
+    const claimRef = firestore.collection('couponClaims').doc(couponClaimDocumentId('NEW_MEMBER_BOWL90', phone));
+    const result = await firestore.runTransaction(async transaction => {
+      const customerSnapshot = await transaction.get(customerRef);
+      const bindingSnapshot = await transaction.get(bindingRef);
+      const campaignSnapshot = await transaction.get(campaignRef);
+      const claimSnapshot = await transaction.get(claimRef);
+      if (!customerSnapshot.exists) throw Object.assign(new Error('CUSTOMER_NOT_FOUND'), { status: 404, publicMessage: '找不到此會員帳號' });
+      const customer = customerSnapshot.data();
+      if (!customer.pw || !safeCodeEqual(password, customer.pw)) {
+        throw Object.assign(new Error('CUSTOMER_AUTH_FAILED'), { status: 403, publicMessage: '登入狀態已失效，請重新登入' });
+      }
+      const currentPhone = normalizePhone(customer.phone);
+      const isRetry = /^09\d{8}$/.test(currentPhone) && currentPhone === phone && !!customer.legacyPhoneCompletedAt;
+      if (/^09\d{8}$/.test(currentPhone) && !isRetry) {
+        throw Object.assign(new Error('PHONE_ALREADY_SET'), { status: 409, publicMessage: '此帳號已經有手機號碼，如需更換請聯絡店家' });
+      }
+      if (bindingSnapshot.exists && bindingSnapshot.data().customerId !== customerId) {
+        throw Object.assign(new Error('PHONE_ALREADY_BOUND'), { status: 409, publicMessage: '此手機號碼已綁定其他會員，請聯絡店家協助確認' });
+      }
+
+      const wallet = Array.isArray(customer.coupons) ? customer.coupons.slice(0, 100) : [];
+      const existingIndex = wallet.findIndex(item => String(item && (item.campaignId || item.code) || '').toUpperCase() === 'NEW_MEMBER_BOWL90' && item.status !== 'void');
+      let coupon = existingIndex >= 0 ? wallet[existingIndex] : null;
+      let alreadyIssued = existingIndex >= 0 || claimSnapshot.exists;
+      if (!alreadyIssued) {
+        if (!campaignSnapshot.exists) throw Object.assign(new Error('COUPON_NOT_FOUND'), { status: 503, publicMessage: '體驗券活動尚未完成設定，請稍後再試' });
+        const campaign = { code: 'NEW_MEMBER_BOWL90', ...campaignSnapshot.data() };
+        const claimable = campaignClaimable(campaign);
+        if (!claimable.ok) throw Object.assign(new Error('COUPON_NOT_CLAIMABLE'), { status: 409, publicMessage: claimable.message });
+        if (wallet.length >= 100) throw Object.assign(new Error('COUPON_WALLET_FULL'), { status: 409, publicMessage: '優惠券數量已達上限，請聯絡店家整理' });
+        coupon = buildCouponInstance(campaign, 'legacy_phone_completion', 'system');
+        wallet.push(coupon);
+        transaction.set(campaignRef, {
+          issuedCount: (Number(campaign.issuedCount) || 0) + 1,
+          lastIssuedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+        transaction.set(claimRef, {
+          campaignId: 'NEW_MEMBER_BOWL90', customerId, phoneHash: claimRef.id.slice('NEW_MEMBER_BOWL90'.length + 1),
+          claimedAt: FieldValue.serverTimestamp(), source: 'legacy_phone_completion'
+        });
+      } else if (coupon && !claimSnapshot.exists) {
+        // 舊錢包已有券但缺少防重複索引時，補寫索引，避免刪帳號後再領。
+        transaction.set(claimRef, {
+          campaignId: 'NEW_MEMBER_BOWL90', customerId, phoneHash: claimRef.id.slice('NEW_MEMBER_BOWL90'.length + 1),
+          claimedAt: FieldValue.serverTimestamp(), source: 'legacy_wallet_migration'
+        });
+      }
+
+      const completedAt = customer.legacyPhoneCompletedAt || new Date().toISOString();
+      const memberSince = customer.memberSince || customer.registeredAt || customer.createdAt || completedAt;
+      transaction.set(customerRef, {
+        phone,
+        coupons: wallet,
+        accountType: customer.accountType || 'registered',
+        isMember: true,
+        memberSince,
+        phoneVerified: false,
+        phoneConfirmedByDoubleEntry: true,
+        legacyPhoneCompletedAt: completedAt,
+        couponUpdatedAt: coupon ? FieldValue.serverTimestamp() : (customer.couponUpdatedAt || FieldValue.serverTimestamp())
+      }, { merge: true });
+      transaction.set(bindingRef, {
+        customerId,
+        phoneHash: bindingRef.id,
+        boundAt: FieldValue.serverTimestamp(),
+        source: 'legacy_phone_completion'
+      }, { merge: true });
+      return { coupon, alreadyIssued, phone, coupons: wallet, memberSince, completedAt };
+    });
+    return res.json({
+      ok: true,
+      phone: result.phone,
+      coupon: result.coupon,
+      coupons: result.coupons,
+      memberSince: result.memberSince,
+      legacyPhoneCompletedAt: result.completedAt,
+      alreadyIssued: result.alreadyIssued
+    });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.publicMessage || '手機補登失敗' });
+    console.error('舊會員補登手機失敗:', error.message);
+    return res.status(500).json({ error: '手機補登失敗，請稍後再試' });
   }
 });
 

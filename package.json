@@ -1,6 +1,6 @@
 {
   "name": "yuanqitang-backend",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "元氣堂預約系統後端",
   "main": "server.js",
   "scripts": {

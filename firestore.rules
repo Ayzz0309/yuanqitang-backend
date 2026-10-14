@@ -11,7 +11,7 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
-    // v2.1.6 過渡規則：既有前端仍直接存取下列集合。
+    // v2.1.7 過渡規則：既有前端仍直接存取下列集合。
     // 完成 Firebase Authentication 帳號遷移後，應改為依角色限制讀寫。
     match /bookings/{id} {
       allow read, write: if true;
@@ -29,6 +29,10 @@ service cloud.firestore {
     }
     match /couponClaims/{claimId} {
       // 防止刪除帳號後用同一手機重複領取；只允許 Render Admin API 存取。
+      allow read, write: if false;
+    }
+    match /phoneBindings/{phoneHash} {
+      // 舊會員補登手機時的唯一綁定索引，只允許 Render Admin API 存取。
       allow read, write: if false;
     }
     match /clocks/{id} {
