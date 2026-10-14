@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>元氣堂後台 v2.1.3 穩定強化版｜元氣堂傳統整復推拿 — 線上預約</title>
+<title>元氣堂後台 v2.1.6 自訂優惠券與批量發放版｜元氣堂傳統整復推拿 — 線上預約</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -275,6 +275,23 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 .cb-new{background:#fff8e0;color:#c07000;}
 .cb-regular{background:var(--green-pale);color:var(--green);}
 .cb-vip{background:var(--pu-pale);color:var(--pu);}
+.cust-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;margin-top:6px;}
+.mini-btn{padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;}
+.mini-btn.primary{background:var(--pu-pale);border-color:var(--pu-mid);color:var(--pu);}
+.mini-btn.danger{background:var(--red-pale);border-color:#e8b0b0;color:var(--red);}
+.cust-history{background:#faf9fd;border-bottom:1px solid var(--border);padding:0.75rem 1rem 0.9rem 3.9rem;}
+.cust-history-row{display:flex;gap:8px;align-items:flex-start;padding:0.55rem 0;border-bottom:1px dashed var(--border);font-size:11px;}
+.cust-history-row:last-child{border-bottom:none;}
+.coupon-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:1rem;margin:0.6rem 0.9rem;}
+.coupon-card.available{border:2px solid var(--gold);background:#fffdf7;}
+.coupon-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.booking-coupon-alert{margin:0 .85rem .8rem;padding:.8rem .9rem;border:2px solid #d6a82d;border-radius:11px;background:linear-gradient(135deg,#fff8d8,#fff1ad);color:#6f4800;box-shadow:0 3px 10px rgba(180,130,0,.12);}
+.booking-coupon-alert-title{font-size:14px;font-weight:900;display:flex;align-items:center;gap:6px;}
+.booking-coupon-alert-price{font-size:12px;font-weight:700;margin-top:5px;line-height:1.55;}
+.coupon-service-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;max-height:240px;overflow:auto;padding:7px;background:var(--bg);border:1px solid var(--border);border-radius:10px;}
+.coupon-service-option{display:flex;align-items:flex-start;gap:6px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:11px;color:var(--text2);line-height:1.35;}
+.coupon-service-option input{margin-top:2px;flex-shrink:0;}
+@media(max-width:420px){.coupon-service-options{grid-template-columns:1fr;}}
 
 /* ── 公休設定 ── */
 .holiday-chip{display:inline-flex;align-items:center;gap:5px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:20px;padding:4px 10px;font-size:12px;margin:4px;}
@@ -341,7 +358,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.3｜Build 20261010-1815</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.6｜Build 20261014-1320</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -377,7 +394,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
         <div id="lc-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="loginCust()">客人登入</button>
         <div style="text-align:center;margin-top:0.6rem"><span style="font-size:12px;color:var(--pu);cursor:pointer;text-decoration:underline" onclick="showForgotPw('cust')">忘記密碼？</span></div>
-        <div class="auth-hint">預約時段 09:30～14:00、19:00～22:00 ｜ 0987-450-468</div>
+        <div class="auth-hint">預約時段 09:30～22:00，以當日師傅班表為準 ｜ 0987-450-468</div>
         <div class="auth-hint" style="margin-top:4px">無手機或需協助？請電洽或現場由服務人員代為預約</div>
       </div>
 
@@ -422,6 +439,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
           <input class="auth-inp" id="rc-promo" placeholder="有優惠碼請填入">
           <div id="rc-promo-msg" style="font-size:11px;color:var(--green);margin-top:3px"></div>
         </div>
+        <div style="margin:-2px 0 12px;padding:9px 11px;border-radius:10px;background:#fff8e0;color:#8a5a00;font-size:11px;line-height:1.55">🎁 新會員註冊成功後，系統會自動發送一張「頌缽音波課程 9 折體驗券」；每個手機限領一次，領取後 60 天內使用。</div>
         <div id="rc-err" class="auth-err hidden"></div>
         <button class="auth-submit" onclick="regCust()">完成註冊</button>
       </div>
@@ -473,7 +491,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <img src="data:image/jpeg;base64,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" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
   </div>
   <div class="hdr-info">
-    <div class="hdr-name">元氣堂傳統整復推拿</div><div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">系統版本 v2.1.3｜穩定強化版</div>
+    <div class="hdr-name">元氣堂傳統整復推拿</div><div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">系統版本 v2.1.6｜自訂優惠券與批量發放版</div>
     <div class="hdr-user" id="hdr-user-text"></div>
   </div>
   <div class="hdr-right">
@@ -506,7 +524,22 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 
   <div id="cust-coupon" class="hidden" style="max-width:430px;margin:0 auto;padding-bottom:3rem;">
     <div class="section-title">我的優惠券</div>
+    <div class="manual-form" style="margin-top:0">
+      <div class="fg" style="margin-bottom:0"><label class="flbl">輸入活動優惠碼</label>
+        <div style="display:flex;gap:8px"><input class="finp" id="claim-coupon-code" maxlength="30" placeholder="例如 NEW200" style="text-transform:uppercase;flex:1"><button class="pbtn" style="width:auto;margin:0;padding:10px 15px" onclick="claimCouponCode()">領取</button></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:7px">每個活動每人限領一張；預約時先鎖定，完成服務後才核銷。</div>
+    </div>
     <div id="my-coupons-list"></div>
+    <div class="section-title">優惠券使用區</div>
+    <div style="margin:0 .9rem;background:#fff;border:1px solid var(--border);border-radius:14px;padding:1rem;font-size:11px;color:var(--text2);line-height:1.75">
+      <div style="font-size:14px;font-weight:700;color:var(--pu);margin-bottom:5px">新會員頌缽音波 9 折體驗券</div>
+      ① 選擇「頌缽音波課程（一對一）」與時間<br>
+      ② 在預約確認頁勾選體驗券<br>
+      ③ 取消預約會退回；完成切單後才核銷<br>
+      <span style="color:var(--red)">每個手機終身限領一張且僅可使用一次；領取後 60 天內有效。只折抵頌缽音波課程的金額，不折抵同筆其他項目；不得與其他優惠券併用、折現或找零。</span>
+      <button class="pbtn" style="margin:.75rem 0 0" onclick="useWelcomeCoupon()">領取／選擇課程使用</button>
+    </div>
   </div>
 
   <div id="cs1" class="sc">
@@ -526,7 +559,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
     </div>
     <div class="cg" id="cal-grid"></div>
     <div style="margin-top:1rem;font-size:11px;font-weight:700;color:var(--pu);letter-spacing:1px;margin-bottom:2px;">選擇時段</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:0.5rem;">早班 09:30–14:00 ／ 晚班 19:00–22:00</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:0.5rem;">可選範圍 09:30–22:00，實際時段依當日師傅班表顯示</div>
     <div class="tgrid" id="tgrid"></div>
     <button class="pbtn" id="cs2-btn" style="margin-top:1rem" disabled onclick="cGoStep('2c')">確認時段，選床位 →</button>
     <button class="sbtn" onclick="cGoStep(1)">← 返回</button>
@@ -558,6 +591,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 
   <div id="cs4" class="sc hidden">
     <div class="sc-lbl">確認預約</div>
+    <div id="coupon-choice"></div>
     <div class="sum-box" id="sum-box"></div>
     <button class="pbtn" onclick="submitBook()">確認送出預約 ✓</button>
     <button class="sbtn" onclick="cGoStep(3)">← 返回修改</button>
@@ -754,13 +788,14 @@ async function releaseBedSlot(b){
   }catch(e){ console.warn('釋放床位鎖失敗',e); }
 }
 
-// 新增預約與床位鎖同一筆交易完成，避免只留下床位鎖或只留下預約。
+// 新增預約、床位鎖與優惠券鎖定在同一筆交易完成。
 async function createBookingAtomic(b){
   if(!b||!b.id)throw new Error('INVALID_BOOKING');
   const d=await db(),f=fs(),bookingRef=f.doc(d,'bookings',b.id);
   const dateKey=bookingDateKey(b);
   const lockRef=b.bed&&dateKey?f.doc(d,'bedLocks',dateKey+'_bed'+b.bed):null;
-  await f.runTransaction(d,async tx=>{
+  const customerRef=b.couponId&&b.custId&&b.custId!=='MANUAL'?f.doc(d,'customers',b.custId):null;
+  return f.runTransaction(d,async tx=>{
     const bookingSnap=await tx.get(bookingRef);
     if(bookingSnap.exists()){const er=new Error('BOOKING_EXISTS');er.code='booking-exists';throw er;}
     let lockData=null,kept=null;
@@ -774,8 +809,74 @@ async function createBookingAtomic(b){
       if(hit){const er=new Error('BED_CONFLICT');er.code='bed-conflict';throw er;}
       kept.push({bookingId:b.id,start:interval.start,end:interval.end,status:b.status||'new',updatedAt:new Date().toISOString()});
     }
-    tx.set(bookingRef,b);
+    const customerSnap=customerRef?await tx.get(customerRef):null;
+    let savedBooking={...b},savedCustomer=null;
+    delete savedBooking.couponId;
+    const subtotal=Math.max(0,Number(b.subtotalPrice!==undefined?b.subtotalPrice:b.price)||0);
+    savedBooking.subtotalPrice=subtotal;
+    savedBooking.originalPrice=subtotal;
+    savedBooking.discountAmount=0;
+    savedBooking.payablePrice=subtotal;
+    if(customerRef){
+      if(!customerSnap||!customerSnap.exists()){const er=new Error('CUSTOMER_NOT_FOUND');er.code='customer-not-found';throw er;}
+      const customer={id:b.custId,...customerSnap.data()},wallet=Array.isArray(customer.coupons)?customer.coupons.slice():[];
+      const couponIndex=wallet.findIndex((item,index)=>couponWalletKey(item,index)===b.couponId);
+      if(couponIndex<0){const er=new Error('COUPON_NOT_FOUND');er.code='coupon-unavailable';throw er;}
+      const coupon={...wallet[couponIndex]};
+      const usable=couponUsableForBooking(coupon,subtotal,dateKey,b.custId,b.items);
+      if(!usable.ok){const er=new Error(usable.message||'COUPON_UNAVAILABLE');er.code='coupon-unavailable';er.publicMessage=usable.message;throw er;}
+      const discount=calculateCouponDiscount(coupon,subtotal,b.items);
+      if(discount<=0){const er=new Error('COUPON_NO_DISCOUNT');er.code='coupon-unavailable';er.publicMessage='此優惠券無法套用於本次預約';throw er;}
+      const reserved={...coupon,id:coupon.id||b.couponId,status:'reserved',used:false,reservedBookingId:b.id,reservedAt:new Date().toISOString()};
+      wallet[couponIndex]=reserved;
+      savedCustomer={...customer,coupons:wallet,couponUpdatedAt:new Date().toISOString()};
+      const couponSnapshot={instanceId:reserved.id,campaignId:reserved.campaignId||reserved.code,code:reserved.code||'',name:reserved.name||reserved.desc||reserved.code||'優惠券',type:reserved.type,value:Number(reserved.value)||0,minSpend:Number(reserved.minSpend)||0,maxDiscount:Number(reserved.maxDiscount)||0,eligibility:reserved.eligibility||'',validFrom:reserved.validFrom||'',validUntil:reserved.validUntil||'',validDays:Number(reserved.validDays)||0,serviceScope:reserved.serviceScope||'all',applicableServiceIds:Array.isArray(reserved.applicableServiceIds)?reserved.applicableServiceIds:[],applicableServiceNames:Array.isArray(reserved.applicableServiceNames)?reserved.applicableServiceNames:[],scopeLabel:reserved.scopeLabel||'全部服務項目',eligibleSubtotal:couponEligibleSubtotal(reserved,subtotal,b.items),discountAmount:discount,status:'reserved'};
+      savedBooking.discountAmount=discount;
+      savedBooking.payablePrice=Math.max(0,subtotal-discount);
+      savedBooking.coupon=couponSnapshot;
+      savedBooking.couponStatus='reserved';
+    }
+    tx.set(bookingRef,savedBooking);
+    if(customerRef&&savedCustomer)tx.set(customerRef,savedCustomer);
     if(lockRef)tx.set(lockRef,{...lockData,dateKey,bed:b.bed,reservations:kept,_updated:new Date().toISOString()},{merge:true});
+    return {booking:savedBooking,customer:savedCustomer};
+  });
+}
+
+// 取消／婉拒時退回優惠券；完成切單時才正式核銷。
+async function updateBookingAndCouponAtomic(id,mutate,couponAction){
+  const d=await db(),f=fs(),bookingRef=f.doc(d,'bookings',id);
+  return f.runTransaction(d,async tx=>{
+    const bookingSnap=await tx.get(bookingRef);
+    if(!bookingSnap.exists()){const er=new Error('BOOKING_NOT_FOUND');er.code='booking-not-found';throw er;}
+    const current={id,...bookingSnap.data()};
+    const customerRef=current.coupon&&current.coupon.instanceId&&current.custId&&current.custId!=='MANUAL'?f.doc(d,'customers',current.custId):null;
+    const customerSnap=customerRef?await tx.get(customerRef):null;
+    const next=mutate({...current});
+    if(!next){const er=new Error('BOOKING_UPDATE_REJECTED');er.code='booking-state-changed';throw er;}
+    next.id=id;next._updated=new Date().toISOString();
+    let savedCustomer=null;
+    if(customerRef&&customerSnap&&customerSnap.exists()){
+      const customer={id:current.custId,...customerSnap.data()},wallet=Array.isArray(customer.coupons)?customer.coupons.slice():[];
+      const index=wallet.findIndex((item,i)=>couponWalletKey(item,i)===current.coupon.instanceId);
+      if(index>=0){
+        const item={...wallet[index]};
+        if(couponAction==='release'&&item.status==='reserved'&&item.reservedBookingId===id){
+          delete item.reservedBookingId;delete item.reservedAt;
+          wallet[index]={...item,status:'available',used:false,releasedAt:new Date().toISOString()};
+        }else if(couponAction==='consume'&&item.status==='reserved'&&item.reservedBookingId===id){
+          wallet[index]={...item,status:'used',used:true,usedAt:new Date().toISOString(),usedBookingId:id};
+        }
+        savedCustomer={...customer,coupons:wallet,couponUpdatedAt:new Date().toISOString()};
+      }
+    }
+    if(current.coupon){
+      next.coupon={...current.coupon,status:couponAction==='consume'?'used':couponAction==='release'?'released':(current.coupon.status||'reserved')};
+      next.couponStatus=next.coupon.status;
+    }
+    tx.set(bookingRef,next);
+    if(customerRef&&savedCustomer)tx.set(customerRef,savedCustomer);
+    return {booking:next,customer:savedCustomer};
   });
 }
 
@@ -853,6 +954,56 @@ function selectedSvcDurationMinutes(sv){
   return fallback||60;
 }
 function selectedTotalDuration(){ return (bookState.svcs||[]).reduce((s,sv)=>s+selectedSvcDurationMinutes(sv),0)||60; }
+function couponWalletKey(coupon,index){
+  if(coupon&&coupon.id)return String(coupon.id);
+  return 'LEGACY_'+String(coupon&&coupon.code||'COUPON').toUpperCase()+'_'+Number(index||0);
+}
+function couponState(coupon){
+  if(!coupon)return 'void';
+  if(coupon.status)return coupon.status;
+  return coupon.used?'used':'available';
+}
+function couponEligibleSubtotal(coupon,subtotal,items){
+  const amount=Math.max(0,Math.round(Number(subtotal)||0));
+  if(!coupon||amount<=0)return 0;
+  const scope=coupon.serviceScope||'all';
+  if(scope==='all')return amount;
+  const allowedIds=new Set((Array.isArray(coupon.applicableServiceIds)?coupon.applicableServiceIds:[]).map(Number));
+  const allowedNames=new Set((Array.isArray(coupon.applicableServiceNames)?coupon.applicableServiceNames:[]).map(String));
+  const rows=Array.isArray(items)?items:[];
+  return Math.min(amount,rows.reduce((sum,item)=>{
+    const id=Number(item&&item.id),name=String(item&&item.name||'');
+    const match=allowedIds.size>0?allowedIds.has(id):allowedNames.has(name);
+    const price=Number(item&&item.price!==undefined?item.price:item&&item.selectedPrice&&item.selectedPrice.p)||0;
+    return sum+(match?Math.max(0,price):0);
+  },0));
+}
+function calculateCouponDiscount(coupon,subtotal,items){
+  const base=couponEligibleSubtotal(coupon,subtotal,items);
+  if(!coupon||base<=0)return 0;
+  let discount=coupon.type==='percent'?Math.floor(base*(Number(coupon.value)||0)/100):Math.round(Number(coupon.value)||0);
+  const cap=Number(coupon.maxDiscount)||0;if(coupon.type==='percent'&&cap>0)discount=Math.min(discount,cap);
+  return Math.max(0,Math.min(base,discount));
+}
+function couponUsableForBooking(coupon,subtotal,dateKey,customerId,items){
+  if(couponState(coupon)!=='available')return {ok:false,message:'此優惠券已被使用或鎖定'};
+  if((Number(coupon.minSpend)||0)>Number(subtotal||0))return {ok:false,message:'需消費滿 NT$'+Number(coupon.minSpend).toLocaleString()+'才能使用'};
+  if(coupon.validFrom&&dateKey&&dateKey<coupon.validFrom)return {ok:false,message:'預約日期尚未進入優惠期間'};
+  if(coupon.validUntil&&dateKey&&dateKey>coupon.validUntil)return {ok:false,message:'預約日期已超過優惠期限'};
+  const eligibility=coupon.eligibility||(String(coupon.code||'').toUpperCase()==='NEW200'?'first_booking':'all');
+  const customer=customers.find(c=>c.id===customerId),phoneKey=customerPhoneKey(customer&&customer.phone);
+  const own=bookings.filter(b=>(b.custId===customerId||(phoneKey&&customerPhoneKey(b.phone)===phoneKey))&&b.status!=='declined');
+  if(eligibility==='first_booking'&&own.length>0)return {ok:false,message:'此券限尚無預約紀錄的新客首次預約'};
+  if(eligibility==='returning'&&!own.some(b=>b.status==='done'))return {ok:false,message:'此券限曾完成消費的回訪客使用'};
+  if(eligibility==='new_member'&&!(customer&&customer.isMember))return {ok:false,message:'此券限已完成登記的會員使用'};
+  if(couponEligibleSubtotal(coupon,subtotal,items)<=0)return {ok:false,message:(coupon.scopeLabel||'指定服務')+'才可使用此優惠券'};
+  if(calculateCouponDiscount(coupon,subtotal,items)<=0)return {ok:false,message:'此優惠券本次無折抵金額'};
+  return {ok:true};
+}
+function bookingPayablePrice(b){
+  const value=b&&b.payablePrice!==undefined?Number(b.payablePrice):Number(b&&b.price);
+  return Number.isFinite(value)&&value>=0?value:0;
+}
 function bookingDurationMins(b){
   const value=Number(b&&b.durationMinutes)||Number(b&&b.durMins)||parseDurMins(b&&b.dur);
   return Number.isFinite(value)&&value>0&&value<=1440?value:60;
@@ -920,8 +1071,16 @@ async function loadAllData(){
       employees = bossAcc ? [bossAcc, ...firebaseEmps] : firebaseEmps;
       console.log('載入員工:', emps.length, '筆');
     }
-    // 客人
+    // 客人與優惠券活動
     const custs=await fbGetAll('customers'); customers=custs; console.log('載入客人:',custs.length,'筆');
+    try{
+      const campaigns=await fbGetAll('couponCampaigns');
+      couponCampaigns=campaigns.sort((a,b)=>String(a.code||a.id).localeCompare(String(b.code||b.id)));
+      console.log('載入優惠券活動:',couponCampaigns.length,'筆');
+    }catch(couponLoadError){
+      couponCampaigns=[];
+      console.warn('優惠券活動尚未可讀，其他功能繼續運作',couponLoadError);
+    }
     // 打卡
     const clocks = await fbGetAll('clocks');
     clocks.forEach(c=>{
@@ -968,7 +1127,7 @@ function startRealtimeSync(){
     bookings = docs.map(migrateBookingInMemory).sort((a,b)=>b.id.localeCompare(a.id));
     if(cur.type==='emp'){
       renderStaffNav();
-      if(['pending','accepted','today','timeline','stats','customers','employees','liveboard'].includes(staffTab))renderStaffContent();
+      if(['pending','accepted','today','timeline','stats','customers','coupons','employees','liveboard'].includes(staffTab))renderStaffContent();
     }
     else if(cur.type==='cust'){
       const history=document.getElementById('cust-history');
@@ -980,6 +1139,26 @@ function startRealtimeSync(){
   fbListen('clocks', function(docs){
     docs.forEach(c=>{ therapistClock[c.id]={clockIn:c.clockIn||null,clockOut:c.clockOut||null,clockDateKey:c.clockDateKey||null,clockInTimestamp:Number(c.clockInTimestamp)||null,clockOutTimestamp:Number(c.clockOutTimestamp)||null,clockLog:Array.isArray(c.clockLog)?c.clockLog:[]}; });
     if(cur.type==='emp'&&['pending','employees','liveboard'].includes(staffTab)) renderStaffContent();
+  });
+  fbListen('customers', function(docs){
+    customers=docs;
+    if(cur.type==='cust'&&cur.user){
+      const latest=customers.find(c=>c.id===cur.user.id);
+      if(latest)cur.user=latest;
+      else{
+        alert('此客人帳號已被店家刪除，系統將自動登出。');logout();return;
+      }
+      const cp=document.getElementById('cust-coupon');if(cp&&!cp.classList.contains('hidden'))renderMyCoupons();
+    }
+    if(cur.type==='emp'&&staffTab==='customers')renderStaffContent();
+  });
+  fbListen('couponCampaigns', function(docs){
+    couponCampaigns=docs.sort((a,b)=>String(a.code||a.id).localeCompare(String(b.code||b.id)));
+    if(cur.type==='cust'){
+      const cp=document.getElementById('cust-coupon');if(cp&&!cp.classList.contains('hidden'))renderMyCoupons();
+      if(String(bookState.step)==='4')renderSummary();
+    }
+    if(cur.type==='emp'&&staffTab==='coupons')renderStaffContent();
   });
   fbListen('schedules', function(docs){
     docs.sort((a,b)=>(/^month_\d{4}_/.test(a.id)?1:0)-(/^month_\d{4}_/.test(b.id)?1:0));
@@ -1003,12 +1182,12 @@ function startRealtimeSync(){
 const MONTHS = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 const MN = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
 
-let employees = [
-  {id:'boss',name:'老闆',pw:'yuanqi2026',role:'boss',lineId:'',cases:[],clockIn:null,clockOut:null,clockLog:[]},
-];
+// 不在公開的 HTML 內放置任何預設老闆密碼；所有員工與店長帳號都由 Firebase 載入。
+let employees = [];
 let customSvcs = []; // 老闆自訂服務項目
 let custSvcNextId = 100;
 let customers = [];
+let couponCampaigns = [];
 let bookings = [];
 // seed employee cases
 
@@ -1020,7 +1199,7 @@ let cur = {type:null, user:null}; // current session
 let authMode = {tab:'login', mode:'cust'};
 let bookState = {
   step:1, svc:null, price:null, svcs:[], date:null, time:null,
-  therapist:'none', bed:null,
+  therapist:'none', bed:null, couponId:null,
   calY:new Date().getFullYear(), calM:new Date().getMonth(),
   catFilter:'all'
 };
@@ -1055,9 +1234,11 @@ function showErr(id,msg){
 async function loginCust(){
   const phone=document.getElementById('lc-phone').value.trim();
   const pw=document.getElementById('lc-pw').value;
-  let u=customers.find(c=>c.phone===phone&&c.pw===pw);
+  const phoneKey=customerPhoneKey(phone);
+  if(!/^09\d{8}$/.test(phoneKey)){showErr('lc-err','請輸入正確的 10 碼手機號碼');return;}
+  let u=customers.find(c=>customerPhoneKey(c.phone)===phoneKey&&c.pw===pw);
   if(!u){
-    try{ const rows=await fbGetAll('customers'); customers=rows; u=customers.find(c=>c.phone===phone&&c.pw===pw); }
+    try{ const rows=await fbGetAll('customers'); customers=rows; u=customers.find(c=>customerPhoneKey(c.phone)===phoneKey&&c.pw===pw); }
     catch(e){ showErr('lc-err','Firebase 連線失敗，請稍後再試'); return; }
   }
   if(!u){showErr('lc-err','手機號碼或密碼錯誤');return;}
@@ -1067,11 +1248,11 @@ async function loginEmp(){
   const id=document.getElementById('le-id').value.trim();
   const pw=document.getElementById('le-pw').value;
   let u=employees.find(e=>e.id===id&&e.pw===pw);
-  if(!u && id!=='boss'){
+  if(!u){
     try{
       const rows=await fbGetAll('employees');
       const boss=employees.find(e=>e.id==='boss');
-      employees=(boss?[boss]:[]).concat(rows.filter(e=>e.id!=='boss').map(e=>({cases:[],...e})));
+      employees=(boss?[boss]:[]).concat(rows.filter(e=>!boss||e.id!==boss.id).map(e=>({cases:[],...e})));
       u=employees.find(e=>e.id===id&&e.pw===pw);
     }catch(e){ showErr('le-err','Firebase 連線失敗，請稍後再試'); return; }
   }
@@ -1085,27 +1266,36 @@ async function regCust(){
   const pw=document.getElementById('rc-pw').value;
   const promoInput=(document.getElementById('rc-promo')||{}).value||'';
   if(!name||!phone||!pw){showErr('rc-err','請填寫所有必填欄位');return;}
+  if(!/^09\d{8}$/.test(customerPhoneKey(phone))){showErr('rc-err','請輸入正確的 10 碼手機號碼');return;}
   if(pw.length<6){showErr('rc-err','密碼至少6位');return;}
-  if(customers.find(c=>c.phone===phone)){showErr('rc-err','此手機號碼已註冊');return;}
-  const id='C'+Date.now().toString(36).toUpperCase();
-  const u={id,name,phone,pw,lineId:line,coupons:[]};
-  // 優惠碼處理
-  let promoMsg='';
-  if(promoInput){
-    const pc=PROMO_CODES[promoInput.toUpperCase()];
-    if(pc){
-      u.coupons.push({code:promoInput.toUpperCase(),desc:pc.desc,type:pc.type,value:pc.value,used:false});
-      promoMsg = `，優惠碼 ${promoInput} 已套用：${pc.desc}`;
-    } else {
-      showErr('rc-err','優惠碼無效，其他欄位已儲存');
-      // still proceed but without coupon
-    }
+  const existing=customers.find(c=>customerPhoneKey(c.phone)===customerPhoneKey(phone));
+  if(existing&&existing.pw){showErr('rc-err','此手機號碼已註冊');return;}
+  const existingBefore=existing?{...existing}:null;
+  const isNewMembership=!(existingBefore&&existingBefore.isMember===true);
+  const id=existing?existing.id:'C'+Date.now().toString(36).toUpperCase();
+  const registeredAt=new Date().toISOString();
+  const u={...(existing||{}),id,name,phone:customerPhoneKey(phone),pw,lineId:line||((existing&&existing.lineId)||''),coupons:Array.isArray(existing&&existing.coupons)?existing.coupons:[],createdAt:(existing&&existing.createdAt)||registeredAt,registeredAt,accountType:'registered',isMember:true,memberSince:(existingBefore&&existingBefore.isMember&&existingBefore.memberSince)||registeredAt,phoneVerified:!!(existing&&existing.phoneVerified)};
+  if(existing)Object.assign(existing,u);else customers.push(u);
+  try{ await saveCustomer(u); }catch(e){ if(existing&&existingBefore){Object.keys(existing).forEach(key=>delete existing[key]);Object.assign(existing,existingBefore);}else customers.pop();showErr('rc-err','帳號儲存失敗，請確認網路後再試'); return; }
+  let promoMsg='',promoError='',welcomeError='';
+  if(isNewMembership){
+    try{
+      const welcomeResult=await claimWelcomeCouponForMember(u),welcome=welcomeResult.coupon;
+      if(welcome){u.coupons=(u.coupons||[]).some(item=>item&&item.id===welcome.id)?u.coupons:[...(u.coupons||[]),welcome];promoMsg='，新會員「頌缽音波課程 9 折體驗券」已自動存入優惠券區';}
+      else if(welcomeResult.alreadyIssued)promoMsg='，此手機先前已領取過新會員體驗券';
+    }catch(e){welcomeError=e.message||'新會員體驗券暫時無法發送';}
   }
-  customers.push(u);
-  try{ await saveCustomer(u); }catch(e){ customers.pop(); showErr('rc-err','帳號儲存失敗，請確認網路後再試'); return; }
+  if(promoInput){
+    try{
+      const coupon=await claimCouponForCustomer(u,promoInput);
+      u.coupons=[...(u.coupons||[]),coupon];
+      promoMsg='，優惠券「'+(coupon.name||coupon.desc||coupon.code)+'」已領取';
+    }catch(e){promoError=e.message||'優惠碼無效';}
+  }
   cur={type:'cust',user:u};
   toast(`歡迎加入元氣堂！${name}，帳號建立成功 🎉${promoMsg}`,'sys');
   enterApp();
+  if(welcomeError||promoError)setTimeout(()=>alert('帳號已建立，但'+[welcomeError,promoError].filter(Boolean).join('；')+'。\n請聯絡店家協助確認優惠券。'),300);
 }
 async function regEmp(){
   const name=cleanText(document.getElementById('re-name').value,80);
@@ -1141,14 +1331,6 @@ async function regEmp(){
   toast(name+' 員工帳號建立成功！','sys');
   enterApp();
 }
-
-
-// ── 優惠碼設定 ──
-const PROMO_CODES = {
-  'YUANQI100': {type:'fixed', value:100, desc:'折抵 NT$100'},
-  'NEW200':    {type:'fixed', value:200, desc:'新客折抵 NT$200'},
-  'VIP10':     {type:'percent', value:10, desc:'九折優惠'},
-};
 
 // ── 忘記密碼 ──
 let forgotPwType = 'cust'; // 'cust' or 'emp'
@@ -1240,7 +1422,7 @@ function logout(){
   document.getElementById('app-header').classList.add('hidden');
   document.getElementById('cust-app').classList.add('hidden');
   document.getElementById('staff-app').classList.add('hidden');
-  bookState={step:1,svc:null,price:null,svcs:[],date:null,time:null,therapist:'none',bed:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
+  bookState={step:1,svc:null,price:null,svcs:[],date:null,time:null,therapist:'none',bed:null,couponId:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
 }
 
 // ===== TOAST =====
@@ -1267,6 +1449,7 @@ let SVCS=[
   {id:4,cat:'neck',name:'局部頌缽筋膜調理放鬆',sub:'含徒手放鬆／內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:1500},{l:'120分',p:3000}]},
   {id:5,cat:'neck',name:'全身頌缽筋膜調理放鬆',sub:'含頭眼臉部放鬆',prices:[{l:'60分',p:1800},{l:'120分',p:3600}]},
   {id:6,cat:'neck',name:'頌缽筋膜刀調理放鬆',sub:'內含大腳缽放鬆5分鐘',prices:[{l:'60分',p:2000},{l:'120分',p:4000}]},
+  {id:20,cat:'sound',name:'頌缽音波課程（一對一）',sub:'新會員 9 折體驗券指定項目',prices:[{l:'60分',p:2000},{l:'120分',p:4000}]},
   {id:7,cat:'foot',name:'腳底按摩筋膜調理放鬆',sub:'',prices:[{l:'40分',p:600},{l:'60分',p:900},{l:'120分',p:1800}]},
   {id:8,cat:'foot',name:'腳底按摩+半身',sub:'',prices:[{l:'60+40分',p:1500}]},
   {id:9,cat:'ear',name:'專業采耳SPA+頭眼臉頌缽筋膜調理',sub:'',prices:[{l:'約60分',p:1500}]},
@@ -1476,7 +1659,7 @@ function anyTherapistWorking(dateStr,timeStr){
 
 
 
-const CATS=[{k:'all',l:'全部'},{k:'full',l:'全身調理'},{k:'neck',l:'頌缽筋膜'},{k:'foot',l:'腳底按摩'},{k:'ear',l:'采耳/頭臉'},{k:'belly',l:'腹燭調理'},{k:'half',l:'半身/單品'}];
+const CATS=[{k:'all',l:'全部'},{k:'sound',l:'頌缽音波'},{k:'full',l:'全身調理'},{k:'neck',l:'頌缽筋膜'},{k:'foot',l:'腳底按摩'},{k:'ear',l:'采耳/頭臉'},{k:'belly',l:'腹燭調理'},{k:'half',l:'半身/單品'}];
 const TIMES=['09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','19:00','19:30','20:00','20:30','21:00','21:30'];
 
 function initCustApp(){
@@ -1738,12 +1921,41 @@ function selTherapist(id){
   renderTherapists();
 }
 
+function currentBookingDateKey(){return bookState.date?formatDateKey(bookState.calY,bookState.calM+1,bookState.date):'';}
+function selectedBookingCoupon(){
+  const wallet=Array.isArray(cur.user&&cur.user.coupons)?cur.user.coupons:[];
+  const index=wallet.findIndex((item,i)=>couponWalletKey(item,i)===bookState.couponId);
+  return index>=0?wallet[index]:null;
+}
+function selectBookingCoupon(encodedId){
+  bookState.couponId=encodedId?decodeURIComponent(encodedId):null;
+  renderSummary();
+}
+function renderCouponChoice(subtotal,dateKey,items){
+  const el=document.getElementById('coupon-choice');if(!el)return;
+  const wallet=Array.isArray(cur.user&&cur.user.coupons)?cur.user.coupons:[];
+  const rows=wallet.map((coupon,index)=>({coupon,id:couponWalletKey(coupon,index),check:couponUsableForBooking(coupon,subtotal,dateKey,cur.user.id,items)}));
+  const usable=rows.filter(row=>row.check.ok);
+  if(bookState.couponId&&!usable.some(row=>row.id===bookState.couponId))bookState.couponId=null;
+  let html='<div style="font-size:12px;font-weight:700;color:var(--pu);margin:0 0 .45rem">🎟️ 本次使用優惠券</div>';
+  html+='<label style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:.65rem .75rem;margin-bottom:6px;cursor:pointer"><input type="radio" name="booking-coupon" '+(!bookState.couponId?'checked':'')+' onchange="selectBookingCoupon(\'\')"><span style="font-size:12px">不使用優惠券</span></label>';
+  if(!usable.length){
+    html+='<div style="font-size:11px;color:var(--text3);padding:.35rem .15rem .75rem">'+(wallet.length?'目前的券不符合本次金額、日期或客人條件':'目前沒有可用優惠券')+'</div>';
+  }else{
+    html+=usable.map(row=>{const c=row.coupon,discount=calculateCouponDiscount(c,subtotal,items),selected=bookState.couponId===row.id;return '<label style="display:flex;align-items:center;gap:8px;background:'+(selected?'#fff8e0':'#fff')+';border:'+(selected?'2px solid var(--gold)':'1px solid var(--border)')+';border-radius:10px;padding:.65rem .75rem;margin-bottom:6px;cursor:pointer"><input type="radio" name="booking-coupon" '+(selected?'checked':'')+' onchange="selectBookingCoupon(\''+encodeURIComponent(row.id)+'\')"><span style="flex:1"><span style="font-size:12px;font-weight:700">'+esc(c.name||c.desc||c.code)+'</span><span style="display:block;font-size:10px;color:var(--text3);margin-top:2px">'+esc(couponScopeText(c))+' ・ '+esc(couponDateText(c))+'</span></span><strong style="font-size:12px;color:var(--green)">-NT$'+discount.toLocaleString()+'</strong></label>';}).join('');
+  }
+  el.innerHTML=html;
+}
+
 function renderSummary(){
   const dateStr=`${MN[bookState.calM]}月${bookState.date}日`;
   const svcs=bookState.svcs||[bookState.svc?{...bookState.svc,selectedPrice:bookState.price}:null].filter(Boolean);
   const totalPrice=svcs.reduce((s,sv)=>s+(sv.selectedPrice?.p||0),0);
   const totalDuration=svcs.reduce((s,sv)=>s+selectedSvcDurationMinutes(sv),0);
   const svcHtml=svcs.map(sv=>`${esc(sv.name)}（${esc(sv.selectedPrice?.l||'')}）`).join('<br>');
+  const dateKey=currentBookingDateKey();
+  renderCouponChoice(totalPrice,dateKey,svcs);
+  const coupon=selectedBookingCoupon(),discount=coupon?calculateCouponDiscount(coupon,totalPrice,svcs):0,payable=Math.max(0,totalPrice-discount);
   document.getElementById('sum-box').innerHTML=`
     <div class="sum-row"><span class="sum-lbl">服務項目</span><span>${svcHtml||'未選'}</span></div>
     <div class="sum-row"><span class="sum-lbl">日期</span><span>${dateStr}</span></div>
@@ -1753,7 +1965,9 @@ function renderSummary(){
     <div class="sum-row"><span class="sum-lbl">床位</span><span>${bookState.bed ? bookState.bed+'號床' : '未選擇'}</span></div>
     <div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${bookState.therapist==='none'?'不指定':THERAPISTS.find(t=>t.id===bookState.therapist)?.name||'不指定'}</span></div>
     <div class="sum-row"><span class="sum-lbl">總時間</span><span>${totalDuration} 分</span></div>
-    <div class="sum-row"><span class="sum-lbl">總金額</span><span style="font-weight:700;color:var(--green)">NT$${totalPrice}</span></div>`;
+    <div class="sum-row"><span class="sum-lbl">服務原價</span><span>NT$${totalPrice.toLocaleString()}</span></div>
+    ${coupon?`<div class="sum-row"><span class="sum-lbl">優惠券</span><span>${esc(coupon.name||coupon.desc||coupon.code)}－NT$${discount.toLocaleString()}</span></div>`:''}
+    <div class="sum-row"><span class="sum-lbl">預計應付</span><span style="font-weight:700;color:var(--green);font-size:17px">NT$${payable.toLocaleString()}</span></div>`;
 }
 
 async function submitBook(){
@@ -1769,33 +1983,38 @@ async function submitBook(){
     const durationMinutes=svcs.reduce((s,sv)=>s+selectedSvcDurationMinutes(sv),0)||60;
     const svcDur=durationMinutes+'分';
     const svcPrice=svcs.reduce((s,sv)=>s+(sv.selectedPrice?.p||0),0);
+    const selectedCoupon=selectedBookingCoupon();
+    if(bookState.couponId){const usable=selectedCoupon?couponUsableForBooking(selectedCoupon,svcPrice,dateKey,cur.user.id,svcs):{ok:false,message:'找不到所選優惠券'};if(!usable.ok){alert(usable.message||'此優惠券目前無法使用');renderSummary();return;}}
     if(isTimePast(dateKey,bookState.time,0)){ alert('這個時段已經過了，請重新選擇時間'); return; }
     if(!appointmentFitsBusinessHours(bookState.time,durationMinutes)){ alert('所選服務的總時間會超出營業時段，請調整開始時間或服務項目'); return; }
     if(!anyTherapistWorking(dateKey,bookState.time)){alert('此時段目前沒有師傅上班，請重新選擇時間');return;}
     if(bookState.therapist!=='none'&&!isTherapistWorking(bookState.therapist,dateKey,bookState.time)){alert('指定師傅在此時段沒有上班，請重新選擇');return;}
     const conflicts=findBedConflicts({dateKey,time:bookState.time,durationMinutes,bed:bookState.bed});
     if(conflicts.length){ alert('這個床位與其他預約時段重疊，請重新選擇床位或時間'); renderBeds(); return; }
-    b={id:bId,custId:cur.user.id,name:cleanText(cur.user.name,80),phone:cleanText(cur.user.phone,30),svc:cleanText(svcName,500),items:svcs.map(sv=>({id:sv.id,name:cleanText(sv.name,100),durationLabel:cleanText(sv.selectedPrice.l,30),durationMinutes:selectedSvcDurationMinutes(sv),price:Number(sv.selectedPrice.p)||0})),dur:svcDur,durationMinutes,price:svcPrice,date:dateDisplay,dateKey,year:bookState.calY,time:bookState.time,status:'new',lineId:cleanText(cur.user.lineId||'',80),note:cleanText(document.getElementById('cs3-note').value,500),bed:bookState.bed,startTime:null,endTime:null,extraMins:0,therapistId:bookState.therapist==='none'?null:bookState.therapist,therapistName:bookState.therapist==='none'?null:(THERAPISTS.find(t=>t.id===bookState.therapist)?.name||null),acceptedBy:null,acceptedAt:null};
-    await createBookingAtomic(b);
+    b={id:bId,custId:cur.user.id,name:cleanText(cur.user.name,80),phone:cleanText(cur.user.phone,30),svc:cleanText(svcName,500),items:svcs.map(sv=>({id:sv.id,name:cleanText(sv.name,100),durationLabel:cleanText(sv.selectedPrice.l,30),durationMinutes:selectedSvcDurationMinutes(sv),price:Number(sv.selectedPrice.p)||0})),dur:svcDur,durationMinutes,price:svcPrice,subtotalPrice:svcPrice,couponId:bookState.couponId||null,date:dateDisplay,dateKey,year:bookState.calY,time:bookState.time,status:'new',lineId:cleanText(cur.user.lineId||'',80),note:cleanText(document.getElementById('cs3-note').value,500),bed:bookState.bed,startTime:null,endTime:null,extraMins:0,therapistId:bookState.therapist==='none'?null:bookState.therapist,therapistName:bookState.therapist==='none'?null:(THERAPISTS.find(t=>t.id===bookState.therapist)?.name||null),acceptedBy:null,acceptedAt:null};
+    const created=await createBookingAtomic(b);b=created.booking;
+    if(created.customer){cur.user=created.customer;const local=customers.find(c=>c.id===cur.user.id);if(local)Object.assign(local,created.customer);}
     bookings.unshift(b);
     const nowT=now();
-    const custMsg=`【元氣堂】預約成功！\n服務項目：${b.svc} ${b.dur}\n日期：${b.date} ${b.time}\n費用：NT$${b.price}\n我們會盡快確認並通知您 📞`;
-    const staffMsg=`【新預約通知】${nowT}\n客人：${b.name}\n電話：${b.phone}\n服務項目：${b.svc} ${b.dur}\n日期：${b.date} ${b.time}\n費用：NT$${b.price}${b.note?'\n備註：'+b.note:''}`;
-    notifyLine('/api/notify/new-booking',{name:b.name,phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time:b.time,price:b.price,note:b.note,therapistName:b.therapistName,bed:b.bed});
+    const payable=bookingPayablePrice(b),couponLine=b.coupon?'\n優惠券：'+b.coupon.name+' －NT$'+Number(b.discountAmount||0):'';
+    const custMsg=`【元氣堂】預約成功！\n服務項目：${b.svc} ${b.dur}\n日期：${b.date} ${b.time}${couponLine}\n預計費用：NT$${payable}\n我們會盡快確認並通知您 📞`;
+    const staffMsg=`【新預約通知】${nowT}\n客人：${b.name}\n電話：${b.phone}\n服務項目：${b.svc} ${b.dur}\n日期：${b.date} ${b.time}${couponLine}\n預計應付：NT$${payable}${b.note?'\n備註：'+b.note:''}`;
+    notifyLine('/api/notify/new-booking',{name:b.name,phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time:b.time,price:payable,note:(b.coupon?'優惠券 '+b.coupon.code+' 折抵 '+b.discountAmount+' 元。':'')+(b.note||''),therapistName:b.therapistName,bed:b.bed});
     setTimeout(()=>toast(custMsg,'line',`${cur.user.name} 的預約確認`),300);
     setTimeout(()=>toast(staffMsg,'line','新預約通知給員工'),700);
     lineLog.unshift({to:'客人',name:b.name,msg:custMsg,time:nowT});
     document.getElementById('success-msg').innerHTML=`<strong>${esc(cur.user.name)}</strong>，預約已送出！<br>員工確認後會再通知您。`;
-    document.getElementById('success-sum').innerHTML=`<div class="sum-row"><span class="sum-lbl">服務項目</span><span>${esc(b.svc)}</span></div><div class="sum-row"><span class="sum-lbl">日期時段</span><span>${esc(b.date)} ${esc(b.time)}</span></div><div class="sum-row"><span class="sum-lbl">費用</span><span>NT$${b.price}</span></div>${b.bed?`<div class="sum-row"><span class="sum-lbl">床位</span><span>${b.bed}號床</span></div>`:''}${b.therapistName?`<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${esc(b.therapistName)}</span></div>`:'<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>不指定</span></div>'}`;
+    document.getElementById('success-sum').innerHTML=`<div class="sum-row"><span class="sum-lbl">服務項目</span><span>${esc(b.svc)}</span></div><div class="sum-row"><span class="sum-lbl">日期時段</span><span>${esc(b.date)} ${esc(b.time)}</span></div><div class="sum-row"><span class="sum-lbl">服務原價</span><span>NT$${Number(b.subtotalPrice||b.price).toLocaleString()}</span></div>${b.coupon?`<div class="sum-row"><span class="sum-lbl">優惠券</span><span>${esc(b.coupon.name)} －NT$${Number(b.discountAmount||0).toLocaleString()}</span></div>`:''}<div class="sum-row"><span class="sum-lbl">預計應付</span><span style="font-weight:700;color:var(--green)">NT$${payable.toLocaleString()}</span></div>${b.bed?`<div class="sum-row"><span class="sum-lbl">床位</span><span>${b.bed}號床</span></div>`:''}${b.therapistName?`<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${esc(b.therapistName)}</span></div>`:'<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>不指定</span></div>'}`;
     showStep(5);
   }catch(e){
     if(e&&e.code==='bed-conflict') alert('剛剛有其他客人先訂到這個床位，請重新選擇床位或時間');
+    else if(e&&e.code==='coupon-unavailable'){alert(e.publicMessage||'優惠券已在其他預約使用，請重新選擇');renderSummary();}
     else { console.error(e); alert('預約儲存失敗，請確認網路後再試一次'); }
   }finally{ endAction('submitBook'); }
 }
 
 function resetBook(){
-  bookState={step:1,svc:null,price:null,svcs:[],date:null,time:null,therapist:'none',bed:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
+  bookState={step:1,svc:null,price:null,svcs:[],date:null,time:null,therapist:'none',bed:null,couponId:null,calY:new Date().getFullYear(),calM:new Date().getMonth(),catFilter:'all'};
   initCustApp();
 }
 
@@ -1816,7 +2035,7 @@ function initStaffApp(){
 }
 
 const STAFF_TABS=new Set(['pending','accepted','schedule','timeline','today']);
-const BOSS_ONLY_TABS=new Set(['linelog','stats','customers','liveboard','employees','holidays']);
+const BOSS_ONLY_TABS=new Set(['linelog','stats','customers','coupons','liveboard','employees','holidays']);
 function isBossSession(){return !!(cur&&cur.type==='emp'&&cur.user&&cur.user.role==='boss');}
 function isManagerSession(){return !!(cur&&cur.type==='emp'&&cur.user&&cur.user.role==='manager');}
 function canManageBookingsSession(){return isBossSession()||isManagerSession();}
@@ -1836,7 +2055,7 @@ function renderStaffNav(){
     {k:'today',l:'今日'},
   ];
   if(canManageBookings)tabs.push({k:'manual',l:'手動預約'});
-  if(isBoss) tabs.push({k:'linelog',l:'LINE'},{k:'stats',l:'報表'},{k:'customers',l:'客人'},{k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
+  if(isBoss) tabs.push({k:'linelog',l:'LINE'},{k:'stats',l:'報表'},{k:'customers',l:'客人'},{k:'coupons',l:'優惠券'},{k:'liveboard',l:'🔴直播'},{k:'employees',l:'員工'},{k:'holidays',l:'公休'});
   document.getElementById('staff-nav').innerHTML=tabs.map(t=>`
     <button class="snav-btn ${staffTab===t.k?'act':''}" onclick="swStaffTab('${t.k}')">${t.l}${t.dot?'<span class="ndot"></span>':''}</button>`).join('');
 }
@@ -1877,6 +2096,8 @@ function renderStaffContent(){
     html=renderStats();
   } else if(staffTab==='customers'){
     html=renderCustomers();
+  } else if(staffTab==='coupons'){
+    html=renderCouponAdmin();
   } else if(staffTab==='employees'&&isBoss){
     html=renderEmployees();
   } else if(staffTab==='liveboard'&&isBoss){
@@ -1886,6 +2107,7 @@ function renderStaffContent(){
   }
   document.getElementById('staff-content').innerHTML=html;
   if(staffTab==='holidays') setTimeout(renderHolidayChips, 50);
+  if(staffTab==='coupons') setTimeout(toggleCouponServiceSelector, 0);
   if(staffTab==='schedule'){
     setTimeout(bindEasyInputEvents, 50);
     setTimeout(bindShiftCellEvents, 50);
@@ -2005,9 +2227,17 @@ function bCard(b){
   const canAccept = canManageBookings;
   const canManageAccepted = canManageBookings || b.acceptedBy === myEmpId;
   const designatedName = b.therapistName || '';
-  const basePrice=Number(b.price)||0,finalPrice=Number(b.finalPrice)||0,actualMins=Number(b.actualMins)||0;
+  const basePrice=Number(b.subtotalPrice!==undefined?b.subtotalPrice:b.price)||0,payablePrice=bookingPayablePrice(b),finalPrice=Number(b.finalPrice)||0,actualMins=Number(b.actualMins)||0;
   const extraInfo = b.extraMins>0 ? `<span class="tag" style="background:#fff8e0;color:#c07000">+${b.extraMins}分</span>` : '';
   const isInProgress = b.status==='accepted' && b.startTime && !b.endTime;
+  const couponStateLabel=b.couponStatus==='used'||(b.coupon&&b.coupon.status==='used')?'已核銷':b.couponStatus==='released'||(b.coupon&&b.coupon.status==='released')?'已退回':'已鎖定，切單時核銷';
+  const couponAlert=b.coupon?`<div class="booking-coupon-alert">
+    <div class="booking-coupon-alert-title">🎟️ 此預約已使用優惠券 <span style="font-size:10px;background:#8a5a00;color:#fff;border-radius:20px;padding:3px 8px">${esc(couponStateLabel)}</span></div>
+    <div style="font-size:12px;font-weight:800;margin-top:5px">${esc(b.coupon.name||b.coupon.code||'優惠券')}（${esc(b.coupon.code||'')}）</div>
+    <div style="font-size:10px;margin-top:3px">${esc(couponScopeText(b.coupon))}</div>
+    <div class="booking-coupon-alert-price">原價 <span style="text-decoration:line-through">NT$${basePrice.toLocaleString()}</span>　折抵 <strong>NT$${Number(b.discountAmount||0).toLocaleString()}</strong>　<span style="font-size:14px;color:#176b36">應收 NT$${payablePrice.toLocaleString()}</span></div>
+    ${b.status==='new'?'<div style="font-size:10px;color:#9a3500;margin-top:4px;font-weight:700">接案前請確認優惠券與應收金額</div>':''}
+  </div>`:'';
 
   // Active service banner with live timer
   const activeBanner = isInProgress ? `
@@ -2050,7 +2280,7 @@ function bCard(b){
       ? `${activeBanner}${!b.startTime?`<div class="bcard-acts"><button class="abtn" style="background:linear-gradient(135deg,#1a7a3a,#2d9e52);color:#fff;border:none;flex:1;font-size:14px;letter-spacing:0.5px" onclick="startService('${b.id}')">▶ 打單開始</button></div>`:''}${addTimeSection}<div class="bcard-acts" style="border-top:none;padding-top:0">${editBtn}${!b.startTime?`<button class="abtn abtn-dec" data-cancel-id="${b.id}" onclick="cancelAccepted('${b.id}')">✕ 取消預約</button>`:''}</div>`
       : `${activeBanner}<div style="padding:0.7rem 1rem;border-top:1px solid var(--border);font-size:12px;color:var(--text3);text-align:center">此案件由 ${esc(emp?emp.name:(b.acceptedBy||'其他員工'))} 管理</div>`
     : '';
-  return `<div class="bcard ${b.status==='new'?'is-new':''}" id="bc-${b.id}">
+  return `<div class="bcard ${b.status==='new'?'is-new':''} ${b.coupon?'has-coupon':''}" id="bc-${b.id}">
     <div class="bcard-top">
       <div class="bcard-av">${esc((b.name||'?')[0])}</div>
       <div class="bcard-info">
@@ -2063,9 +2293,10 @@ function bCard(b){
           ${(()=>{ if(b.status==='done'&&b.finalPrice!==undefined){
             const fc=finalPrice<basePrice?'#c07000':finalPrice>basePrice?'var(--green)':'var(--pu)';
             const bg=finalPrice<basePrice?'#fff8e0':finalPrice>basePrice?'#edf9f0':'var(--pu-pale)';
-            return `<span class="tag tag-p" style="text-decoration:line-through;opacity:0.5">NT$${basePrice}</span>
+            return `${finalPrice!==basePrice?`<span class="tag tag-p" style="text-decoration:line-through;opacity:0.5">NT$${basePrice}</span>`:''}
                     <span class="tag" style="background:${bg};color:${fc};font-weight:700">✓ NT$${finalPrice}${actualMins?'（'+actualMins+'分）':''}</span>`;
-          } return `<span class="tag tag-p">NT$${basePrice}</span>`; })()}
+          } return b.coupon?`<span class="tag tag-p" style="text-decoration:line-through;opacity:.55">NT$${basePrice}</span><span class="tag" style="background:#edf9f0;color:var(--green);font-weight:700">NT$${payablePrice}</span>`:`<span class="tag tag-p">NT$${basePrice}</span>`; })()}
+          ${b.coupon?`<span class="tag" style="background:#fff8e0;color:#9a6500">🎟️ ${esc(b.coupon.code||b.coupon.name)} －$${Number(b.discountAmount||0)}</span>`:''}
           ${emp?`<span class="tag tag-e">👤 ${esc(emp.id)} ${esc(emp.name)}</span>`:''}
           ${b.bed?`<span class="tag" style="background:#f0f8ff;color:#2255cc">🛏️ ${b.bed}號床</span>`:''}
           ${b.therapistId?`<span class="tag" style="background:#fff0f8;color:#c2547a">🎯 指定：${esc(b.therapistName)}</span>`:''}
@@ -2077,6 +2308,7 @@ function bCard(b){
       </div>
       <span class="sbadge ${stMap[b.status]}">${stLbl[b.status]}</span>
     </div>
+    ${couponAlert}
     ${actions}
   </div>`;
 }
@@ -2116,7 +2348,7 @@ async function acceptBook(id){
     const assignedName=therapist?therapist.name:assignee.name;
     const notifyEmp={...assignee,name:assignedName};
     const custMsg=buildCustConfirmMsg(accepted,assignedName,assignee.id); const staffMsg=buildStaffAcceptMsg(accepted,notifyEmp);
-    notifyLine('/api/notify/accepted',{empId:assignee.id,empName:assignedName,name:accepted.name,phone:accepted.phone,svc:accepted.svc,dur:accepted.dur,date:displayBookingDate(accepted),time:accepted.time,price:accepted.price,note:accepted.note});
+    notifyLine('/api/notify/accepted',{empId:assignee.id,empName:assignedName,name:accepted.name,phone:accepted.phone,svc:accepted.svc,dur:accepted.dur,date:displayBookingDate(accepted),time:accepted.time,price:bookingPayablePrice(accepted),note:(accepted.coupon?'優惠券 '+accepted.coupon.code+' 折抵 '+accepted.discountAmount+' 元。':'')+(accepted.note||'')});
     setTimeout(()=>toast(custMsg,'line',`${accepted.name} 預約確認通知`),250); setTimeout(()=>toast(staffMsg,'line',`安排確認 - ${assignedName}`),600);
     lineLog.unshift({to:'客人',name:accepted.name,msg:custMsg,time:nowT}); lineLog.unshift({to:'員工',name:assignedName,msg:staffMsg,time:nowT});
     renderStaffNav(); renderStaffContent();
@@ -2130,8 +2362,8 @@ async function declineBook(id){
   if(!requireBookingManager('婉拒預約'))return;
   if(!beginAction('decline_'+id)) return; const b=bookings.find(x=>x.id===id); if(!b){endAction('decline_'+id);return;}
   try{
-    const updated=await updateBookingAtomic(id,current=>{if(current.status!=='new'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',declinedAt:now(),declinedTimestamp:Date.now()};});
-    Object.assign(b,updated);await releaseBedSlot(updated);renderStaffNav();renderStaffContent();
+    const result=await updateBookingAndCouponAtomic(id,current=>{if(current.status!=='new'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',declinedAt:now(),declinedTimestamp:Date.now()};},'release');
+    Object.assign(b,result.booking);await releaseBedSlot(result.booking);renderStaffNav();renderStaffContent();
   }
   catch(e){alert(e&&e.code==='booking-state-changed'?'預約狀態已被其他人更新，請重新確認':'拒絕預約儲存失敗');} finally{endAction('decline_'+id);}
 }
@@ -2139,7 +2371,7 @@ let cancelConfirmId=null;
 async function cancelAccepted(id){
   if(cancelConfirmId===id){
     if(!beginAction('cancel_'+id)) return; const b=bookings.find(x=>x.id===id);
-    try{ if(b){const updated=await updateBookingAtomic(id,current=>{if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if(current.status!=='accepted'||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now()};});Object.assign(b,updated);await releaseBedSlot(updated);} cancelConfirmId=null; toast('✕ 已取消預約：'+(b?b.name:''),'sys','取消預約'); renderStaffNav(); renderStaffContent(); }
+    try{ if(b){const result=await updateBookingAndCouponAtomic(id,current=>{if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if(current.status!=='accepted'||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now()};},'release');Object.assign(b,result.booking);await releaseBedSlot(result.booking);} cancelConfirmId=null; toast('✕ 已取消預約：'+(b?b.name:''),'sys','取消預約'); renderStaffNav(); renderStaffContent(); }
     catch(e){ cancelConfirmId=null;if(e&&e.code==='not-owner')alert('只能取消自己承接的預約');else if(e&&e.code==='booking-state-changed')alert('預約已開始或狀態已變更，無法取消');else alert('取消預約儲存失敗'); }
     finally{ endAction('cancel_'+id); }
   }else{
@@ -2172,7 +2404,7 @@ function custNav(tab, el){
   if(tab==='book'){
     // 回到預約頁：重置到第一步
     bookState.step=1;
-    bookState.svc=null; bookState.price=null; bookState.svcs=[];
+    bookState.svc=null; bookState.price=null; bookState.svcs=[];bookState.couponId=null;
     bookState.date=null; bookState.time=null;
     bookState.therapist='none'; bookState.bed=null;
     ['cs2','cs2c','cs2b','cs3','cs4','cs5'].forEach(id=>{
@@ -2191,24 +2423,101 @@ function custNav(tab, el){
   }
 }
 
+function couponValueText(c){
+  if(!c)return '';
+  if(c.type==='percent')return '折抵 '+Number(c.value||0)+'%'+(Number(c.maxDiscount)>0?'（最高 NT$'+Number(c.maxDiscount).toLocaleString()+'）':'');
+  return '折抵 NT$'+Number(c.value||0).toLocaleString();
+}
+function couponEligibilityText(value,code){const normalized=value||(String(code||'').toUpperCase()==='NEW200'?'first_booking':'all');return normalized==='first_booking'?'限新客首次預約':normalized==='returning'?'限已完成消費的回訪客':normalized==='new_member'?'限已登記會員':'一般活動券';}
+function couponScopeText(c){
+  if(!c||!c.serviceScope||c.serviceScope==='all')return '全部服務項目';
+  if(c.scopeLabel)return c.scopeLabel;
+  const names=Array.isArray(c.applicableServiceNames)?c.applicableServiceNames.filter(Boolean):[];
+  if(names.length)return '指定服務：'+names.join('、');
+  if(c.serviceScope==='singing_bowl_course')return '指定服務：頌缽音波課程（一對一）';
+  const count=Array.isArray(c.applicableServiceIds)?c.applicableServiceIds.length:0;
+  return count?'指定服務（'+count+' 項）':'指定服務項目';
+}
+function couponDateText(c){
+  if(c.validFrom&&c.validUntil)return c.validFrom+' ～ '+c.validUntil;
+  if(c.validFrom)return c.validFrom+' 起';
+  if(c.validUntil)return '有效至 '+c.validUntil;
+  if(Number(c.validDays)>0)return '領取後 '+Number(c.validDays)+' 天內有效';
+  return '無指定到期日';
+}
+async function claimCouponForCustomer(customer,code){
+  const response=await fetch(LINE_CONFIG.backendUrl+'/api/coupons/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId:customer.id,password:customer.pw,code:cleanText(code,30).toUpperCase()})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||'優惠券領取失敗');
+  return result.coupon;
+}
+async function claimWelcomeCouponForMember(customer){
+  const response=await fetch(LINE_CONFIG.backendUrl+'/api/coupons/welcome-member',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId:customer.id})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||'新會員體驗券發送失敗');
+  return {coupon:result.coupon||null,alreadyIssued:result.alreadyIssued===true};
+}
+async function claimCouponCode(){
+  if(cur.type!=='cust'||!cur.user)return;
+  const input=document.getElementById('claim-coupon-code'),code=cleanText(input&&input.value,30).toUpperCase();
+  if(!code){alert('請輸入優惠碼');return;}
+  if(!beginAction('claim_coupon'))return;
+  try{
+    const coupon=await claimCouponForCustomer(cur.user,code);
+    const wallet=Array.isArray(cur.user.coupons)?cur.user.coupons:[];
+    cur.user.coupons=wallet.some(item=>item&&item.id===coupon.id)?wallet:[...wallet,coupon];
+    const local=customers.find(c=>c.id===cur.user.id);if(local)local.coupons=cur.user.coupons;
+    if(input)input.value='';
+    toast('已領取「'+(coupon.name||coupon.desc||coupon.code)+'」','sys','優惠券領取成功');
+    renderMyCoupons();
+  }catch(e){alert(e.message||'優惠券領取失敗');}
+  finally{endAction('claim_coupon');}
+}
 function renderMyCoupons(){
-  const u = cur.user;
-  const coupons = (u.coupons||[]);
-  const el = document.getElementById('my-coupons-list');
+  const coupons=Array.isArray(cur.user&&cur.user.coupons)?cur.user.coupons:[];
+  const el=document.getElementById('my-coupons-list');if(!el)return;
   if(!coupons.length){
-    el.innerHTML = '<div class="empty"><div class="empty-ico">🎟️</div>目前沒有優惠券<br><span style="font-size:12px;color:var(--text3)">註冊時輸入優惠碼可獲得</span></div>';
+    el.innerHTML='<div class="empty"><div class="empty-ico">🎟️</div>目前沒有優惠券<br><span style="font-size:12px;color:var(--text3)">有活動碼可在上方領取</span></div>';
     return;
   }
-  el.innerHTML = coupons.map((c,i)=>`
-    <div style="background:#fff;border-radius:14px;border:${c.used?'1px solid var(--border)':'2px solid var(--gold)'};padding:1rem 1.1rem;margin:0.6rem 0.9rem;opacity:${c.used?0.5:1}">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:15px;font-weight:700;color:${c.used?'var(--text3)':'var(--gold)'}">${esc(c.desc)}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">代碼：${esc(c.code)}</div>
-        </div>
-        <div style="font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;background:${c.used?'#eee':'#fff8e0'};color:${c.used?'var(--text3)':'#c07000'}">${c.used?'已使用':'可使用'}</div>
-      </div>
-    </div>`).join('');
+  const stateInfo={available:{label:'可使用',bg:'#fff8e0',color:'#c07000'},reserved:{label:'預約已鎖定',bg:'#eef4ff',color:'#245a9b'},used:{label:'已使用',bg:'#eee',color:'var(--text3)'},void:{label:'已作廢',bg:'#eee',color:'var(--text3)'}};
+  el.innerHTML=coupons.map((c,index)=>({c,index})).sort((a,b)=>couponState(a.c)==='available'?-1:couponState(b.c)==='available'?1:0).map(({c,index})=>{
+    const state=couponState(c),info=stateInfo[state]||stateInfo.void,dim=state==='used'||state==='void';
+    const condition=(Number(c.minSpend)>0?'滿 NT$'+Number(c.minSpend).toLocaleString()+' 可用 ・ ':'')+couponEligibilityText(c.eligibility,c.code)+' ・ '+couponScopeText(c);
+    const trace=state==='reserved'&&c.reservedBookingId?'<div style="font-size:10px;color:#245a9b;margin-top:5px">鎖定預約：'+esc(c.reservedBookingId)+'</div>':state==='used'&&c.usedAt?'<div style="font-size:10px;color:var(--text3);margin-top:5px">核銷：'+esc(String(c.usedAt).slice(0,10))+'</div>':'';
+    const useButton=state==='available'?'<button class="mini-btn primary" style="margin-top:10px;width:100%" onclick="useCouponFromWallet(\''+encodeURIComponent(couponWalletKey(c,index))+'\')">前往預約使用</button>':'';
+    return '<div class="coupon-card '+(state==='available'?'available':'')+'" style="opacity:'+(dim?'.55':'1')+'"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:700;color:'+(dim?'var(--text3)':'var(--gold)')+'">'+esc(c.name||c.desc||c.code||'優惠券')+'</div><div style="font-size:13px;font-weight:700;color:var(--green);margin-top:4px">'+esc(couponValueText(c))+'</div><div style="font-size:10px;color:var(--text3);margin-top:4px">代碼：'+esc(c.code||'')+' ・ '+esc(condition)+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+esc(couponDateText(c))+'</div>'+trace+'</div><div style="font-size:10px;padding:4px 9px;border-radius:20px;font-weight:700;white-space:nowrap;background:'+info.bg+';color:'+info.color+'">'+info.label+'</div></div>'+useButton+'</div>';
+  }).join('');
+}
+function useCouponFromWallet(encodedId){
+  const id=decodeURIComponent(encodedId),wallet=Array.isArray(cur.user&&cur.user.coupons)?cur.user.coupons:[],index=wallet.findIndex((item,i)=>couponWalletKey(item,i)===id),coupon=index>=0?wallet[index]:null;
+  if(!coupon||couponState(coupon)!=='available'){alert('這張優惠券目前無法使用');return;}
+  const tab=document.getElementById('cn-book');custNav('book',tab);bookState.couponId=id;
+  if(coupon.serviceScope!=='all'){
+    const allowedIds=(Array.isArray(coupon.applicableServiceIds)?coupon.applicableServiceIds:[]).map(Number),matched=SVCS.filter(s=>allowedIds.includes(Number(s.id))),cats=new Set(matched.map(s=>s.cat).filter(Boolean));
+    bookState.catFilter=cats.size===1?[...cats][0]:'all';
+  }
+  renderCatPills();renderSvcs();
+  toast(couponScopeText(coupon)+'；選好課程與時段後，在確認頁套用此券。','sys','優惠券使用方式');
+  setTimeout(()=>{const target=document.getElementById('cs1');if(target&&target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'start'});},80);
+}
+async function useWelcomeCoupon(){
+  let wallet=Array.isArray(cur.user&&cur.user.coupons)?cur.user.coupons:[],index=wallet.findIndex(c=>c&&c.code==='NEW_MEMBER_BOWL90'&&couponState(c)==='available');
+  if(index>=0){useCouponFromWallet(encodeURIComponent(couponWalletKey(wallet[index],index)));return;}
+  const existing=wallet.find(c=>c&&c.code==='NEW_MEMBER_BOWL90');
+  if(existing){alert(couponState(existing)==='reserved'?'此券已鎖定在另一筆預約；取消該預約後才會退回。':'這張新會員體驗券已使用，不能再次領取。');return;}
+  if(cur.type!=='cust'||!cur.user||cur.user.isMember!==true){alert('完成新會員註冊且有正確手機號碼後，才可領取此券。');return;}
+  if(!beginAction('welcome_coupon'))return;
+  try{
+    const result=await claimWelcomeCouponForMember(cur.user);
+    if(!result.coupon){alert(result.alreadyIssued?'此手機號碼已領取過新會員體驗券，每人限領一張。':'目前無法領取新會員體驗券');return;}
+    const currentWallet=Array.isArray(cur.user.coupons)?cur.user.coupons:[];
+    cur.user.coupons=currentWallet.some(c=>c&&c.id===result.coupon.id)?currentWallet:[...currentWallet,result.coupon];
+    const local=customers.find(c=>c.id===cur.user.id);if(local)local.coupons=cur.user.coupons;
+    renderMyCoupons();toast('新會員 9 折體驗券已存入優惠券區','sys','領取成功');
+    wallet=cur.user.coupons;index=wallet.findIndex(c=>c&&c.id===result.coupon.id);useCouponFromWallet(encodeURIComponent(couponWalletKey(wallet[index],index)));
+  }catch(e){alert(e.message||'新會員體驗券暫時無法領取');}
+  finally{endAction('welcome_coupon');}
 }
 
 function renderMyBookings(){
@@ -2225,7 +2534,8 @@ function renderMyBookings(){
         <div class="mbc-icon">💆</div>
         <div class="mbc-info">
           <div class="mbc-svc">${esc(b.svc)}</div>
-          <div class="mbc-meta">${esc(displayBookingDate(b))} ${esc(b.time)} ・ ${esc(b.dur)} ・ NT$${Number(b.price)||0}</div>
+          <div class="mbc-meta">${esc(displayBookingDate(b))} ${esc(b.time)} ・ ${esc(b.dur)} ・ NT$${bookingPayablePrice(b).toLocaleString()}</div>
+          ${b.coupon?`<div class="mbc-meta" style="color:var(--green)">🎟️ ${esc(b.coupon.name||b.coupon.code)} －NT$${Number(b.discountAmount||0).toLocaleString()} ・ ${b.couponStatus==='used'?'已核銷':b.status==='declined'?'已退回':'已鎖定'}</div>`:''}
           <div class="mbc-meta">${b.bed?(Number(b.bed)||'')+'號床 ・':''}${b.therapistName?'指定 '+esc(b.therapistName):''}</div>
         </div>
         <span style="font-size:11px;font-weight:700;color:${stColor[b.status]}">${stLbl[b.status]}</span>
@@ -2241,8 +2551,8 @@ async function cancelMyBooking(id){
   if(!beginAction('custcancel_'+id)) return;
   const b=bookings.find(x=>x.id===id); if(!b){endAction('custcancel_'+id);return;}
   try{
-    const updated=await updateBookingAtomic(id,current=>{if(current.custId!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if((current.status!=='new'&&current.status!=='accepted')||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now(),cancelledBy:'customer'};});
-    Object.assign(b,updated);await releaseBedSlot(updated);
+    const result=await updateBookingAndCouponAtomic(id,current=>{if(current.custId!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}if((current.status!=='new'&&current.status!=='accepted')||current.startTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,status:'declined',cancelledAt:now(),cancelledTimestamp:Date.now(),cancelledBy:'customer'};},'release');
+    Object.assign(b,result.booking);if(result.customer){cur.user=result.customer;const local=customers.find(c=>c.id===cur.user.id);if(local)Object.assign(local,result.customer);}await releaseBedSlot(result.booking);
     const t=now();
     notifyLine('/api/notify/new-booking',{name:b.name+'（取消）',phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time:b.time,price:0,note:'⚠️ 客人已取消此預約'});
     toast('預約已取消，店家通知已送出','sys','取消成功'); renderMyBookings();
@@ -2688,13 +2998,13 @@ function renderManualBook(){
         </div><button onclick="addCustomSvc()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:var(--pu);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">確認新增</button></div>`:'';
   const assignmentFields=canManage?`<div class="fg"><label class="flbl">師傅</label><select class="finp" id="mb-therapist"><option value="none">不指定</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div><div class="fg"><label class="flbl">支援師傅（選填）</label><select class="finp" id="mb-support"><option value="">無</option>${THERAPISTS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select></div>`:`<div class="fg"><label class="flbl">承接員工</label><input class="finp" value="${esc(myT?myT.name:'尚未綁定班表身分')}" disabled><input type="hidden" id="mb-therapist" value="${esc(myTid||'')}"><input type="hidden" id="mb-support" value=""></div>`;
   return `<div class="section-title">手動預約</div>
-  <div style="background:#fff8e0;border:1px solid #ffe082;border-radius:10px;padding:0.75rem 1rem;margin:0 0 1rem;font-size:13px;color:#7a5a00;line-height:1.7">
+    <div style="background:#fff8e0;border:1px solid #ffe082;border-radius:10px;padding:0.75rem 1rem;margin:0 0 1rem;font-size:13px;color:#7a5a00;line-height:1.7">
     📞 <strong>適用情境：</strong>現場來客、電話預約、長者無手機<br>
-    手機號碼選填，沒有手機的客人可以留空
+      一般客人手機可留空；若選擇「會員」，手機號碼為必填，供後續預約簡訊使用
   </div>
   <div class="manual-form">
     <div class="fg"><label class="flbl">客人姓名 *</label><input class="finp" id="mb-name" placeholder="姓名"></div>
-    <div class="fg"><label class="flbl">手機號碼（無手機可留空）</label><input class="finp" id="mb-phone" placeholder="09xx-xxx-xxx（選填）" type="tel"></div>
+    <div class="fg"><label class="flbl">手機號碼（辦會員必填）</label><input class="finp" id="mb-phone" placeholder="09xx-xxx-xxx；非會員可留空" type="tel" inputmode="numeric" maxlength="14"><div style="font-size:10px;color:var(--text3);margin-top:4px">會員需填台灣 09 開頭的 10 碼手機號碼</div></div>
     <div class="fg"><label class="flbl">LINE ID（選填）</label><input class="finp" id="mb-line" placeholder="@line_id"></div>
     <div class="fg"><label class="flbl">服務項目 *</label>
       <select class="finp" id="mb-svc">
@@ -2747,6 +3057,8 @@ async function submitManual(){
     if(!canManageBookingsSession()){therapistId=employeeTherapistId(cur.user)||'';supportId='';if(!therapistId){alert('此員工帳號尚未綁定班表身分，請店長協助設定');return;}}
     const supportObj=THERAPISTS.find(t=>t.id===supportId),note=cleanText(document.getElementById('mb-note').value,500),isnewVal=document.getElementById('mb-isnew').value,isNew=isnewVal==='1',isMember=isnewVal==='2';
     if(!name||!svcVal||!dateRaw||!time){alert('請填寫必填欄位（姓名、服務項目、日期、時段）');return;}
+    const phoneKey=customerPhoneKey(phone),storedPhone=/^09\d{8}$/.test(phoneKey)?phoneKey:phone;
+    if(isMember&&!/^09\d{8}$/.test(phoneKey)){alert('辦會員必須填寫 09 開頭的 10 碼手機號碼，之後才能接收預約簡訊');return;}
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){alert('時間格式請使用 HH:MM，例如 14:30');return;}
     const dp=parseDateInput(dateRaw,new Date().getFullYear()); if(!dp){alert('日期格式請輸入 9/11 或 2026-09-11');return;}
     const parts=svcVal.split('_'),svcId=parts[0],priceStr=parts[1]; let svcName,durVal,priceVal,durationMinutes;
@@ -2754,13 +3066,24 @@ async function submitManual(){
     else{ const svcObj=SVCS.find(s=>s.id===parseInt(svcId)); if(!svcObj){alert('找不到服務項目');return;} const priceObj=svcObj.prices.find(p=>p.p===parseInt(priceStr)); if(!priceObj){alert('找不到價格');return;} svcName=svcObj.name;durationMinutes=selectedSvcDurationMinutes({...svcObj,selectedPrice:priceObj});durVal=durationMinutes+'分';priceVal=priceObj.p; }
     if(bed && findBedConflicts({dateKey:dp.key,time,durationMinutes,bed}).length){alert('這個床位與現有預約時段重疊，請換床位或時間');return;}
     const thObj=THERAPISTS.find(t=>t.id===therapistId),assignedEmp=therapistId!=='none'?employees.find(e=>employeeTherapistId(e)===therapistId):null,acceptEmp=canManageBookingsSession()?(assignedEmp||cur.user):cur.user,bId='B'+Date.now().toString(36).toUpperCase()+'M';
-    b={id:bId,custId:'MANUAL',name,phone,svc:cleanText(svcName,180),dur:durVal,durationMinutes,price:priceVal,date:dp.display,dateKey:dp.key,year:dp.y,time,bed,therapistId:therapistId==='none'?null:therapistId,therapistName:thObj?thObj.name:null,supportId:supportId||null,supportName:supportObj?supportObj.name:null,startTime:null,endTime:null,extraMins:0,status:'accepted',lineId:cleanText(document.getElementById('mb-line').value,80),note:note+(isNew?' ★新客人':isMember?' ★會員':''),acceptedBy:acceptEmp.id,acceptedAt:now(),acceptedAtTimestamp:Date.now(),isNew};
-    await createBookingAtomic(b);bookings.unshift(b);
-    let c=customers.find(c=>c.phone===phone);
-    if(phone && !c){ c={id:'C'+Date.now().toString(36).toUpperCase(),name,phone,pw:'',lineId:b.lineId,bookCount:1,isNew:true}; customers.push(c); try{await saveCustomer(c);}catch(e){console.warn('新客資料儲存失敗',e);toast('預約已建立，但新客資料未同步，請稍後再試','sys','客人資料');} }
-    else if(c){c.bookCount=(c.bookCount||0)+1;if(c.bookCount>=3)c.isVip=true;try{await saveCustomer(c);}catch(e){console.warn('客人累計資料儲存失敗',e);}}
-    notifyLine('/api/notify/accepted',{empId:acceptEmp.id,empName:acceptEmp.name,name,phone,svc:b.svc,dur:b.dur,date:b.date,time,price:b.price,note:b.note});
-    toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':isMember?'（會員）':'')+' LINE通知發送中','sys','手動預約成功'); swStaffTab('accepted');
+    b={id:bId,custId:'MANUAL',name,phone:storedPhone,svc:cleanText(svcName,180),dur:durVal,durationMinutes,price:priceVal,date:dp.display,dateKey:dp.key,year:dp.y,time,bed,therapistId:therapistId==='none'?null:therapistId,therapistName:thObj?thObj.name:null,supportId:supportId||null,supportName:supportObj?supportObj.name:null,startTime:null,endTime:null,extraMins:0,status:'accepted',lineId:cleanText(document.getElementById('mb-line').value,80),note:note+(isNew?' ★新客人':isMember?' ★會員':''),acceptedBy:acceptEmp.id,acceptedAt:now(),acceptedAtTimestamp:Date.now(),isNew,isMember};
+    const created=await createBookingAtomic(b);b=created.booking;bookings.unshift(b);
+    let c=customers.find(c=>storedPhone&&customerPhoneKey(c.phone)===customerPhoneKey(storedPhone));
+    const wasMember=!!(c&&c.isMember),createdAt=new Date().toISOString();let customerSaved=true,welcomeNotice='';
+    if(storedPhone&&!c){
+      c={id:'C'+Date.now().toString(36).toUpperCase(),name,phone:storedPhone,pw:'',lineId:b.lineId,coupons:[],accountType:'manual',bookCount:1,isNew:true,isMember,memberSince:isMember?createdAt:null,phoneVerified:false,createdAt};customers.push(c);
+      try{await saveCustomer(c);}catch(e){customerSaved=false;console.warn('新客資料儲存失敗',e);toast('預約已建立，但新客資料未同步，請稍後再試','sys','客人資料');}
+    }else if(c){
+      c.bookCount=(c.bookCount||0)+1;if(c.bookCount>=3)c.isVip=true;
+      if(isMember){c.isMember=true;c.memberSince=wasMember?(c.memberSince||createdAt):createdAt;c.phone=storedPhone;if(c.phoneVerified!==true)c.phoneVerified=false;}
+      try{await saveCustomer(c);}catch(e){customerSaved=false;console.warn('客人累計資料儲存失敗',e);}
+    }
+    if(isMember&&c&&!wasMember&&customerSaved){
+      try{const welcomeResult=await claimWelcomeCouponForMember(c),welcome=welcomeResult.coupon;if(welcome){c.coupons=(c.coupons||[]).some(item=>item&&item.id===welcome.id)?c.coupons:[...(c.coupons||[]),welcome];welcomeNotice='，9 折體驗券已發送';}else if(welcomeResult.alreadyIssued)welcomeNotice='，此手機已領過體驗券';}
+      catch(e){console.warn('新會員體驗券發送失敗',e);welcomeNotice='，體驗券發送待確認';}
+    }
+    notifyLine('/api/notify/accepted',{empId:acceptEmp.id,empName:acceptEmp.name,name,phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time,price:b.price,note:b.note});
+    toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':isMember?'（會員）':'')+welcomeNotice+' LINE通知發送中','sys','手動預約成功'); swStaffTab('accepted');
   }catch(e){ if(e&&e.code==='bed-conflict')alert('剛剛有其他人先使用這個床位，請重新選擇'); else{console.error(e);alert('手動預約儲存失敗，請確認網路後再試');} }
   finally{endAction('manual');}
 }
@@ -2768,8 +3091,8 @@ async function submitManual(){
 
 // ── 報表 ──
 function effectivePrice(b){
-  // 切單後使用實際計算金額；進行中或未切單用原始價格
-  const value=(b.status==='done'&&b.finalPrice!==undefined)?Number(b.finalPrice):Number(b.price);
+  // 切單後使用實收金額；進行中或未切單使用扣除優惠券後的預計應付。
+  const value=(b.status==='done'&&b.finalPrice!==undefined)?Number(b.finalPrice):bookingPayablePrice(b);
   return Number.isFinite(value)&&value>=0?value:0;
 }
 
@@ -2791,9 +3114,7 @@ function renderStats(){
   if(reportMonth!=='all'&&!monthKeys.includes(reportMonth))reportMonth=currentMonth;
   const selectedBookings=reportMonth==='all'?bookings:bookings.filter(b=>bookingDateKey(b).slice(0,7)===reportMonth);
   const allDone=selectedBookings.filter(function(b){return b.status==='done';});
-  const totalRev=allDone.reduce(function(s,b){
-    return s+(b.status==='done'&&b.finalPrice!==undefined ? b.finalPrice : b.price);
-  },0);
+  const totalRev=allDone.reduce(function(s,b){return s+effectivePrice(b);},0);
   const newCount=selectedBookings.filter(function(b){return b.status==='new';}).length;
 
   const svcMap={};
@@ -2837,7 +3158,7 @@ function renderStats(){
     const done=myBooks.filter(function(b){return b.status==='done';}).length;
     const doneBooks=myBooks.filter(function(b){return b.status==='done';});
     const total=doneBooks.reduce(function(s,b){return s+effectivePrice(b);},0);
-    const origTotal=doneBooks.reduce(function(s,b){return s+b.price;},0);
+    const origTotal=doneBooks.reduce(function(s,b){return s+(Number(b.subtotalPrice!==undefined?b.subtotalPrice:b.price)||0);},0);
     const hasDiff = total !== origTotal;
     const bossTag=e.role==='boss'?'<span class="boss-mark">店長</span>':e.role==='manager'?'<span class="boss-mark" style="background:#e8f4ff;color:#245a9b">管理人員</span>':'';
     html+='<tr class="staff-row">'
@@ -2875,42 +3196,234 @@ async function editReportAmount(id){
   const raw=prompt('請輸入「'+b.name+'」的實收金額',String(effectivePrice(b)));if(raw===null)return;
   const amount=Number(raw);if(!Number.isInteger(amount)||amount<0||amount>1000000){alert('請輸入 0–1000000 的整數金額');return;}
   if(!beginAction('report_'+id))return;
-  try{const updated=await updateBookingAtomic(id,current=>{if(current.status!=='done'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,finalPrice:amount,priceDiff:amount-(Number(current.price)||0),reportEditedAt:new Date().toISOString(),reportEditedBy:cur.user.id};});Object.assign(b,updated);toast('報表金額已修正為 NT$'+amount.toLocaleString(),'sys','報表更新');renderStaffContent();}
+  try{const updated=await updateBookingAtomic(id,current=>{if(current.status!=='done'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}return {...current,finalPrice:amount,priceDiff:amount-bookingPayablePrice(current),reportEditedAt:new Date().toISOString(),reportEditedBy:cur.user.id};});Object.assign(b,updated);toast('報表金額已修正為 NT$'+amount.toLocaleString(),'sys','報表更新');renderStaffContent();}
   catch(e){alert(e&&e.code==='booking-state-changed'?'案件狀態已變更':'報表金額儲存失敗');}
   finally{endAction('report_'+id);}
 }
 
 // ── 客人名單 ──
+let customerDetailOpenKey=null;
+let customerCouponCampaignCode='';
+let customerCouponBulkTarget='members';
+function setCustomerCouponCampaign(value){customerCouponCampaignCode=String(value||'');}
+function setCustomerCouponBulkTarget(value){customerCouponBulkTarget=value==='all'?'all':'members';}
+function customerPhoneKey(value){return String(value||'').replace(/\D/g,'');}
+function buildCustomerRows(){
+  const byId=new Map(),byPhone=new Map(),rows=[];
+  customers.forEach(function(customer){
+    const row={key:'id:'+customer.id,account:customer,name:customer.name||'未命名客人',phone:customer.phone||'',lineId:customer.lineId||'',books:[]};
+    rows.push(row);byId.set(customer.id,row);const phoneKey=customerPhoneKey(customer.phone);if(phoneKey&&!byPhone.has(phoneKey))byPhone.set(phoneKey,row);
+  });
+  bookings.forEach(function(booking){
+    let row=booking.custId&&byId.get(booking.custId);const phoneKey=customerPhoneKey(booking.phone);
+    if(!row&&phoneKey)row=byPhone.get(phoneKey);
+    if(!row){
+      const historicalIdentity=phoneKey||(booking.custId&&booking.custId!=='MANUAL'?booking.custId:'')||booking.name||booking.id;
+      const key='history:'+historicalIdentity;
+      row=rows.find(item=>item.key===key);
+      if(!row){row={key,account:null,name:booking.name||'未命名客人',phone:booking.phone||'',lineId:booking.lineId||'',books:[]};rows.push(row);if(phoneKey)byPhone.set(phoneKey,row);}
+    }
+    row.books.push(booking);
+    if(!row.name&&booking.name)row.name=booking.name;if(!row.lineId&&booking.lineId)row.lineId=booking.lineId;
+  });
+  rows.forEach(function(row){
+    row.doneBooks=row.books.filter(b=>b.status==='done').sort((a,b)=>bookingDateKey(b).localeCompare(bookingDateKey(a))||Number(b.endTimestamp||0)-Number(a.endTimestamp||0));
+    row.completedCount=row.doneBooks.length;
+    row.total=row.doneBooks.reduce((sum,b)=>sum+effectivePrice(b),0);
+    row.lastDate=row.books.reduce((latest,b)=>{const key=bookingDateKey(b);return key>latest?key:latest;},'');
+    row.activeCount=row.books.filter(b=>b.status==='new'||b.status==='accepted').length;
+  });
+  return rows.sort((a,b)=>b.total-a.total||b.completedCount-a.completedCount||String(a.name).localeCompare(String(b.name),'zh-Hant'));
+}
+function customerHistoryHtml(row){
+  if(!row.doneBooks.length)return '<div class="cust-history"><div style="font-size:11px;color:var(--text3)">尚無已完成的消費紀錄。待切單完成後才會計入消費。</div></div>';
+  return '<div class="cust-history"><div style="font-size:11px;font-weight:700;color:var(--pu);margin-bottom:4px">已完成消費紀錄（'+row.doneBooks.length+'筆）</div>'+row.doneBooks.map(function(b){
+    const original=Number(b.subtotalPrice!==undefined?b.subtotalPrice:b.price)||0,paid=effectivePrice(b),staff=b.acceptedByName||b.therapistName||b.acceptedBy||'未記錄';
+    return '<div class="cust-history-row"><div style="width:74px;flex-shrink:0;color:var(--text3)">'+esc(displayBookingDate(b))+'<br>'+esc(b.time||'')+'</div><div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--text)">'+esc(b.svc||'服務')+'</div><div style="color:var(--text3);margin-top:2px">服務：'+esc(staff)+(b.coupon?' ・ 🎟️ '+esc(b.coupon.code||b.coupon.name):'')+'</div></div><div style="text-align:right;white-space:nowrap"><strong style="color:var(--green)">NT$'+paid.toLocaleString()+'</strong>'+(paid!==original?'<div style="font-size:9px;color:var(--text3);text-decoration:line-through">NT$'+original.toLocaleString()+'</div>':'')+'</div></div>';
+  }).join('')+'</div>';
+}
 function renderCustomers(){
   if(!isBossSession())return bossOnlyMessage();
-  const custMap={};
-  bookings.forEach(function(b){
-    if(!b.phone) return;
-    if(!custMap[b.phone]) custMap[b.phone]={name:b.name,phone:b.phone,lineId:b.lineId,count:0,total:0,lastDate:''};
-    if(b.status!=='declined'){custMap[b.phone].count++;custMap[b.phone].total+=effectivePrice(b);}
-    const bk=bookingDateKey(b); if(!custMap[b.phone].lastDate||bk>custMap[b.phone].lastDate)custMap[b.phone].lastDate=bk;
-  });
-  const list=Object.values(custMap).sort(function(a,b){return b.count-a.count;});
+  const list=buildCustomerRows();
   if(!list.length) return '<div class="empty"><div class="empty-ico">👥</div>尚無客人資料</div>';
-  let out = '<div class="section-title">客人名單（'+list.length+' 人）</div>'
+  const accountCount=list.filter(r=>r.account&&r.account.pw).length;
+  const distributable=couponCampaigns.filter(c=>couponCampaignStatus(c).label==='啟用中');
+  if(!distributable.some(c=>(c.code||c.id)===customerCouponCampaignCode))customerCouponCampaignCode=distributable.length?(distributable[0].code||distributable[0].id):'';
+  const campaignOptions=distributable.map(c=>'<option value="'+esc(c.code||c.id)+'" '+((c.code||c.id)===customerCouponCampaignCode?'selected':'')+'>'+esc(c.name||c.code||c.id)+'｜'+esc(couponValueText(c))+(c.autoIssue?'（系統自動券）':'')+'</option>').join('');
+  let out='<div class="section-title">客人名單（'+list.length+' 人／'+accountCount+' 個可登入帳號）</div>'
+    +'<div style="margin:0 .9rem 1rem;padding:.8rem;background:#eef7ff;border:1px solid #b8d8f0;border-radius:12px;font-size:11px;color:#245a9b;line-height:1.6">消費次數與金額只統計「已完成／已切單」案件。刪除帳號不會刪除預約、消費或報表歷史。</div>'
+    +'<div class="manual-form" style="margin-top:0"><div style="font-size:14px;font-weight:800;color:var(--pu);margin-bottom:8px">🎟️ 發放優惠券</div>'
+    +'<div class="fg"><label class="flbl">選擇要發放的優惠券</label><select class="finp" id="cust-coupon-campaign" onchange="setCustomerCouponCampaign(this.value)">'+(campaignOptions||'<option value="">目前沒有可發放的優惠券</option>')+'</select></div>'
+    +'<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end"><div class="fg" style="margin:0"><label class="flbl">一次發放對象</label><select class="finp" id="cust-coupon-target" onchange="setCustomerCouponBulkTarget(this.value)"><option value="members" '+(customerCouponBulkTarget==='members'?'selected':'')+'>全部會員（有有效手機）</option><option value="all" '+(customerCouponBulkTarget==='all'?'selected':'')+'>全部客人資料（有有效手機）</option></select></div><button class="pbtn" style="width:auto;margin:0;padding:10px 14px" onclick="issueCouponBulkUI()" '+(campaignOptions?'':'disabled')+'>一次批量發放</button></div>'
+    +'<div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.55">個別發放：先在上方選券，再按客人旁的「發所選券」。批量發放會自動跳過已領過、手機無效或不符合資格的人。</div></div>'
     +'<div style="margin:0 0.9rem;background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;">';
   list.forEach(function(c){
-    const tier=c.count>=5?'vip':c.count>=2?'regular':'new';
+    const tier=c.completedCount>=5?'vip':c.completedCount>=2?'regular':'new';
     const tierLbl={vip:'⭐ VIP',regular:'回頭客',new:'新客人'};
     const tierClass={vip:'cb-vip',regular:'cb-regular',new:'cb-new'};
     const lineInfo=c.lineId?' ・ '+esc(c.lineId):'';
+    const encoded=encodeURIComponent(c.key),accountEncoded=c.account?encodeURIComponent(c.account.id):'',isRegistered=!!(c.account&&c.account.pw),canReceiveCoupon=!!(c.account&&/^09\d{8}$/.test(customerPhoneKey(c.account.phone))),accountBadge=isRegistered?'<span style="font-size:9px;background:#edf9f0;color:var(--green);padding:2px 6px;border-radius:10px;margin-left:4px">可登入</span>':c.account?'<span style="font-size:9px;background:#f5f5f5;color:var(--text3);padding:2px 6px;border-radius:10px;margin-left:4px">現場資料</span>':'<span style="font-size:9px;background:#fff8e0;color:#9a6500;padding:2px 6px;border-radius:10px;margin-left:4px">僅歷史紀錄</span>',memberBadge=c.account&&c.account.isMember?'<span style="font-size:9px;background:#f3edff;color:var(--pu);padding:2px 6px;border-radius:10px;margin-left:4px">會員</span>':'';
     out += '<div class="cust-row">'
       +'<div class="cust-av">'+esc((c.name||'?')[0])+'</div>'
       +'<div class="cust-info">'
-      +'<div class="cust-name">'+esc(c.name)+'</div>'
-      +'<div class="cust-meta">📞 '+esc(c.phone)+lineInfo+' ・ 最近：'+esc(c.lastDate)+'</div></div>'
-      +'<div style="text-align:right">'
+      +'<div class="cust-name">'+esc(c.name)+accountBadge+memberBadge+'</div>'
+      +'<div class="cust-meta">📞 '+esc(c.phone||'未留電話')+lineInfo+' ・ 最近：'+esc(c.lastDate||'無')+(c.activeCount?' ・ 進行中 '+c.activeCount+'筆':'')+'</div>'
+      +'<div class="cust-actions"><button class="mini-btn primary" onclick="toggleCustomerHistory(\''+encoded+'\')">'+(customerDetailOpenKey===c.key?'收起':'消費紀錄')+'</button>'
+      +(canReceiveCoupon?'<button class="mini-btn" onclick="issueCouponToCustomerUI(decodeURIComponent(\''+accountEncoded+'\'))">🎟️ 發所選券</button>':'')
+      +(c.account?'<button class="mini-btn danger" onclick="deleteCustomerAccount(decodeURIComponent(\''+accountEncoded+'\'))">🗑 '+(isRegistered?'刪除帳號':'刪除資料')+'</button>':'')+'</div></div>'
+      +'<div style="text-align:right;min-width:70px">'
       +'<div><span class="cust-badge '+tierClass[tier]+'">'+tierLbl[tier]+'</span></div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-top:3px">'+c.count+'次 ・ $'+c.total.toLocaleString()+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:3px">'+c.completedCount+'次 ・ $'+c.total.toLocaleString()+'</div>'
       +'</div></div>';
+    if(customerDetailOpenKey===c.key)out+=customerHistoryHtml(c);
   });
   out += '</div>';
   return out;
+}
+
+function toggleCustomerHistory(encodedKey){
+  const key=decodeURIComponent(encodedKey);customerDetailOpenKey=customerDetailOpenKey===key?null:key;renderStaffContent();
+}
+
+async function deleteCustomerAccount(customerId){
+  if(!requireBoss('刪除客人帳號'))return;
+  const customer=customers.find(c=>c.id===customerId);if(!customer){alert('找不到此客人帳號');return;}
+  if(!confirm('確定刪除「'+customer.name+'」的'+(customer.pw?'登入帳號':'客人資料')+'？\n\n預約、已完成消費與報表歷史都會保留；未使用優惠券會隨帳號移除。'))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認刪除「'+customer.name+'」');if(!recoveryCode)return;
+  if(!beginAction('delete_customer_'+customerId))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-customer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId,recoveryCode})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'刪除失敗');
+    customers=customers.filter(c=>c.id!==customerId);customerDetailOpenKey=null;
+    toast('已刪除 '+customer.name+' 的帳號，消費歷史已保留','sys','客人帳號刪除完成');renderStaffContent();
+  }catch(e){alert(e.message||'客人帳號刪除失敗');}
+  finally{endAction('delete_customer_'+customerId);}
+}
+
+async function issueCouponToCustomerUI(customerId){
+  if(!requireBoss('發送優惠券'))return;
+  const customer=customers.find(c=>c.id===customerId);if(!customer)return;
+  const selector=document.getElementById('cust-coupon-campaign'),code=selector&&selector.value,campaign=couponCampaigns.find(c=>(c.code||c.id)===code);
+  customerCouponCampaignCode=code||customerCouponCampaignCode;
+  if(!code||!campaign){alert('請先在客人名單上方選擇要發放的優惠券');return;}
+  if(!confirm('確定發送「'+(campaign.name||code)+'」給 '+customer.name+'？\n'+couponValueText(campaign)+'｜'+couponScopeText(campaign)))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認發券');if(!recoveryCode)return;
+  if(!beginAction('issue_coupon_'+customerId))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/issue-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId,code,recoveryCode,issuedBy:cur.user.id})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'發券失敗');
+    const wallet=Array.isArray(customer.coupons)?customer.coupons:[];customer.coupons=wallet.some(item=>item&&item.id===result.coupon.id)?wallet:[...wallet,result.coupon];toast('已發送「'+(result.coupon.name||result.coupon.code)+'」給 '+customer.name,'sys','發券成功');renderStaffContent();
+  }catch(e){alert(e.message||'優惠券發送失敗');}
+  finally{endAction('issue_coupon_'+customerId);}
+}
+
+async function issueCouponBulkUI(){
+  if(!requireBoss('批量發送優惠券'))return;
+  const selector=document.getElementById('cust-coupon-campaign'),targetEl=document.getElementById('cust-coupon-target'),code=selector&&selector.value,target=targetEl&&targetEl.value==='all'?'all':'members',campaign=couponCampaigns.find(c=>(c.code||c.id)===code);
+  customerCouponCampaignCode=code||customerCouponCampaignCode;customerCouponBulkTarget=target;
+  if(!code||!campaign){alert('請先選擇要批量發放的優惠券');return;}
+  if(campaign.autoIssue){alert('這是系統自動券，不能批量發放；如有漏發，請在該客人旁個別補發。');return;}
+  const candidateCount=customers.filter(c=>/^09\d{8}$/.test(customerPhoneKey(c.phone))&&(target==='all'||c.isMember===true)).length,targetLabel=target==='all'?'全部有有效手機的客人':'全部會員';
+  if(!candidateCount){alert('目前沒有符合「'+targetLabel+'」條件的客人');return;}
+  if(!confirm('確定將「'+(campaign.name||code)+'」一次發給'+targetLabel+'？\n預計檢查 '+candidateCount+' 人，已領過的人會自動跳過。'))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認批量發券');if(!recoveryCode)return;
+  if(!beginAction('issue_coupon_bulk'))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/issue-coupon-bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,target,recoveryCode,issuedBy:cur.user.id})});
+    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'批量發券失敗');
+    const summary='成功 '+Number(result.issued||0)+' 人；跳過 '+Number(result.skipped||0)+' 人'+(Number(result.failed||0)?'；失敗 '+Number(result.failed)+' 人':'')+(result.truncated?'；客人超過 500 人，請分批處理':'');
+    toast(summary,'sys','批量發券完成');alert('批量發券完成\n'+summary);
+  }catch(e){alert(e.message||'批量發券失敗');}
+  finally{endAction('issue_coupon_bulk');}
+}
+
+// ── 優惠券活動管理 ──
+let editingCouponCode=null;
+function couponServiceOptions(){
+  return SVCS.map(s=>({id:Number(s.id),name:String(s.name||('服務 '+s.id)),cat:s.cat||''})).filter(s=>Number.isInteger(s.id)&&s.id>0);
+}
+function couponServiceChecksHtml(selectedIds){
+  const selected=new Set((Array.isArray(selectedIds)?selectedIds:[]).map(Number));
+  return couponServiceOptions().map(s=>'<label class="coupon-service-option"><input type="checkbox" name="ca-service" value="'+s.id+'" '+(selected.has(s.id)?'checked':'')+'><span>'+esc(s.name)+'</span></label>').join('');
+}
+function renderCouponServiceChecks(selectedIds){
+  const list=document.getElementById('ca-services-list');if(list)list.innerHTML=couponServiceChecksHtml(selectedIds);
+}
+function toggleCouponServiceSelector(){
+  const scope=document.getElementById('ca-scope'),wrap=document.getElementById('ca-services-wrap');if(!scope||!wrap)return;
+  wrap.classList.toggle('hidden',scope.value!=='selected_services');
+}
+function selectedCouponServiceIds(){
+  return [...document.querySelectorAll('input[name="ca-service"]:checked')].map(input=>Number(input.value)).filter(Number.isInteger);
+}
+function generateCustomCouponCode(){
+  const input=document.getElementById('ca-code');if(!input||input.readOnly)return;
+  const d=new Date(),part=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0'),String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0')].join('');
+  let code='CUSTOM_'+part,suffix=1;while(couponCampaigns.some(c=>(c.code||c.id)===code)){code='CUSTOM_'+part+'_'+suffix;suffix++;}
+  input.value=code;
+}
+function couponCampaignStatus(c){
+  const today=todayKey();
+  if(c.active===false)return {label:'已停用',color:'var(--text3)',bg:'#eee'};
+  if(c.validFrom&&today<c.validFrom)return {label:'尚未開始',color:'#245a9b',bg:'#eef4ff'};
+  if(c.validUntil&&today>c.validUntil)return {label:'已過期',color:'var(--red)',bg:'var(--red-pale)'};
+  const limit=Number(c.totalLimit)||0,issued=Number(c.issuedCount)||0;
+  if(limit>0&&issued>=limit)return {label:'已領完',color:'#9a6500',bg:'#fff8e0'};
+  return {label:'啟用中',color:'var(--green)',bg:'#edf9f0'};
+}
+function renderCouponAdmin(){
+  if(!isBossSession())return bossOnlyMessage();
+  let html='<div class="section-title">🎟️ 優惠券活動管理</div>'
+    +'<div style="margin:0 .9rem 1rem;padding:.85rem;background:#eef7ff;border:1px solid #b8d8f0;border-radius:12px;font-size:11px;color:#245a9b;line-height:1.65">每位客人對同一活動限領一張。預約時只鎖定，取消或婉拒會自動退回，切單完成才核銷。活動停用不會刪除舊紀錄。</div>'
+    +'<div class="manual-form"><div style="font-size:14px;font-weight:700;color:var(--pu);margin-bottom:.8rem" id="coupon-form-title">＋ 建立自訂優惠券</div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">優惠碼 *</label><div style="display:flex;gap:5px"><input class="finp" id="ca-code" maxlength="30" placeholder="可自動產生" style="text-transform:uppercase;flex:1"><button type="button" class="mini-btn primary" style="white-space:nowrap" onclick="generateCustomCouponCode()">自動產生</button></div></div><div class="fg"><label class="flbl">優惠券名稱 *</label><input class="finp" id="ca-name" maxlength="80" placeholder="例：會員感謝券"></div></div>'
+    +'<div class="fg"><label class="flbl">顯示說明</label><input class="finp" id="ca-desc" maxlength="160" placeholder="使用條件或活動說明"></div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">優惠類型</label><select class="finp" id="ca-type"><option value="fixed">固定折抵金額</option><option value="percent">百分比折扣</option></select></div><div class="fg"><label class="flbl">折抵值 *</label><input class="finp" id="ca-value" type="number" min="1" step="1" placeholder="200 或 10"></div></div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">最低消費</label><input class="finp" id="ca-min" type="number" min="0" step="1" value="0"></div><div class="fg"><label class="flbl">百分比最高折抵（0=無上限）</label><input class="finp" id="ca-max" type="number" min="0" step="1" value="0"></div></div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">使用對象</label><select class="finp" id="ca-eligibility"><option value="all">所有客人</option><option value="first_booking">新客首次預約</option><option value="returning">已完成消費的回訪客</option><option value="new_member">已登記會員</option></select></div><div class="fg"><label class="flbl">折抵範圍</label><select class="finp" id="ca-scope" onchange="toggleCouponServiceSelector()"><option value="all">全部服務都能折</option><option value="selected_services">只限勾選的指定服務</option></select></div></div>'
+    +'<div class="fg hidden" id="ca-services-wrap"><label class="flbl">勾選可折抵的線上預約服務（可複選）</label><div class="coupon-service-options" id="ca-services-list">'+couponServiceChecksHtml([])+'</div><div style="font-size:10px;color:var(--text3);margin-top:4px">同一筆預約包含其他服務時，只計算已勾選項目的折扣。</div></div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">開始日（可留空）</label><input class="finp" id="ca-from" type="date"></div><div class="fg"><label class="flbl">到期日（可留空）</label><input class="finp" id="ca-until" type="date"></div></div>'
+    +'<div class="fg"><label class="flbl">領券後有效天數（0=依上方固定日期或無期限）</label><input class="finp" id="ca-days" type="number" min="0" max="3650" step="1" value="0"></div>'
+    +'<div class="coupon-admin-grid"><div class="fg"><label class="flbl">總發行上限（0=無上限）</label><input class="finp" id="ca-limit" type="number" min="0" step="1" value="0"></div><label style="display:flex;align-items:center;gap:8px;font-size:12px;padding-top:20px"><input id="ca-active" type="checkbox" checked> 建立後立即啟用</label></div>'
+    +'<div style="display:flex;gap:8px"><button class="pbtn" style="margin:.35rem 0 0;flex:1" onclick="saveCouponCampaign()">儲存活動</button><button class="sbtn" style="margin:.35rem 0 0;width:auto;padding:10px 14px" onclick="clearCouponCampaignForm()">清除</button></div></div>';
+  html+='<div class="section-title">現有活動（'+couponCampaigns.length+'）</div>';
+  if(!couponCampaigns.length)html+='<div class="empty"><div class="empty-ico">🎟️</div>尚無優惠券活動</div>';
+  couponCampaigns.slice().sort((a,b)=>(a.active===false)-(b.active===false)||String(a.code||a.id).localeCompare(String(b.code||b.id))).forEach(function(c){
+    const code=c.code||c.id,state=couponCampaignStatus(c),used=bookings.filter(b=>b.status==='done'&&b.coupon&&(b.coupon.campaignId===code||b.coupon.code===code)).length,reserved=bookings.filter(b=>(b.status==='new'||b.status==='accepted')&&b.coupon&&(b.coupon.campaignId===code||b.coupon.code===code)).length;
+    html+='<div class="coupon-card"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--text)">'+esc(c.name||code)+' <span style="font-size:10px;color:var(--text3)">'+esc(code)+'</span></div><div style="font-size:13px;font-weight:700;color:var(--green);margin-top:3px">'+esc(couponValueText(c))+'</div><div style="font-size:10px;color:var(--text3);line-height:1.55;margin-top:3px">'+esc(c.description||'')+'<br>'+esc(couponEligibilityText(c.eligibility))+' ・ '+esc(couponScopeText(c))+(Number(c.minSpend)>0?' ・ 滿 NT$'+Number(c.minSpend).toLocaleString():'')+' ・ '+esc(couponDateText(c))+(c.autoIssue?' ・ 新會員自動發券':'')+'<br>已發行 '+Number(c.issuedCount||0)+(Number(c.totalLimit)>0?'/'+Number(c.totalLimit):'')+' ・ 鎖定 '+reserved+' ・ 已核銷 '+used+'</div></div><span style="font-size:10px;padding:4px 9px;border-radius:20px;font-weight:700;background:'+state.bg+';color:'+state.color+'">'+state.label+'</span></div><div class="cust-actions" style="margin-top:10px"><button class="mini-btn primary" onclick="loadCouponCampaign(\''+esc(code)+'\')">✏️ 修改</button><button class="mini-btn '+(c.active===false?'primary':'danger')+'" onclick="toggleCouponCampaign(\''+esc(code)+'\','+(c.active===false?'true':'false')+')">'+(c.active===false?'啟用':'停用')+'</button></div></div>';
+  });
+  return html;
+}
+function clearCouponCampaignForm(){
+  editingCouponCode=null;['ca-code','ca-name','ca-desc','ca-value','ca-from','ca-until'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});['ca-min','ca-max','ca-limit','ca-days'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='0';});
+  const code=document.getElementById('ca-code');if(code)code.readOnly=false;const type=document.getElementById('ca-type');if(type)type.value='fixed';const eligibility=document.getElementById('ca-eligibility');if(eligibility)eligibility.value='all';const scope=document.getElementById('ca-scope');if(scope)scope.value='all';renderCouponServiceChecks([]);toggleCouponServiceSelector();const active=document.getElementById('ca-active');if(active)active.checked=true;const title=document.getElementById('coupon-form-title');if(title)title.textContent='＋ 建立自訂優惠券';
+}
+function loadCouponCampaign(code){
+  const c=couponCampaigns.find(item=>(item.code||item.id)===code);if(!c)return;editingCouponCode=code;
+  const normalizedScope=!c.serviceScope||c.serviceScope==='all'?'all':'selected_services';
+  const values={'ca-code':code,'ca-name':c.name||'','ca-desc':c.description||'','ca-type':c.type||'fixed','ca-value':Number(c.value)||'','ca-min':Number(c.minSpend)||0,'ca-max':Number(c.maxDiscount)||0,'ca-eligibility':c.eligibility||'all','ca-scope':normalizedScope,'ca-from':c.validFrom||'','ca-until':c.validUntil||'','ca-days':Number(c.validDays)||0,'ca-limit':Number(c.totalLimit)||0};Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
+  renderCouponServiceChecks(Array.isArray(c.applicableServiceIds)?c.applicableServiceIds:(c.serviceScope==='singing_bowl_course'?[20]:[]));toggleCouponServiceSelector();
+  document.getElementById('ca-code').readOnly=true;document.getElementById('ca-active').checked=c.active!==false;document.getElementById('coupon-form-title').textContent='修改活動：'+code;window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveCouponCampaign(){
+  if(!requireBoss('儲存優惠券活動'))return;
+  const get=id=>document.getElementById(id),serviceScope=get('ca-scope').value,applicableServiceIds=serviceScope==='selected_services'?selectedCouponServiceIds():[],serviceMap=new Map(couponServiceOptions().map(s=>[s.id,s.name])),applicableServiceNames=applicableServiceIds.map(id=>serviceMap.get(id)).filter(Boolean),payload={code:cleanText(get('ca-code').value,30).toUpperCase(),name:cleanText(get('ca-name').value,80),description:cleanText(get('ca-desc').value,160),type:get('ca-type').value,value:Number(get('ca-value').value),minSpend:Number(get('ca-min').value||0),maxDiscount:Number(get('ca-max').value||0),eligibility:get('ca-eligibility').value,serviceScope,applicableServiceIds,applicableServiceNames,validFrom:get('ca-from').value,validUntil:get('ca-until').value,validDays:Number(get('ca-days').value||0),totalLimit:Number(get('ca-limit').value||0),active:get('ca-active').checked};
+  if(!payload.code||!payload.name||!Number.isInteger(payload.value)||payload.value<=0){alert('請填寫優惠碼、名稱與正確折抵值');return;}
+  if(serviceScope==='selected_services'&&!applicableServiceIds.length){alert('指定服務優惠券至少要勾選一個適用項目');return;}
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認儲存優惠券活動');if(!recoveryCode)return;
+  if(!beginAction('save_coupon_campaign'))return;
+  try{
+    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/upsert-coupon-campaign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,recoveryCode})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'儲存失敗');
+    const index=couponCampaigns.findIndex(c=>(c.code||c.id)===result.campaign.code);if(index>=0)couponCampaigns[index]={...couponCampaigns[index],...result.campaign,id:result.campaign.code};else couponCampaigns.push({...result.campaign,id:result.campaign.code});
+    toast('優惠券活動已儲存','sys','優惠券');editingCouponCode=null;renderStaffContent();
+  }catch(e){alert(e.message||'優惠券活動儲存失敗');}
+  finally{endAction('save_coupon_campaign');}
+}
+async function toggleCouponCampaign(code,active){
+  if(!requireBoss(active?'啟用優惠券':'停用優惠券'))return;if(!confirm('確定'+(active?'啟用':'停用')+'優惠券活動 '+code+'？\n已鎖定在現有預約的券仍會照常核銷。'))return;
+  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認');if(!recoveryCode)return;if(!beginAction('toggle_coupon_'+code))return;
+  try{const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/set-coupon-campaign-active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,active,recoveryCode})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'更新失敗');const campaign=couponCampaigns.find(c=>(c.code||c.id)===code);if(campaign)campaign.active=active;toast(code+' 已'+(active?'啟用':'停用'),'sys','優惠券狀態');renderStaffContent();}
+  catch(e){alert(e.message||'優惠券狀態更新失敗');}finally{endAction('toggle_coupon_'+code);}
 }
 
 // ── 公休設定 ──
@@ -3099,19 +3612,19 @@ async function startService(bookId){
 async function endService(bookId){
   if(!beginAction('end_'+bookId))return; const b=bookings.find(x=>x.id===bookId);if(!b){endAction('end_'+bookId);return;}
   try{
-    const endedAt=Date.now(),endedTime=now(),updated=await updateBookingAtomic(bookId,current=>{
+    const endedAt=Date.now(),endedTime=now(),result=await updateBookingAndCouponAtomic(bookId,current=>{
       if(current.status!=='accepted'||!current.startTime||current.endTime){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}
       if(!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}
-      const startMs=bookingStartMs(current),basePrice=Number(current.price)||0,bookedMins=bookingDurationMins(current)+(Number(current.extraMins)||0);
+      const startMs=bookingStartMs(current),basePrice=bookingPayablePrice(current),originalPrice=Number(current.subtotalPrice!==undefined?current.subtotalPrice:current.price)||0,bookedMins=bookingDurationMins(current)+(Number(current.extraMins)||0);
       // 切單代表整套服務完成：不因提早切單而按分鐘比例減價。
-      // 實際經過時間另存供查核；報表工時與應收金額一律採預約完整時數及原價。
+      // 實際經過時間另存供查核；應收金額採完整服務價，若有優惠券再扣除其鎖定折抵。
       const actualElapsedMins=startMs?Math.max(0,Math.round((endedAt-startMs)/60000)):bookedMins;
       const actualMins=bookedMins,completedMins=bookedMins,finalPrice=basePrice;
-      return {...current,endTime:endedTime,endTimestamp:endedAt,status:'done',actualElapsedMins,actualMins,completedMins,finalPrice,priceDiff:0};
-    });
-    Object.assign(b,updated);
+      return {...current,endTime:endedTime,endTimestamp:endedAt,status:'done',actualElapsedMins,actualMins,completedMins,finalPrice,priceDiff:finalPrice-originalPrice};
+    },'consume');
+    Object.assign(b,result.booking);
     const bookedMins=bookingDurationMins(b)+(Number(b.extraMins)||0);
-    const msg='⏹️ 切單：'+b.name+' ・ 完成 '+bookedMins+'分\n應收：NT$'+b.finalPrice+'（完整計價）';
+    const msg='⏹️ 切單：'+b.name+' ・ 完成 '+bookedMins+'分\n應收：NT$'+b.finalPrice+'（完整計價'+(b.coupon?'，優惠券已核銷':'')+'）';
     if(b.bed){try{await reserveBedSlot(b,{force:true});}catch(lockErr){console.warn('切單後床位鎖同步失敗',lockErr);toast('切單已完成，但床位同步失敗','sys','床位提醒');}}
     timerAlertsShown.delete(bookId);toast(msg,'sys','服務結束');renderStaffContent();startTimerLoop();
   }catch(e){if(e&&e.code==='not-owner')alert('只能結束自己承接的服務');else if(e&&e.code==='booking-state-changed')alert('此服務已在其他裝置結束或狀態已變更');else alert('切單資料儲存失敗，請確認網路後再試一次');}
@@ -3433,23 +3946,23 @@ async function sendLineMessage(msg) {
 
 // LINE 通知內容產生器
 function buildCustLineMsg(b) {
-  return "【元氣堂】預約成功通知 ✅\n━━━━━━━━━━━━━\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + "\n費用：NT$" + b.price + "\n━━━━━━━━━━━━━\n預約後我們會盡快確認\n如需修改請來電：0987-450-468";
+  return "【元氣堂】預約成功通知 ✅\n━━━━━━━━━━━━━\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + (b.coupon?"\n優惠券："+b.coupon.name+" －NT$"+Number(b.discountAmount||0):"") + "\n預計費用：NT$" + bookingPayablePrice(b) + "\n━━━━━━━━━━━━━\n預約後我們會盡快確認\n如需修改請來電：0987-450-468";
 }
 
 function buildCustConfirmMsg(b, empName, empId) {
-  return "【元氣堂】預約已確認 🎉\n━━━━━━━━━━━━━\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + "\n費用：NT$" + b.price + "\n接待師傅：" + empName + "（" + empId + "）\n━━━━━━━━━━━━━\n請準時到場，謝謝！\n如有疑問：0987-450-468";
+  return "【元氣堂】預約已確認 🎉\n━━━━━━━━━━━━━\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + (b.coupon?"\n優惠券："+b.coupon.name+" －NT$"+Number(b.discountAmount||0):"") + "\n預計費用：NT$" + bookingPayablePrice(b) + "\n接待師傅：" + empName + "（" + empId + "）\n━━━━━━━━━━━━━\n請準時到場，謝謝！\n如有疑問：0987-450-468";
 }
 
 function buildStaffAcceptMsg(b, emp) {
   const t = now();
   const noteStr = b.note ? ("備註：" + b.note) : "";
-  return "【元氣堂後台】接案通知 " + t + " ✅\n━━━━━━━━━━━━━\n員工：" + emp.name + "（" + emp.id + "）\n客人：" + b.name + "\n電話：" + b.phone + "\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + "\n費用：NT$" + b.price + (noteStr ? "\n" + noteStr : "") + "\n━━━━━━━━━━━━━";
+  return "【元氣堂後台】接案通知 " + t + " ✅\n━━━━━━━━━━━━━\n員工：" + emp.name + "（" + emp.id + "）\n客人：" + b.name + "\n電話：" + b.phone + "\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + (b.coupon?"\n優惠券："+b.coupon.code+" －NT$"+Number(b.discountAmount||0):"") + "\n預計應付：NT$" + bookingPayablePrice(b) + (noteStr ? "\n" + noteStr : "") + "\n━━━━━━━━━━━━━";
 }
 
 function buildNewBookingStaffMsg(b) {
   const t = now();
   const noteStr = b.note ? ("備註：" + b.note) : "";
-  return "【元氣堂】新預約通知 " + t + " 📋\n━━━━━━━━━━━━━\n客人：" + b.name + "\n電話：" + b.phone + "\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + "\n費用：NT$" + b.price + (noteStr ? "\n" + noteStr : "") + "\n━━━━━━━━━━━━━\n請登入系統接案 👆";
+  return "【元氣堂】新預約通知 " + t + " 📋\n━━━━━━━━━━━━━\n客人：" + b.name + "\n電話：" + b.phone + "\n服務項目：" + b.svc + " " + b.dur + "\n日期：" + b.date + " " + b.time + (b.coupon?"\n優惠券："+b.coupon.code+" －NT$"+Number(b.discountAmount||0):"") + "\n預計應付：NT$" + bookingPayablePrice(b) + (noteStr ? "\n" + noteStr : "") + "\n━━━━━━━━━━━━━\n請登入系統接案 👆";
 }
 
 // ── 修改預約 ──
@@ -3465,6 +3978,8 @@ function openEditBooking(id){
   document.getElementById('em-name').value = b.name||'';
   document.getElementById('em-phone').value = b.phone||'';
   document.getElementById('em-svc').value = b.svc||'';
+  document.getElementById('em-svc').readOnly=!!b.coupon;
+  const couponLockHint=document.getElementById('em-coupon-lock-hint');if(couponLockHint){couponLockHint.textContent=b.coupon?'此預約已使用優惠券；如需更換服務，請先取消預約退券後重新建立。':'';couponLockHint.classList.toggle('hidden',!b.coupon);}
   document.getElementById('em-date').value=b.dateKey||b.date||'';
   document.getElementById('em-time').value = b.time||'';
   document.getElementById('em-bed').value = b.bed||'';
@@ -3485,13 +4000,15 @@ function saveEditBooking(){
   const rawDate=document.getElementById('em-date').value.trim();const dp=parseDateInput(rawDate,b.year||new Date().getFullYear());if(!dp){alert('日期格式請輸入 9/11 或 2026-09-11');return;}
   const newTime=document.getElementById('em-time').value.trim(),newBed=parseInt(document.getElementById('em-bed').value)||null,newName=cleanText(document.getElementById('em-name').value||b.name,80),newPhone=cleanText(document.getElementById('em-phone').value||b.phone,30),newSvc=cleanText(document.getElementById('em-svc').value||b.svc,180),newNote=cleanText(document.getElementById('em-note').value,500),newThId=document.getElementById('em-therapist').value||null,newThName=newThId?(THERAPISTS.find(t=>t.id===newThId)||{}).name||'':'';
   if(!newName||!newSvc||!/^([01]\d|2[0-3]):[0-5]\d$/.test(newTime)){alert('請填寫有效的姓名、服務名稱與時間（HH:MM）');return;}
+  if(b.coupon&&newSvc!==b.svc){alert('此預約已鎖定優惠券，不能直接更換服務；請先取消預約退券後重新建立。');return;}
   if(newBed&&newTime){const conflict=findBedConflicts({dateKey:dp.key,time:newTime,durationMinutes:bookingDurationMins(b),bed:newBed,excludeId:b.id});if(conflict.length){const names=conflict.map(x=>esc(x.name)+'（'+esc(x.time)+'）').join('、');const w=document.getElementById('edit-warn');const forceBtn=cur.user.role==='boss'?'<button onclick="forceSaveEdit()" style="padding:5px 14px;background:var(--red-pale);color:var(--red);border:1px solid #e8b0b0;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">⚠️ 店長確認忽略</button>':'';w.innerHTML='⚠️ <strong>床位衝突！</strong>'+esc(dp.display)+' '+esc(newTime)+' 的 '+newBed+'號床 已有：'+names+'<br><div style="display:flex;gap:8px;margin-top:8px">'+forceBtn+'<button onclick="hideEditWarn()" style="padding:5px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit">取消重選</button></div>';w.classList.remove('hidden');return;}}
   doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,false);
 }
 function forceSaveEdit(){
   if(cur.user.role!=='boss'){alert('只有店長可以忽略床位衝突');return;}
   const b=bookings.find(x=>x.id===editingBookId);if(!b)return;const dp=parseDateInput(document.getElementById('em-date').value.trim(),b.year||new Date().getFullYear());if(!dp){alert('日期格式錯誤');return;}
-  doSaveEdit(cleanText(document.getElementById('em-name').value||b.name,80),cleanText(document.getElementById('em-phone').value||b.phone,30),cleanText(document.getElementById('em-svc').value||b.svc,180),dp,document.getElementById('em-time').value.trim()||b.time,parseInt(document.getElementById('em-bed').value)||null,cleanText(document.getElementById('em-note').value,500),document.getElementById('em-therapist').value||null,(document.getElementById('em-therapist').value?(THERAPISTS.find(t=>t.id===document.getElementById('em-therapist').value)||{}).name||'':''),true);
+  const forcedSvc=cleanText(document.getElementById('em-svc').value||b.svc,180);if(b.coupon&&forcedSvc!==b.svc){alert('此預約已鎖定優惠券，不能直接更換服務；請先取消預約退券後重新建立。');return;}
+  doSaveEdit(cleanText(document.getElementById('em-name').value||b.name,80),cleanText(document.getElementById('em-phone').value||b.phone,30),forcedSvc,dp,document.getElementById('em-time').value.trim()||b.time,parseInt(document.getElementById('em-bed').value)||null,cleanText(document.getElementById('em-note').value,500),document.getElementById('em-therapist').value||null,(document.getElementById('em-therapist').value?(THERAPISTS.find(t=>t.id===document.getElementById('em-therapist').value)||{}).name||'':''),true);
 }
 async function doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,force){
   if(!requireBookingManager('修改預約資料'))return;
@@ -3499,6 +4016,8 @@ async function doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newT
   try{
     if(b.status==='accepted'&&!canManageBookingsSession()&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
     if(b.status!=='new'&&b.status!=='accepted'){alert('此狀態的預約不能修改');return;}
+    if(b.coupon&&newSvc!==b.svc){alert('此預約已鎖定優惠券，不能直接更換服務；請先取消預約退券後重新建立。');return;}
+    if(b.coupon&&((b.coupon.validFrom&&dp.key<b.coupon.validFrom)||(b.coupon.validUntil&&dp.key>b.coupon.validUntil))){alert('新日期超出已鎖定優惠券的有效期，請改選有效期內日期，或先取消此預約讓優惠券退回。');return;}
     const changedSlot=bookingDateKey(b)!==dp.key||b.time!==newTime||Number(b.bed||0)!==Number(newBed||0);
     changedLockDoc=bookingDateKey(b)!==dp.key||Number(b.bed||0)!==Number(newBed||0);
     const changes={name:newName,phone:newPhone,svc:newSvc,date:dp.display,dateKey:dp.key,year:dp.y,time:newTime||b.time,bed:newBed,note:newNote,therapistId:newThId,therapistName:newThName};
@@ -3529,7 +4048,7 @@ document.addEventListener('click', function(e){
     <div id="edit-warn" class="modal-warn hidden"></div>
     <div class="fg"><label class="flbl">客人姓名</label><input class="finp" id="em-name"></div>
     <div class="fg"><label class="flbl">手機</label><input class="finp" id="em-phone"></div>
-    <div class="fg"><label class="flbl">服務名稱</label><input class="finp" id="em-svc" placeholder="例：整復推拿 60分"></div>
+    <div class="fg"><label class="flbl">服務名稱</label><input class="finp" id="em-svc" placeholder="例：整復推拿 60分"><div id="em-coupon-lock-hint" class="hidden" style="font-size:10px;color:var(--red);margin-top:4px"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="fg"><label class="flbl">日期（9/11 或 2026-09-11）</label><input class="finp" id="em-date" placeholder="2026-09-11"></div>
       <div class="fg"><label class="flbl">時段（14:00）</label><input class="finp" id="em-time" placeholder="14:00"></div>
@@ -3589,6 +4108,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.3｜全時段班表修正版｜Build 20261010-1815</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.6｜自訂優惠券與批量發放版｜Build 20261014-1320</div>
 </body>
 </html>
