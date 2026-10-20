@@ -14,7 +14,16 @@ service cloud.firestore {
     // v2.1.7 過渡規則：既有前端仍直接存取下列集合。
     // 完成 Firebase Authentication 帳號遷移後，應改為依角色限制讀寫。
     match /bookings/{id} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.status in ['new', 'accepted']
+                    && !request.resource.data.keys().hasAny(['correctionRevision', 'lastCorrection']);
+      // 已完成單據由店長管理碼驗證後的 Admin API 更正；稽核欄位不可由前端偽造。
+      allow update: if resource.data.status != 'done'
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['correctionRevision', 'lastCorrection']);
+      allow delete: if false;
+    }
+    match /bookingCorrections/{id} {
+      allow read, write: if false;
     }
     match /customers/{id} {
       // 客人帳號刪除只能由 Render 後端執行，避免前端誤刪。

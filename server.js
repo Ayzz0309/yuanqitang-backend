@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { createBookingCorrectionService, installBookingCorrectionRoutes } = require('./booking-correction-api');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -428,7 +429,7 @@ async function sendLineMsg(to, text) {
 }
 
 // ── 健康檢查 ──
-app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.7' }));
+app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.9' }));
 
 // ── 員工註冊（註冊碼只存在 Render 環境變數）──
 app.post('/api/register/employee', registrationLimiter, async (req, res) => {
@@ -619,6 +620,147 @@ app.post('/api/admin/delete-customer', adminLimiter, async (req, res) => {
   } catch (error) {
     console.error('刪除指定客人帳號失敗:', error.message);
     return res.status(500).json({ error: '客人帳號刪除失敗，請稍後再試' });
+  }
+});
+
+// ── 店長將「僅歷史紀錄」連結到既有可登入會員帳號 ──
+app.post('/api/admin/link-customer-history', adminLimiter, async (req, res) => {
+  if (!firestore || !BOSS_RECOVERY_CODE) {
+    return res.status(503).json({ error: '會員連結功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+  }
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
+    return res.status(403).json({ error: '店長救援碼錯誤' });
+  }
+  const targetCustomerId = cleanDocumentId(body.targetCustomerId);
+  const bookingIds = [...new Set((Array.isArray(body.bookingIds) ? body.bookingIds : [])
+    .map(value => cleanDocumentId(value))
+    .filter(Boolean))].slice(0, 100);
+  if (!targetCustomerId) return res.status(400).json({ error: '請選擇要連結的會員帳號' });
+  if (!bookingIds.length) return res.status(400).json({ error: '找不到要連結的歷史紀錄' });
+  if (Array.isArray(body.bookingIds) && body.bookingIds.length > 100) {
+    return res.status(400).json({ error: '單次最多可連結 100 筆歷史紀錄' });
+  }
+
+  try {
+    const result = await firestore.runTransaction(async transaction => {
+      // 在同一交易內重新讀取全部會員，避免用舊畫面資料連結到重複手機。
+      const customerList = await transaction.get(firestore.collection('customers'));
+      const targetSnapshot = customerList.docs.find(snapshot => snapshot.id === targetCustomerId);
+      if (!targetSnapshot) {
+        throw Object.assign(new Error('TARGET_CUSTOMER_NOT_FOUND'), { status: 404, publicMessage: '找不到選擇的會員帳號，可能已被刪除' });
+      }
+      const target = targetSnapshot.data();
+      if (!target.pw) {
+        throw Object.assign(new Error('TARGET_NOT_LOGIN_ACCOUNT'), { status: 409, publicMessage: '只能連結到已有密碼、可登入的會員帳號' });
+      }
+
+      const bookingSnapshots = [];
+      for (const bookingId of bookingIds) {
+        bookingSnapshots.push(await transaction.get(firestore.collection('bookings').doc(bookingId)));
+      }
+      if (bookingSnapshots.some(snapshot => !snapshot.exists)) {
+        throw Object.assign(new Error('HISTORY_BOOKING_NOT_FOUND'), { status: 409, publicMessage: '部分歷史紀錄已變更，請重新整理畫面後再連結' });
+      }
+
+      const validHistoryPhones = [...new Set(bookingSnapshots
+        .map(snapshot => normalizePhone(snapshot.data().phone))
+        .filter(phone => /^09\d{8}$/.test(phone)))];
+      if (validHistoryPhones.length > 1) {
+        throw Object.assign(new Error('MULTIPLE_HISTORY_PHONES'), { status: 409, publicMessage: '這組歷史紀錄含有不同手機號碼，請先修正預約資料再連結' });
+      }
+      const historyPhone = validHistoryPhones[0] || '';
+      const targetPhone = normalizePhone(target.phone);
+      if (historyPhone && /^09\d{8}$/.test(targetPhone) && targetPhone !== historyPhone) {
+        throw Object.assign(new Error('TARGET_PHONE_MISMATCH'), {
+          status: 409,
+          publicMessage: `歷史手機 ${historyPhone} 與選擇帳號的手機 ${targetPhone} 不同，為避免連錯人已停止`
+        });
+      }
+      const linkedPhone = historyPhone || (/^09\d{8}$/.test(targetPhone) ? targetPhone : '');
+
+      if (linkedPhone) {
+        const duplicate = customerList.docs.find(snapshot => snapshot.id !== targetCustomerId && normalizePhone(snapshot.data().phone) === linkedPhone);
+        if (duplicate) {
+          const duplicateName = cleanString(duplicate.data().name || duplicate.id, 80);
+          throw Object.assign(new Error('PHONE_DUPLICATED'), {
+            status: 409,
+            publicMessage: `手機 ${linkedPhone} 已綁定其他會員「${duplicateName}」，不可重複連結`
+          });
+        }
+      }
+
+      // 若歷史預約已指向另一個仍存在的帳號，不允許強制覆蓋。
+      const activeCustomerIds = new Set(customerList.docs.map(snapshot => snapshot.id));
+      const conflictingBooking = bookingSnapshots.find(snapshot => {
+        const currentId = cleanDocumentId(snapshot.data().custId);
+        return currentId && currentId !== 'MANUAL' && currentId !== targetCustomerId && activeCustomerIds.has(currentId);
+      });
+      if (conflictingBooking) {
+        throw Object.assign(new Error('BOOKING_ALREADY_LINKED'), { status: 409, publicMessage: '其中一筆預約已連結其他存在的會員帳號，未進行覆蓋' });
+      }
+
+      let bindingRef = null;
+      let staleBindingReclaimed = false;
+      if (linkedPhone) {
+        bindingRef = firestore.collection('phoneBindings').doc(phoneBindingDocumentId(linkedPhone));
+        const bindingSnapshot = await transaction.get(bindingRef);
+        if (bindingSnapshot.exists) {
+          const boundCustomerId = cleanDocumentId(bindingSnapshot.data().customerId);
+          if (boundCustomerId && boundCustomerId !== targetCustomerId && activeCustomerIds.has(boundCustomerId)) {
+            const owner = customerList.docs.find(snapshot => snapshot.id === boundCustomerId);
+            throw Object.assign(new Error('PHONE_ALREADY_BOUND'), {
+              status: 409,
+              publicMessage: `手機 ${linkedPhone} 已綁定其他會員「${cleanString(owner && owner.data().name || boundCustomerId, 80)}」，不可重複連結`
+            });
+          }
+          staleBindingReclaimed = !!(boundCustomerId && boundCustomerId !== targetCustomerId && !activeCustomerIds.has(boundCustomerId));
+        }
+      }
+
+      const targetUpdate = {
+        historyLinkedAt: FieldValue.serverTimestamp(),
+        historyLinkedBookingCount: FieldValue.increment(bookingIds.length),
+        historyLinkedBy: 'boss'
+      };
+      if (linkedPhone && !/^09\d{8}$/.test(targetPhone)) {
+        targetUpdate.phone = linkedPhone;
+        targetUpdate.phoneVerified = false;
+        targetUpdate.phoneLinkedByBossAt = FieldValue.serverTimestamp();
+      }
+      transaction.set(firestore.collection('customers').doc(targetCustomerId), targetUpdate, { merge: true });
+      if (bindingRef) {
+        transaction.set(bindingRef, {
+          customerId: targetCustomerId,
+          phoneHash: bindingRef.id,
+          boundAt: FieldValue.serverTimestamp(),
+          source: 'boss_history_link'
+        }, { merge: true });
+      }
+      bookingSnapshots.forEach(snapshot => {
+        const update = {
+          custId: targetCustomerId,
+          customerAccountLinkedAt: FieldValue.serverTimestamp(),
+          customerAccountLinkedBy: 'boss',
+          _updated: new Date().toISOString()
+        };
+        if (linkedPhone) update.phone = linkedPhone;
+        transaction.set(snapshot.ref, update, { merge: true });
+      });
+
+      return {
+        targetCustomerId,
+        targetCustomerName: cleanString(target.name || targetCustomerId, 80),
+        linkedPhone,
+        linkedBookingCount: bookingSnapshots.length,
+        staleBindingReclaimed
+      };
+    });
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.publicMessage || '會員連結失敗' });
+    console.error('連結歷史紀錄失敗:', error.message);
+    return res.status(500).json({ error: '會員連結失敗，請稍後再試' });
   }
 });
 
@@ -1092,6 +1234,8 @@ app.get('/api/check-groups', (req, res) => {
   });
 });
 
+installBookingCorrectionRoutes({app,service:createBookingCorrectionService({db:firestore,managementCode:BOSS_RECOVERY_CODE}),limiter:adminLimiter});
+
 app.use((error, req, res, next) => {
   if (error && error.message === 'CORS_ORIGIN_DENIED') {
     return res.status(403).json({ error: '此網站來源未獲允許' });
@@ -1104,4 +1248,5 @@ app.use((error, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`元氣堂後端啟動 port ${PORT}`));
+if(require.main===module)app.listen(PORT, () => console.log(`元氣堂後端啟動 port ${PORT}`));
+module.exports=app;
