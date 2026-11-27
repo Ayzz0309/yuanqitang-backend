@@ -1,6 +1,7 @@
 'use strict';
 const crypto=require('node:crypto');
 const C=require('./booking-correction');
+const staffSchedule = require('./therapist-schedule');
 const catalog=require('./service-catalog');
 function fail(status,code,message){return Object.assign(new Error(code),{status,publicMessage:message});}
 function equal(a,b){const x=Buffer.from(String(a||'')),y=Buffer.from(String(b||''));return y.length>0&&x.length===y.length&&crypto.timingSafeEqual(x,y);}
@@ -64,6 +65,13 @@ function createBookingCorrectionService({db,managementCode,clock=Date.now}){
         if(result.releaseCoupon){const coupon={...wallet[index],status:'available',used:false,releasedAt:new Date(clock()).toISOString()};delete coupon.reservedBookingId;delete coupon.reservedAt;wallet[index]=coupon;}
         customer={...customer,coupons:wallet,couponUpdatedAt:new Date(clock()).toISOString()};
       }
+      if (current.status !== 'done' && !current.startTime) {
+        const oldEnd = interval(current, 0).end;
+        const newEnd = interval(next, 0).end;
+        if (newEnd > oldEnd && newEnd > 22 * 60) {
+          throw fail(409, 'AFTER_CLOSING', '新服務總時間超過 22:00，請先調整預約時間');
+        }
+      }
       let lockRef=null,lockData=null;
       if(current.status!=='done'&&current.bed){
         const key=C.dateKey(current);if(!key)throw fail(409,'DATE_INVALID','預約日期不完整，請先修正日期');
@@ -75,8 +83,6 @@ function createBookingCorrectionService({db,managementCode,clock=Date.now}){
         const all=await tx.get(db.collection('bookings').where('dateKey','==',key));
         const currentInterval=interval(next,buffer);
         if(!Number.isFinite(currentInterval.start)||!Number.isFinite(currentInterval.end))throw fail(400,'TIME_INVALID','預約開始時間不正確');
-        const oldInterval=interval(current,buffer);
-        if(!current.startTime&&currentInterval.end>oldInterval.end&&currentInterval.end-buffer>1320)throw fail(409,'AFTER_CLOSING','新服務總時間超過 22:00，請先調整預約時間');
         const rows=(Array.isArray(lockData.reservations)?lockData.reservations:[]).filter(row=>row&&row.bookingId!==bookingId&&row.status!=='declined');
         const comparisons=rows.concat(all.docs.filter(doc=>doc.id!==bookingId).map(doc=>doc.data()).filter(b=>b.status!=='declined'&&Number(b.bed)===Number(current.bed)).map(b=>interval(b,buffer)));
         if(comparisons.some(other=>currentInterval.start<Number(other.end)&&currentInterval.end>Number(other.start)))throw fail(409,'BED_CONFLICT','新服務時間與同床位其他預約重疊，請先換床位或調整時間');
@@ -87,6 +93,17 @@ function createBookingCorrectionService({db,managementCode,clock=Date.now}){
       next.lastCorrection={at,byId:actor.id,byName:actor.name,reason:result.reason,requestId,couponOverride:result.couponOverride};
       next.reportEditedAt=at;next.reportEditedBy=actor.id;next._updated=at;
       // Read everything first; all writes, coupon release, lock, and audit commit together.
+      const staffLock = key => db.collection('bedLocks').doc(key);
+      await staffSchedule.guard(current, next, {
+        async revision(key){return Number((await tx.get(staffLock(key))).data()?.revision) || 0;},
+        async openBookings(){
+          const results = await Promise.all(['new','accepted'].map(status =>
+            tx.get(db.collection('bookings').where('status','==',status))));
+          return results.flatMap(result => result.docs.map(doc => ({...doc.data(),id:doc.id})));
+        },
+        async employee(id){return (await tx.get(db.collection('employees').doc(id))).data();},
+        bump(key,revision){tx.set(staffLock(key),{revision});}
+      });
       tx.set(ref,next);
       if(customerRef)tx.set(customerRef,customer);
       if(lockRef)tx.set(lockRef,{...lockData,_updated:at});
