@@ -122,6 +122,19 @@ test('bed buffer can be zero; adjacent slots do not become false conflicts',asyn
   const f=fixture({'settings/appConfig':{bedBuffer:0},'bookings/B002':{...base,id:'B002',time:'15:00'}});
   assert.equal((await f.service.correct(input(f))).booking.svc,foot.name);
 });
+test('unassigned booking may end at closing but cannot be extended past closing', async () => {
+  const original = { ...base, bed: null, time: '20:30' };
+  const f = fixture({ 'bookings/B001': original });
+  await assert.rejects(
+    f.service.correct(input(f, { items: [{ ...item, durationMinutes: 120 }] })),
+    /AFTER_CLOSING/
+  );
+  assert.deepEqual(f.db.records.get('bookings/B001'), original);
+  assert.equal(audits(f).length, 0);
+  const result = await f.service.correct(input(f, { items: [{ ...item, durationMinutes: 90 }] }));
+  assert.equal(result.booking.durationMinutes, 90);
+});
+
 test('unstarted service extension past closing is rejected',async()=>{
   const f=fixture({'bookings/B001':{...base,time:'21:00'}});
   await assert.rejects(f.service.correct(input(f,{items:[{...item,price:1600,durationMinutes:120}]})),/AFTER_CLOSING/);
@@ -176,4 +189,14 @@ test('HTTP correction and history routes enforce the same permissions and never 
   const response=await post('/api/admin/correct-booking',input(f));assert.equal(response.status,200);assert.equal((await response.json()).booking.svc,foot.name);
   const history=await post('/api/admin/booking-corrections',{actor:boss,recoveryCode:ADMIN,bookingId:'B001'});
   assert.equal(history.status,200);const text=await history.text();assert.ok(!text.includes(ADMIN));assert.ok(!text.includes(boss.password));
+});
+
+test('longer service on another bed cannot overlap a therapist or helper on an existing booking',async()=>{
+  for(const other of [{therapistId:'T031'}, {therapistId:'T043',supportId:'T031'}]){
+    const f=fixture({'bookings/B001':{...base,therapistId:'T031'},
+      'bookings/B002':{...base,...other,id:'B002',bed:2,time:'15:00'}});
+    await assert.rejects(f.service.correct(input(f,{items:[{...item,durationMinutes:90}]})),{code:'therapist-conflict'});
+    assert.equal(f.db.records.get('bookings/B001').durationMinutes,60);
+    assert.equal(audits(f).length,0);
+  }
 });

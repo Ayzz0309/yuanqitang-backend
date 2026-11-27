@@ -7,7 +7,8 @@ service cloud.firestore {
       allow read: if true;
       // 過渡期仍允許既有前端寫入打卡關聯資料，但禁止自行改成老闆或換帳號 ID。
       allow update: if request.resource.data.role == resource.data.role
-                    && request.resource.data.id == resource.data.id;
+                    && request.resource.data.id == resource.data.id
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pw', 'passwordRevision', 'passwordResetAt', 'passwordResetBy']);
       allow create, delete: if false;
     }
 
@@ -28,8 +29,16 @@ service cloud.firestore {
     match /customers/{id} {
       // 客人帳號刪除只能由 Render 後端執行，避免前端誤刪。
       // 預約與優惠券鎖定目前仍由既有前端交易更新。
-      allow read, create, update: if true;
+      allow read, create: if true;
+      // 已有登入帳號的密碼只能由店長驗證後的後端重設；現場資料仍可首次註冊。
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['passwordRevision', 'passwordResetAt', 'passwordResetBy'])
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['pw'])
+                        || !resource.data.keys().hasAny(['pw']) || resource.data.pw == null || resource.data.pw == '');
       allow delete: if false;
+    }
+    match /accountResets/{id} {
+      // 密碼重設紀錄只有後端 Admin 可寫入及讀取，不儲存密碼或管理碼。
+      allow read, write: if false;
     }
     match /couponCampaigns/{code} {
       // 活動內容可公開讀取；建立、修改與停用只走 Render Admin API。

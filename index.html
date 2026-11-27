@@ -6,7 +6,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>元氣堂後台 v2.1.9 店長單據更正版｜元氣堂傳統整復推拿 — 線上預約</title>
+<title>元氣堂後台 v2.1.11 師傅預約防重疊版｜元氣堂傳統整復推拿 — 線上預約</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -330,12 +330,14 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 </style>
 
   <!-- Firebase SDK -->
-  <script src="service-catalog.js?v=2.1.9"></script>
-<script src="booking-correction.js?v=2.1.9"></script>
-<script defer src="booking-correction-ui.js?v=2.1.9"></script>
+  <script src="service-catalog.js?v=2.1.10"></script>
+<script src="booking-correction.js?v=2.1.10"></script>
+<script src="therapist-schedule.js?v=2.1.11"></script>
+<script defer src="booking-correction-ui.js?v=2.1.10"></script>
+<script defer src="account-support-ui.js?v=2.1.10"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc, updateDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, getDocsFromServer, query, where, onSnapshot, deleteDoc, updateDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAs_GNdiTCyUsGRSRx_xc9XFZ9RPYot-SM",
@@ -349,7 +351,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     window._db = db;
-    window._fs = { doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc, updateDoc, serverTimestamp, runTransaction };
+    window._fs = { doc, setDoc, getDoc, collection, getDocs, getDocsFromServer, query, where, onSnapshot, deleteDoc, updateDoc, serverTimestamp, runTransaction };
     window._fbReady = true;
     console.log('Firebase 已連線');
     // 通知主程式 Firebase 準備好了
@@ -361,7 +363,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.9｜Build 20261020-REPORT</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.11｜Build 20261127-STAFF</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -494,7 +496,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <img src="data:image/jpeg;base64,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" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
   </div>
   <div class="hdr-info">
-    <div class="hdr-name">元氣堂傳統整復推拿</div><div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">系統版本 v2.1.9｜店長單據更正版</div>
+    <div class="hdr-name">元氣堂傳統整復推拿</div><div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">系統版本 v2.1.11｜師傅預約防重疊版</div>
     <div class="hdr-user" id="hdr-user-text"></div>
   </div>
   <div class="hdr-right">
@@ -656,7 +658,7 @@ async function fbGetAll(col){
     const d = await db();
     const f = fs();
     const snap = await f.getDocs(f.collection(d, col));
-    return snap.docs.map(d=>({id:d.id, ...d.data()}));
+    return snap.docs.map(d=>({...d.data(), id:d.id}));
   }catch(e){ console.error('Firebase 讀取集合失敗:', e); throw e; }
 }
 
@@ -677,7 +679,7 @@ function fbListen(col, callback){
       const f = fs();
       const unsub=f.onSnapshot(f.collection(d, col), snap=>{
         dbLastError = null;
-        const docs = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        const docs = snap.docs.map(d=>({...d.data(), id:d.id}));
         callback(docs);
       }, err=>{
         dbLastError = err;
@@ -693,7 +695,21 @@ function fbListen(col, callback){
   })();
 }
 
-async function updateBookingAtomic(id, mutate){
+function checkStaffTransaction(tx, d, f, current, next){
+  const lock = key => f.doc(d, 'bedLocks', key);
+  return TherapistSchedule.guard(current, next, {
+    async revision(key){const snap = await tx.get(lock(key));return Number(snap.data()?.revision) || 0;},
+    async openBookings(){
+      const active = f.query(f.collection(d, 'bookings'), f.where('status', 'in', ['new','accepted']));
+      const snap = await f.getDocsFromServer(active);
+      return snap.docs.map(doc => ({...doc.data(), id:doc.id}));
+    },
+    async employee(id){return (await tx.get(f.doc(d, 'employees', id))).data();},
+    bump(key, revision){tx.set(lock(key), {revision});}
+  });
+}
+
+async function updateBookingAtomic(id, mutate, bedEdit){
   const d=await db(),f=fs(),ref=f.doc(d,'bookings',id);
   return f.runTransaction(d,async tx=>{
     const snap=await tx.get(ref);
@@ -702,6 +718,9 @@ async function updateBookingAtomic(id, mutate){
     const next=mutate({...current});
     if(!next){const er=new Error('BOOKING_UPDATE_REJECTED');er.code='booking-state-changed';throw er;}
     next.id=id;next._updated=new Date().toISOString();
+    const writeBeds = bedEdit ? await prepareEditedBeds(tx, d, f, current, next, bedEdit.force) : null;
+    await checkStaffTransaction(tx, d, f, current, next);
+    if (writeBeds) writeBeds();
     tx.set(ref,next);
     return next;
   });
@@ -709,7 +728,9 @@ async function updateBookingAtomic(id, mutate){
 
 // 儲存員工
 async function saveEmployee(e){
-  await fbSet('employees', e.id, e);
+  const d=await db(),f=fs();
+  const {pw,passwordRevision,passwordResetAt,passwordResetBy,...profile}=e;
+  await f.setDoc(f.doc(d,'employees',e.id),{...profile,_updated:new Date().toISOString()},{merge:true});
 }
 
 // 儲存客人
@@ -773,6 +794,30 @@ async function reserveBedSlot(b, options={}){
     kept.push({bookingId:b.id,start,end,status:b.status||'new',updatedAt:new Date().toISOString()});
     tx.set(ref,{dateKey,bed:b.bed,reservations:kept,_updated:new Date().toISOString()},{merge:true});
   });
+}
+
+// Stage both bed documents before the staff check. A rejected edit must keep
+// the original bed reservation, including when another device edits the same booking.
+async function prepareEditedBeds(tx, d, f, old, next, force){
+  const key = b => b.bed ? bookingDateKey(b) + '_bed' + b.bed : '';
+  const before = key(old), after = key(next);
+  if (before === after && old.time === next.time) return null;
+  const writes = [];
+  for (const name of new Set([before, after].filter(Boolean))) {
+    const ref = f.doc(d, 'bedLocks', name);
+    const snap = await tx.get(ref), data = snap.data() || {};
+    const rows = (data.reservations || []).filter(row => row.bookingId !== next.id);
+    if (name === after) {
+      const {start, end} = bookingInterval(next);
+      if (!force && rows.some(row => row.status !== 'declined' && intervalsOverlap(start,end,row.start,row.end))) {
+        throw Object.assign(new Error('BED_CONFLICT'), {code:'bed-conflict'});
+      }
+      rows.push({bookingId:next.id, start, end, status:next.status, updatedAt:next._updated});
+      data.bed = next.bed; data.dateKey = bookingDateKey(next);
+    }
+    writes.push([ref, {...data, reservations:rows, _updated:next._updated}]);
+  }
+  return () => writes.forEach(([ref,data]) => tx.set(ref,data));
 }
 
 async function releaseBedSlot(b){
@@ -839,6 +884,7 @@ async function createBookingAtomic(b){
       savedBooking.coupon=couponSnapshot;
       savedBooking.couponStatus='reserved';
     }
+    await checkStaffTransaction(tx, d, f, null, savedBooking);
     tx.set(bookingRef,savedBooking);
     if(customerRef&&savedCustomer)tx.set(customerRef,savedCustomer);
     if(lockRef)tx.set(lockRef,{...lockData,dateKey,bed:b.bed,reservations:kept,_updated:new Date().toISOString()},{merge:true});
@@ -1066,14 +1112,8 @@ async function loadAllData(){
     console.log('載入預約:', bks.length, '筆');
     // 員工
     const emps = await fbGetAll('employees');
-    if(emps.length > 0){
-      const firebaseEmps = emps.filter(e=>e.id!=='boss').map(e=>({
-        clockIn:null, clockOut:null, clockLog:[], cases:[], ...e
-      }));
-      const bossAcc = employees.find(e=>e.id==='boss');
-      employees = bossAcc ? [bossAcc, ...firebaseEmps] : firebaseEmps;
-      console.log('載入員工:', emps.length, '筆');
-    }
+    employees = emps.map(e=>({clockIn:null,clockOut:null,clockLog:[],cases:[],...e}));
+    console.log('載入員工:', emps.length, '筆');
     // 客人與優惠券活動
     const custs=await fbGetAll('customers'); customers=custs; console.log('載入客人:',custs.length,'筆');
     try{
@@ -1137,6 +1177,18 @@ function startRealtimeSync(){
       if(history&&!history.classList.contains('hidden'))renderMyBookings();
       if(String(bookState.step)==='2')renderTimes();
       if(String(bookState.step)==='2c')renderBeds();
+      if(String(bookState.step)==='2b')renderTherapists();
+    }
+  });
+  fbListen('employees', function(docs){
+    employees=docs.map(e=>({cases:[],...e}));
+    if(cur.type==='emp'&&cur.user){
+      const latest=employees.find(e=>e.id===cur.user.id);
+      if(!latest||latest.pw!==cur.user.pw||Number(latest.passwordRevision||0)!==Number(cur.user.passwordRevision||0)){
+        alert('此員工帳號已停用或密碼已變更，請重新登入。');logout();return;
+      }
+      cur.user={...cur.user,...latest};
+      renderStaffNav();if(staffTab==='employees')renderStaffContent();
     }
   });
   fbListen('clocks', function(docs){
@@ -1147,7 +1199,12 @@ function startRealtimeSync(){
     customers=docs;
     if(cur.type==='cust'&&cur.user){
       const latest=customers.find(c=>c.id===cur.user.id);
-      if(latest)cur.user=latest;
+      if(latest){
+        if(latest.pw!==cur.user.pw||Number(latest.passwordRevision||0)!==Number(cur.user.passwordRevision||0)){
+          alert('密碼已變更，請使用新密碼重新登入。');logout();return;
+        }
+        cur.user=latest;
+      }
       else{
         alert('此客人帳號已被店家刪除，系統將自動登出。');logout();return;
       }
@@ -1235,38 +1292,30 @@ function showErr(id,msg){
 }
 
 async function loginCust(){
-  const account=cleanText(document.getElementById('lc-phone').value,80);
+  const account=cleanText(document.getElementById('lc-phone').value,100);
   const pw=document.getElementById('lc-pw').value;
   if(!account||!pw){showErr('lc-err','請輸入手機號碼／舊會員姓名與密碼');return;}
-  const phoneKey=customerPhoneKey(account),isPhone=/^09\d{8}$/.test(phoneKey);
-  const findAccount=function(rows){
-    if(isPhone)return rows.find(c=>customerPhoneKey(c.phone)===phoneKey&&c.pw===pw)||null;
-    const matches=rows.filter(c=>c.pw===pw&&!/^09\d{8}$/.test(customerPhoneKey(c.phone))&&(String(c.id||'')===account||String(c.name||'')===account));
-    return matches.length===1?matches[0]:matches.length>1?'AMBIGUOUS':null;
-  };
-  let u=findAccount(customers);
-  if(!u){
-    try{ const rows=await fbGetAll('customers'); customers=rows; u=findAccount(customers); }
-    catch(e){ showErr('lc-err','Firebase 連線失敗，請稍後再試'); return; }
-  }
-  if(u==='AMBIGUOUS'){showErr('lc-err','有多筆同名舊會員資料，請聯絡店家協助確認');return;}
-  if(!u){showErr('lc-err','手機號碼／舊會員姓名或密碼錯誤');return;}
-  cur={type:'cust',user:u}; enterApp();
+  if(!beginAction('login_customer'))return;
+  const btn=document.querySelector('#form-login-cust .auth-submit');
+  if(btn){btn.disabled=true;btn.textContent='登入中…';}
+  try{
+    const result=await accountSupportRequest('/api/auth/login',{kind:'customer',account,password:pw});
+    cur={type:'cust',user:{...result.account,pw}};document.getElementById('lc-pw').value='';enterApp();
+  }catch(e){showErr('lc-err',e.message||'登入連線失敗，請確認網路後再試');}
+  finally{endAction('login_customer');if(btn){btn.disabled=false;btn.textContent='客人登入';}}
 }
 async function loginEmp(){
-  const id=document.getElementById('le-id').value.trim();
+  const id=document.getElementById('le-id').value.normalize('NFKC').trim();
   const pw=document.getElementById('le-pw').value;
-  let u=employees.find(e=>e.id===id&&e.pw===pw);
-  if(!u){
-    try{
-      const rows=await fbGetAll('employees');
-      const boss=employees.find(e=>e.id==='boss');
-      employees=(boss?[boss]:[]).concat(rows.filter(e=>!boss||e.id!==boss.id).map(e=>({cases:[],...e})));
-      u=employees.find(e=>e.id===id&&e.pw===pw);
-    }catch(e){ showErr('le-err','Firebase 連線失敗，請稍後再試'); return; }
-  }
-  if(!u){showErr('le-err','帳號或密碼錯誤');return;}
-  cur={type:'emp',user:u}; enterApp();
+  if(!id||!pw){showErr('le-err','請輸入員工帳號與密碼');return;}
+  if(!beginAction('login_employee'))return;
+  const btn=document.querySelector('#form-login-emp .auth-submit');
+  if(btn){btn.disabled=true;btn.textContent='登入中…';}
+  try{
+    const result=await accountSupportRequest('/api/auth/login',{kind:'employee',account:id,password:pw});
+    cur={type:'emp',user:{cases:[],...result.account,pw}};document.getElementById('le-pw').value='';enterApp();
+  }catch(e){showErr('le-err',e.message||'登入連線失敗，請確認網路後再試');}
+  finally{endAction('login_employee');if(btn){btn.disabled=false;btn.textContent='員工登入';}}
 }
 async function regCust(){
   const name=cleanText(document.getElementById('rc-name').value,80);
@@ -1346,33 +1395,36 @@ let forgotPwType = 'cust'; // 'cust' or 'emp'
 let forgotPwTarget = null;
 
 function showForgotPw(type){
-  forgotPwType = type;
-  forgotPwTarget = null;
-  if(type==='cust'){alert('為保護帳號安全，請聯絡店家核對身分後協助重設密碼。\n電話：0987-450-468');return;}
+  forgotPwType=type;forgotPwTarget=null;
+  if(type==='cust'){alert('請聯絡店家核對身分，再由店長於「客人名單」按「重設密碼」協助。\n電話：0987-450-468');return;}
+  ['fp-id','fp-code','fp-newpw','fp-newpw2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fp-err').classList.add('hidden');
+  document.getElementById('forgot-employee-help').classList.remove('hidden');
+  document.getElementById('forgot-step1').classList.add('hidden');
+  document.getElementById('forgot-description').textContent='員工忘記密碼：請由店長登入後，在「員工帳號管理」找到你的帳號並按「重設密碼」。員工不需要管理碼。';
   document.getElementById('forgot-modal').classList.remove('hidden');
 }
 function closeForgotModal(){
   document.getElementById('forgot-modal').classList.add('hidden');
+  ['fp-code','fp-newpw','fp-newpw2'].forEach(id=>document.getElementById(id).value='');
 }
-function forgotVerify(){
-  forgotReset();
-}
+function forgotVerify(){forgotReset();}
 async function forgotReset(){
   const employeeId=cleanText(document.getElementById('fp-id').value,50);
-  const recoveryCode=document.getElementById('fp-code').value.trim();
+  const recoveryCode=document.getElementById('fp-code').value;
   const password=document.getElementById('fp-newpw').value;
-  const password2=document.getElementById('fp-newpw2').value;
-  if(!recoveryCode||!password||!password2){showErr('fp-err','請填寫救援碼與兩次新密碼');return;}
-  if(password.length<6){showErr('fp-err','新密碼至少6位');return;}
-  if(password!==password2){showErr('fp-err','兩次新密碼不一致');return;}
-  const btn=document.querySelector('#forgot-step1 .auth-submit');if(btn){btn.disabled=true;btn.textContent='重設中...';}
+  const passwordConfirm=document.getElementById('fp-newpw2').value;
+  if(!recoveryCode.trim()||!password||!passwordConfirm){showErr('fp-err','請填寫店長管理碼與兩次新密碼');return;}
+  if(password.length<6||password.length>128){showErr('fp-err','新密碼長度需為 6–128 位');return;}
+  if(password!==passwordConfirm){showErr('fp-err','兩次新密碼不一致');return;}
+  if(!beginAction('boss_recovery'))return;
+  const btn=document.querySelector('#forgot-step1 .auth-submit');if(btn){btn.disabled=true;btn.textContent='重設中…';}
   try{
-    const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/reset-boss-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,recoveryCode,password})});
-    const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'重設失敗');
-    closeForgotModal();document.getElementById('le-id').value=result.bossId||employeeId;document.getElementById('le-pw').value='';
-    alert('店長密碼已重設成功。\n店長帳號：'+(result.bossId||employeeId)+'\n請使用新密碼登入。');
-  }catch(e){showErr('fp-err',e.message||'重設失敗，請稍後再試');}
-  finally{if(btn){btn.disabled=false;btn.textContent='確認重設店長密碼';}}
+    const result=await accountSupportRequest('/api/admin/reset-boss-password',{employeeId,recoveryCode,password,passwordConfirm});
+    closeForgotModal();document.getElementById('le-id').value=result.bossId;document.getElementById('le-pw').value='';
+    alert('店長密碼已重設成功。\n店長帳號：'+result.bossId+'\n請使用新密碼登入。');
+  }catch(e){showErr('fp-err',e.message||'連線失敗，請稍後再試');}
+  finally{endAction('boss_recovery');if(btn){btn.disabled=false;btn.textContent='確認重設店長密碼';}}
 }
 
 function customerNeedsPhoneCompletion(customer){
@@ -1465,6 +1517,8 @@ function enterApp(){
 }
 
 function logout(){
+  if(typeof closeAccountSupport==='function')closeAccountSupport();
+  if(typeof closeForgotModal==='function')closeForgotModal();
   if(typeof closeBookingCorrection==='function')closeBookingCorrection();
   stopRealtimeSync();
   if(timerLoopId){ clearInterval(timerLoopId); timerLoopId=null; }
@@ -1497,14 +1551,7 @@ function now(){const d=new Date();return `${d.getHours().toString().padStart(2,'
 
 // ===== CUSTOMER APP =====
 let SVCS=YuanqiServiceCatalog;
-const THERAPISTS = [
-  {id:'T_GUO', name:'郭老師', specialty:'整復推拿', exp:'', avatar:'郭', role:'boss'},
-  {id:'T_HON', name:'洪老師', specialty:'整復推拿', exp:'', avatar:'洪', role:'boss'},
-  {id:'T043', name:'43號', specialty:'整復推拿', exp:'', avatar:'43', role:'staff'},
-  {id:'T031', name:'31號', specialty:'整復推拿', exp:'', avatar:'31', role:'staff'},
-  {id:'T026', name:'26號', specialty:'整復推拿', exp:'', avatar:'26', role:'staff'},
-  {id:'T007', name:'7號', specialty:'整復推拿', exp:'', avatar:'7', role:'staff'},
-];
+const THERAPISTS = TherapistSchedule.roster;
 
 // 打卡狀態：每位師傅獨立記錄
 let therapistClock = {
@@ -1687,8 +1734,14 @@ function isTherapistWorking(therapistId,dateStr,timeStr){
   if(range) return mins>=range.start && finish<=range.end;
   return false;
 }
+function staffBusy(candidate){
+  return TherapistSchedule.conflicts(candidate, bookings, id => employees.find(e => e.id === id));
+}
+function requestedStaffBusy(id, dateKey, time){
+  return staffBusy({status:'new',therapistId:id,dateKey,time,durationMinutes:selectedTotalDuration()});
+}
 function anyTherapistWorking(dateStr,timeStr){
-  return THERAPISTS.some(t=>isTherapistWorking(t.id,dateStr,timeStr));
+  return THERAPISTS.some(t=>isTherapistWorking(t.id,dateStr,timeStr) && !requestedStaffBusy(t.id,dateStr,timeStr));
 }
 
 
@@ -1827,7 +1880,7 @@ function renderTimes(){
           const noStaff=!!dateKey&&!anyTherapistWorking(dateKey,t);
           const allBusy=[1,2,3].every(bed=>findBedConflicts({dateKey,time:t,durationMinutes:duration,bed}).length>0);
           const disabled=past||outsideHours||noStaff||allBusy;
-          const note=past?'（已過時間）':outsideHours?'（服務時間超出營業時段）':noStaff?'（目前沒有師傅上班）':allBusy?'（床位已滿）':'';
+          const note=past?'（已過時間）':outsideHours?'（服務時間超出營業時段）':noStaff?'（沒有可安排的師傅）':allBusy?'（床位已滿）':'';
           return `<option value="${t}" ${bookState.time===t?'selected':''} ${disabled?'disabled':''}>${t} ${note}</option>`;
         }).join('')}
       </select>
@@ -1935,7 +1988,7 @@ function renderTherapists(){
   // 說明文字
   const hint = document.createElement('div');
   hint.style.cssText = 'margin-bottom:0.9rem;font-size:13px;color:var(--text2)';
-  hint.textContent = '可依個人喜好指定師傅，休假中師傅無法指定';
+  hint.textContent = '可依個人喜好指定師傅，休假或已有預約的師傅無法指定';
   container.appendChild(hint);
 
   // 不指定
@@ -1944,8 +1997,9 @@ function renderTherapists(){
   // 各師傅
   THERAPISTS.forEach(function(t){
     const working = !selectedDate || isTherapistWorking(t.id, selectedDate, selectedTime);
-    const disabled = !working;
-    const shiftLbl = disabled ? '😴 今日休假 / 非上班時段' : getShiftLabel(t.id, selectedDate);
+    const busy = working && requestedStaffBusy(t.id, selectedDate, selectedTime);
+    const disabled = !working || busy;
+    const shiftLbl = busy ? '此時段已有預約' : !working ? '😴 今日休假 / 非上班時段' : getShiftLabel(t.id, selectedDate);
     container.appendChild(makeCard(t.id, t.avatar, t.name, shiftLbl, disabled));
   });
 }
@@ -2021,8 +2075,11 @@ async function submitBook(){
     if(bookState.couponId){const usable=selectedCoupon?couponUsableForBooking(selectedCoupon,svcPrice,dateKey,cur.user.id,svcs):{ok:false,message:'找不到所選優惠券'};if(!usable.ok){alert(usable.message||'此優惠券目前無法使用');renderSummary();return;}}
     if(isTimePast(dateKey,bookState.time,0)){ alert('這個時段已經過了，請重新選擇時間'); return; }
     if(!appointmentFitsBusinessHours(bookState.time,durationMinutes)){ alert('所選服務的總時間會超出營業時段，請調整開始時間或服務項目'); return; }
-    if(!anyTherapistWorking(dateKey,bookState.time)){alert('此時段目前沒有師傅上班，請重新選擇時間');return;}
+    if(!anyTherapistWorking(dateKey,bookState.time)){alert('此時段沒有可安排的師傅，請重新選擇時間');return;}
     if(bookState.therapist!=='none'&&!isTherapistWorking(bookState.therapist,dateKey,bookState.time)){alert('指定師傅在此時段沒有上班，請重新選擇');return;}
+    if(bookState.therapist!=='none' && requestedStaffBusy(bookState.therapist,dateKey,bookState.time)){
+      alert('指定師傅在這段時間已有預約，請重新選擇。');showStep('2b');return;
+    }
     const conflicts=findBedConflicts({dateKey,time:bookState.time,durationMinutes,bed:bookState.bed});
     if(conflicts.length){ alert('這個床位與其他預約時段重疊，請重新選擇床位或時間'); renderBeds(); return; }
     b={id:bId,custId:cur.user.id,name:cleanText(cur.user.name,80),phone:cleanText(cur.user.phone,30),svc:cleanText(svcName,500),items:svcs.map(sv=>({id:sv.id,name:cleanText(sv.name,100),durationLabel:cleanText(sv.selectedPrice.l,30),durationMinutes:selectedSvcDurationMinutes(sv),price:Number(sv.selectedPrice.p)||0})),dur:svcDur,durationMinutes,price:svcPrice,subtotalPrice:svcPrice,couponId:bookState.couponId||null,date:dateDisplay,dateKey,year:bookState.calY,time:bookState.time,status:'new',lineId:cleanText(cur.user.lineId||'',80),note:cleanText(document.getElementById('cs3-note').value,500),bed:bookState.bed,startTime:null,endTime:null,extraMins:0,therapistId:bookState.therapist==='none'?null:bookState.therapist,therapistName:bookState.therapist==='none'?null:(THERAPISTS.find(t=>t.id===bookState.therapist)?.name||null),acceptedBy:null,acceptedAt:null};
@@ -2041,7 +2098,8 @@ async function submitBook(){
     document.getElementById('success-sum').innerHTML=`<div class="sum-row"><span class="sum-lbl">服務項目</span><span>${esc(b.svc)}</span></div><div class="sum-row"><span class="sum-lbl">日期時段</span><span>${esc(b.date)} ${esc(b.time)}</span></div><div class="sum-row"><span class="sum-lbl">服務原價</span><span>NT$${Number(b.subtotalPrice||b.price).toLocaleString()}</span></div>${b.coupon?`<div class="sum-row"><span class="sum-lbl">優惠券</span><span>${esc(b.coupon.name)} －NT$${Number(b.discountAmount||0).toLocaleString()}</span></div>`:''}<div class="sum-row"><span class="sum-lbl">預計應付</span><span style="font-weight:700;color:var(--green)">NT$${payable.toLocaleString()}</span></div>${b.bed?`<div class="sum-row"><span class="sum-lbl">床位</span><span>${b.bed}號床</span></div>`:''}${b.therapistName?`<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>${esc(b.therapistName)}</span></div>`:'<div class="sum-row"><span class="sum-lbl">指定師傅</span><span>不指定</span></div>'}`;
     showStep(5);
   }catch(e){
-    if(e&&e.code==='bed-conflict') alert('剛剛有其他客人先訂到這個床位，請重新選擇床位或時間');
+    if(e?.code==='therapist-conflict'){alert(e.publicMessage);showStep('2b');}
+    else if(e&&e.code==='bed-conflict') alert('剛剛有其他客人先訂到這個床位，請重新選擇床位或時間');
     else if(e&&e.code==='coupon-unavailable'){alert(e.publicMessage||'優惠券已在其他預約使用，請重新選擇');renderSummary();}
     else { console.error(e); alert('預約儲存失敗，請確認網路後再試一次'); }
   }finally{ endAction('submitBook'); }
@@ -2359,6 +2417,7 @@ async function acceptBookingAtomic(id, assignee, therapist, manager){
       const er=new Error('BOOKING_ALREADY_ACCEPTED'); er.code='booking-taken'; throw er;
     }
     const next={...data,id,status:'accepted',acceptedBy:assignee.id,acceptedByName:assignee.name,therapistId:therapist?therapist.id:null,therapistName:therapist?therapist.name:null,managedBy:manager.id,managedByName:manager.name,acceptedAt:now(),acceptedAtTimestamp:Date.now(),_updated:new Date().toISOString()};
+    await checkStaffTransaction(tx, d, f, {...data,id}, next);
     tx.set(ref,next);
     return next;
   });
@@ -2387,7 +2446,8 @@ async function acceptBook(id){
     lineLog.unshift({to:'客人',name:accepted.name,msg:custMsg,time:nowT}); lineLog.unshift({to:'員工',name:assignedName,msg:staffMsg,time:nowT});
     renderStaffNav(); renderStaffContent();
   }catch(e){
-    if(e&&e.code==='booking-taken') alert('此預約已被其他員工接走，畫面將自動更新');
+    if(e?.code==='therapist-conflict') alert(e.publicMessage);
+    else if(e&&e.code==='booking-taken') alert('此預約已被其他員工接走，畫面將自動更新');
     else alert('接案資料儲存失敗，請確認網路後再試一次');
   }
   finally{ endAction('accept_'+id); }
@@ -3118,7 +3178,7 @@ async function submitManual(){
     }
     notifyLine('/api/notify/accepted',{empId:acceptEmp.id,empName:acceptEmp.name,name,phone:b.phone,svc:b.svc,dur:b.dur,date:b.date,time,price:b.price,note:b.note});
     toast('✅ 已為 '+name+' 建立預約！'+(isNew?'（新客人）':isMember?'（會員）':'')+welcomeNotice+' LINE通知發送中','sys','手動預約成功'); swStaffTab('accepted');
-  }catch(e){ if(e&&e.code==='bed-conflict')alert('剛剛有其他人先使用這個床位，請重新選擇'); else{console.error(e);alert('手動預約儲存失敗，請確認網路後再試');} }
+  }catch(e){ if(e?.code==='therapist-conflict')alert(e.publicMessage);else if(e&&e.code==='bed-conflict')alert('剛剛有其他人先使用這個床位，請重新選擇'); else{console.error(e);alert('手動預約儲存失敗，請確認網路後再試');} }
   finally{endAction('manual');}
 }
 
@@ -3237,7 +3297,7 @@ let customerCouponCampaignCode='';
 let customerCouponBulkTarget='members';
 function setCustomerCouponCampaign(value){customerCouponCampaignCode=String(value||'');}
 function setCustomerCouponBulkTarget(value){customerCouponBulkTarget=value==='all'?'all':'members';}
-function customerPhoneKey(value){return String(value||'').replace(/\D/g,'');}
+function customerPhoneKey(value){const digits=String(value||'').normalize('NFKC').replace(/\D/g,'');return digits.startsWith('8869')?'0'+digits.slice(3):digits;}
 function buildCustomerRows(){
   const byId=new Map(),byPhone=new Map(),rows=[];
   customers.forEach(function(customer){
@@ -3285,6 +3345,7 @@ function renderCustomers(){
     +'<div class="manual-form" style="margin-top:0"><div style="font-size:14px;font-weight:800;color:var(--pu);margin-bottom:8px">🎟️ 發放優惠券</div>'
     +'<div class="fg"><label class="flbl">選擇要發放的優惠券</label><select class="finp" id="cust-coupon-campaign" onchange="setCustomerCouponCampaign(this.value)">'+(campaignOptions||'<option value="">目前沒有可發放的優惠券</option>')+'</select></div>'
     +'<div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end"><div class="fg" style="margin:0"><label class="flbl">一次發放對象</label><select class="finp" id="cust-coupon-target" onchange="setCustomerCouponBulkTarget(this.value)"><option value="members" '+(customerCouponBulkTarget==='members'?'selected':'')+'>全部會員（有有效手機）</option><option value="all" '+(customerCouponBulkTarget==='all'?'selected':'')+'>全部客人資料（有有效手機）</option></select></div><button class="pbtn" style="width:auto;margin:0;padding:10px 14px" onclick="issueCouponBulkUI()" '+(campaignOptions?'':'disabled')+'>一次批量發放</button></div>'
+    +managementCodeHelpHtml()
     +'<div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.55">個別發放：先在上方選券，再按客人旁的「發所選券」。批量發放會自動跳過已領過、手機無效或不符合資格的人。</div></div>'
     +'<div style="margin:0 0.9rem;background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;">';
   list.forEach(function(c){
@@ -3300,6 +3361,8 @@ function renderCustomers(){
       +'<div class="cust-meta">📞 '+esc(c.phone||'未留電話')+lineInfo+' ・ 最近：'+esc(c.lastDate||'無')+(c.activeCount?' ・ 進行中 '+c.activeCount+'筆':'')+'</div>'
       +'<div class="cust-actions"><button class="mini-btn primary" onclick="toggleCustomerHistory(\''+encoded+'\')">'+(customerDetailOpenKey===c.key?'收起':'消費紀錄')+'</button>'
       +(canReceiveCoupon?'<button class="mini-btn" onclick="issueCouponToCustomerUI(decodeURIComponent(\''+accountEncoded+'\'))">🎟️ 發所選券</button>':'')
+      +(isRegistered?accountResetButtonHtml('customer',c.account.id):'')
+      +(!isRegistered||c.books.some(b=>!c.account||b.custId!==c.account.id)?customerAccountHelpButtonHtml(c.key,isRegistered?'連結歷史紀錄':'帳號說明／連結'):'')
       +(c.account?'<button class="mini-btn danger" onclick="deleteCustomerAccount(decodeURIComponent(\''+accountEncoded+'\'))">🗑 '+(isRegistered?'刪除帳號':'刪除資料')+'</button>':'')+'</div></div>'
       +'<div style="text-align:right;min-width:70px">'
       +'<div><span class="cust-badge '+tierClass[tier]+'">'+tierLbl[tier]+'</span></div>'
@@ -3319,7 +3382,7 @@ async function deleteCustomerAccount(customerId){
   if(!requireBoss('刪除客人帳號'))return;
   const customer=customers.find(c=>c.id===customerId);if(!customer){alert('找不到此客人帳號');return;}
   if(!confirm('確定刪除「'+customer.name+'」的'+(customer.pw?'登入帳號':'客人資料')+'？\n\n預約、已完成消費與報表歷史都會保留；未使用優惠券會隨帳號移除。'))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認刪除「'+customer.name+'」');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('刪除「'+customer.name+'」');if(!recoveryCode)return;
   if(!beginAction('delete_customer_'+customerId))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-customer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId,recoveryCode})});
@@ -3337,7 +3400,7 @@ async function issueCouponToCustomerUI(customerId){
   customerCouponCampaignCode=code||customerCouponCampaignCode;
   if(!code||!campaign){alert('請先在客人名單上方選擇要發放的優惠券');return;}
   if(!confirm('確定發送「'+(campaign.name||code)+'」給 '+customer.name+'？\n'+couponValueText(campaign)+'｜'+couponScopeText(campaign)))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認發券');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('發送優惠券');if(!recoveryCode)return;
   if(!beginAction('issue_coupon_'+customerId))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/issue-coupon',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId,code,recoveryCode,issuedBy:cur.user.id})});
@@ -3356,7 +3419,7 @@ async function issueCouponBulkUI(){
   const candidateCount=customers.filter(c=>/^09\d{8}$/.test(customerPhoneKey(c.phone))&&(target==='all'||c.isMember===true)).length,targetLabel=target==='all'?'全部有有效手機的客人':'全部會員';
   if(!candidateCount){alert('目前沒有符合「'+targetLabel+'」條件的客人');return;}
   if(!confirm('確定將「'+(campaign.name||code)+'」一次發給'+targetLabel+'？\n預計檢查 '+candidateCount+' 人，已領過的人會自動跳過。'))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認批量發券');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('批量發送優惠券');if(!recoveryCode)return;
   if(!beginAction('issue_coupon_bulk'))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/issue-coupon-bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,target,recoveryCode,issuedBy:cur.user.id})});
@@ -3440,7 +3503,7 @@ async function saveCouponCampaign(){
   const get=id=>document.getElementById(id),serviceScope=get('ca-scope').value,applicableServiceIds=serviceScope==='selected_services'?selectedCouponServiceIds():[],serviceMap=new Map(couponServiceOptions().map(s=>[s.id,s.name])),applicableServiceNames=applicableServiceIds.map(id=>serviceMap.get(id)).filter(Boolean),payload={code:cleanText(get('ca-code').value,30).toUpperCase(),name:cleanText(get('ca-name').value,80),description:cleanText(get('ca-desc').value,160),type:get('ca-type').value,value:Number(get('ca-value').value),minSpend:Number(get('ca-min').value||0),maxDiscount:Number(get('ca-max').value||0),eligibility:get('ca-eligibility').value,serviceScope,applicableServiceIds,applicableServiceNames,validFrom:get('ca-from').value,validUntil:get('ca-until').value,validDays:Number(get('ca-days').value||0),totalLimit:Number(get('ca-limit').value||0),active:get('ca-active').checked};
   if(!payload.code||!payload.name||!Number.isInteger(payload.value)||payload.value<=0){alert('請填寫優惠碼、名稱與正確折抵值');return;}
   if(serviceScope==='selected_services'&&!applicableServiceIds.length){alert('指定服務優惠券至少要勾選一個適用項目');return;}
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認儲存優惠券活動');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('儲存優惠券活動');if(!recoveryCode)return;
   if(!beginAction('save_coupon_campaign'))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/upsert-coupon-campaign',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,recoveryCode})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'儲存失敗');
@@ -3451,7 +3514,7 @@ async function saveCouponCampaign(){
 }
 async function toggleCouponCampaign(code,active){
   if(!requireBoss(active?'啟用優惠券':'停用優惠券'))return;if(!confirm('確定'+(active?'啟用':'停用')+'優惠券活動 '+code+'？\n已鎖定在現有預約的券仍會照常核銷。'))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認');if(!recoveryCode)return;if(!beginAction('toggle_coupon_'+code))return;
+  const recoveryCode=await requestManagementCode('更新優惠券狀態');if(!recoveryCode)return;if(!beginAction('toggle_coupon_'+code))return;
   try{const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/set-coupon-campaign-active',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,active,recoveryCode})});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'更新失敗');const campaign=couponCampaigns.find(c=>(c.code||c.id)===code);if(campaign)campaign.active=active;toast(code+' 已'+(active?'啟用':'停用'),'sys','優惠券狀態');renderStaffContent();}
   catch(e){alert(e.message||'優惠券狀態更新失敗');}finally{endAction('toggle_coupon_'+code);}
 }
@@ -3635,7 +3698,7 @@ async function startService(bookId){
     }
     timerAlertsShown.delete(bookId);toast('▶️ 打單開始：'+b.name+' / '+b.svc,'sys','服務開始');renderStaffContent();startTimerLoop();
   }
-  catch(e){if(e&&e.code==='not-owner')alert('只能開始自己承接的服務');else if(e&&e.code==='booking-state-changed')alert('此預約已在其他裝置開始或狀態已變更');else alert('開始服務儲存失敗，請確認網路後再試');}
+  catch(e){if(e?.code==='therapist-conflict')alert(e.publicMessage);else if(e&&e.code==='not-owner')alert('只能開始自己承接的服務');else if(e&&e.code==='booking-state-changed')alert('此預約已在其他裝置開始或狀態已變更');else alert('開始服務儲存失敗，請確認網路後再試');}
   finally{endAction('start_'+bookId);}
 }
 
@@ -3731,7 +3794,7 @@ async function addTime(bookId, mins){
     const affected=bookings.filter(x=>x.id!==bookId&&Number(x.bed)===Number(b.bed)&&bookingDateKey(x)===bookingDateKey(b)&&x.status!=='declined').filter(x=>{const xi=bookingInterval(x);return intervalsOverlap(bi.start,bi.end,xi.start,xi.end);});
     if(affected.length>0) toast('⚠️ 注意：同床位後續客人可能受影響，請確認','sys','床位提醒');
     renderStaffContent(); if(b.startTime&&!b.endTime)startTimerLoop();
-  }catch(e){if(e&&e.code==='not-owner')alert('只能替自己承接的服務加時');else if(e&&e.code==='booking-state-changed')alert('服務已完成或狀態已變更，無法加時');else if(e&&e.code==='too-much-time')alert('累計加時不可超過 1440 分鐘');else alert('加時資料儲存失敗，請確認網路後再試');}
+  }catch(e){if(e?.code==='therapist-conflict')alert(e.publicMessage);else if(e&&e.code==='not-owner')alert('只能替自己承接的服務加時');else if(e&&e.code==='booking-state-changed')alert('服務已完成或狀態已變更，無法加時');else if(e&&e.code==='too-much-time')alert('累計加時不可超過 1440 分鐘');else alert('加時資料儲存失敗，請確認網路後再試');}
   finally{endAction('addtime_'+bookId);}
 }
 
@@ -3874,7 +3937,7 @@ function employeeTherapistId(e){
 }
 function renderEmployees(){
   if(!isBossSession())return bossOnlyMessage();
-  let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>'
+  let out=renderLineConfig()+'<div class="section-title">員工帳號管理</div>'+managementCodeHelpHtml()
     +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#eef7ff;border:1px solid #b8d8f0;border-radius:12px"><div style="font-size:13px;font-weight:700;color:#245a9b;margin-bottom:5px">管理人員權限</div><div style="font-size:11px;color:var(--text2);line-height:1.6">管理人員可以建立、接受、安排、修改及取消預約；報表、員工帳號與系統設定仍只有店長可操作。</div></div>'
     +'<div style="margin:0 .9rem 1rem;padding:1rem;background:#fff8e8;border:1px solid #efd394;border-radius:12px"><div style="font-size:13px;font-weight:700;color:#9a6500;margin-bottom:5px">指定刪除員工帳號</div><div style="font-size:11px;color:var(--text2);line-height:1.6">每個非店長帳號旁都有「刪除帳號」。只會刪除選中的登入帳號，預約、報表、班表及打卡歷史都會保留；刪除後該班表身分即可重新註冊。</div></div>';
   employees.forEach(function(e){
@@ -3888,13 +3951,14 @@ function renderEmployees(){
     const isOnline=isClockedIn(clk);
     const onlineTag=isOnline?'<span style="background:#edf9f0;color:var(--green);border:1px solid #a0d0b0;border-radius:20px;font-size:10px;padding:2px 8px;font-weight:700;margin-left:4px">🟢 上線中</span>':'<span style="background:#f5f5f5;color:var(--text3);border:1px solid #ddd;border-radius:20px;font-size:10px;padding:2px 8px;margin-left:4px">⚫ 離線</span>';
     out+='<div class="emp-manage-card">'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
       +'<div class="emp-av" style="'+(isOnline?'box-shadow:0 0 0 3px #2d9e52':'')+'">'+esc((e.name||'?')[0])+'</div>'
-      +'<div style="flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
+      +'<div style="flex:1;min-width:100px;overflow-wrap:anywhere"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
       +'<span style="font-size:14px;font-weight:700">'+esc(e.name)+'</span>'+bossTag+onlineTag+'</div>'
       +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+esc(e.id)
       +(clk.clockIn?' ・ 上班：'+esc(clk.clockIn):'')+(clk.clockOut?' ・ 下班：'+esc(clk.clockOut):'')+'</div></div>'
       +(e.role!=='boss'?'<button onclick="setEmployeeRole(\''+esc(e.id)+'\',\''+(e.role==='manager'?'staff':'manager')+'\')" style="flex-shrink:0;background:'+(e.role==='manager'?'#f5f5f5':'#e8f4ff')+';color:'+(e.role==='manager'?'var(--text2)':'#245a9b')+';border:1px solid '+(e.role==='manager'?'#ddd':'#b8d8f0')+';border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">'+(e.role==='manager'?'改為一般員工':'設為管理人員')+'</button>':'')
+      +(e.role!=='boss'?accountResetButtonHtml('employee',e.id):'')
       +(e.role!=='boss'?'<button onclick="deleteEmployeeAccount(\''+esc(e.id)+'\')" style="flex-shrink:0;background:#fff5f5;color:var(--red);border:1px solid #e8b0b0;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700">🗑 刪除帳號</button>':'')
       +'<button data-empid="'+esc(e.id)+'" class="clk-log-btn" style="flex-shrink:0;background:var(--pu-pale);color:var(--pu);border:1px solid var(--pu-mid);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600">📋 打卡記錄</button>'
       +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)">'
@@ -3907,7 +3971,7 @@ async function deleteEmployeeAccount(employeeId){
   if(!requireBoss('刪除員工帳號'))return;
   const employee=employees.find(e=>e.id===employeeId);if(!employee||employee.role==='boss'){alert('店長帳號不可刪除');return;}
   if(!confirm('確定刪除「'+employee.name+'」的登入帳號（'+employee.id+'）？\n\n預約、報表、班表與打卡歷史會保留，但此帳號將無法再登入。'))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認刪除「'+employee.name+'」');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('刪除「'+employee.name+'」');if(!recoveryCode)return;
   if(!beginAction('delete_employee_'+employeeId))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/delete-employee',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,recoveryCode})});
@@ -3924,7 +3988,7 @@ async function setEmployeeRole(employeeId,role){
   const employee=employees.find(e=>e.id===employeeId);if(!employee||employee.role==='boss')return;
   const label=role==='manager'?'管理人員':'一般員工';
   if(!confirm('確定將「'+employee.name+'」設為'+label+'？'))return;
-  const recoveryCode=prompt('請輸入 BOSS_RECOVERY_CODE 確認店長權限');if(!recoveryCode)return;
+  const recoveryCode=await requestManagementCode('更新員工權限');if(!recoveryCode)return;
   if(!beginAction('employee_role_'+employeeId))return;
   try{
     const response=await fetch(LINE_CONFIG.backendUrl+'/api/admin/set-employee-role',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employeeId,role,recoveryCode})});
@@ -4042,22 +4106,27 @@ function forceSaveEdit(){
 }
 async function doSaveEdit(newName,newPhone,newSvc,dp,newTime,newBed,newNote,newThId,newThName,force){
   if(!requireBookingManager('修改預約資料'))return;
-  if(!beginAction('edit_'+editingBookId))return;const b=bookings.find(x=>x.id===editingBookId);if(!b){endAction('edit_'+editingBookId);return;}const old=JSON.parse(JSON.stringify(b));let reserved=false,candidate=null,changedLockDoc=false;
+  if(!beginAction('edit_'+editingBookId))return;const b=bookings.find(x=>x.id===editingBookId);if(!b){endAction('edit_'+editingBookId);return;}const editId=b.id;
   try{
     if(b.status==='accepted'&&!canManageBookingsSession()&&b.acceptedBy!==cur.user.id){alert('只能修改自己承接的預約');return;}
     if(b.status!=='new'&&b.status!=='accepted'){alert('此狀態的預約不能修改');return;}
     if(newSvc!==b.svc){alert('請使用「更換服務」修改服務、分鐘與費用');return;}
     if(b.coupon&&((b.coupon.validFrom&&dp.key<b.coupon.validFrom)||(b.coupon.validUntil&&dp.key>b.coupon.validUntil))){alert('新日期超出已鎖定優惠券的有效期，請改選有效期內日期，或先取消此預約讓優惠券退回。');return;}
-    const changedSlot=bookingDateKey(b)!==dp.key||b.time!==newTime||Number(b.bed||0)!==Number(newBed||0);
-    changedLockDoc=bookingDateKey(b)!==dp.key||Number(b.bed||0)!==Number(newBed||0);
     const changes={name:newName,phone:newPhone,svc:newSvc,date:dp.display,dateKey:dp.key,year:dp.y,time:newTime||b.time,bed:newBed,note:newNote,therapistId:newThId,therapistName:newThName};
-    candidate={...b,...changes};
-    if(changedSlot&&newBed){await reserveBedSlot(candidate,{force:!!force});reserved=true;}
-    const updated=await updateBookingAtomic(b.id,current=>{if(current.status!=='new'&&current.status!=='accepted'){const er=new Error('STATE_CHANGED');er.code='booking-state-changed';throw er;}if(current.status==='accepted'&&!canManageBookingsSession()&&current.acceptedBy!==cur.user.id){const er=new Error('NOT_OWNER');er.code='not-owner';throw er;}return {...current,...changes};});
-    Object.keys(b).forEach(k=>delete b[k]);Object.assign(b,updated);if(changedLockDoc&&old.bed)await releaseBedSlot(old);
+    const updated=await updateBookingAtomic(editId,current=>{
+      if(!['new','accepted'].includes(current.status))throw Object.assign(new Error('STATE_CHANGED'),{code:'booking-state-changed'});
+      if(current.status==='accepted'&&!canManageBookingsSession()&&current.acceptedBy!==cur.user.id)throw Object.assign(new Error('NOT_OWNER'),{code:'not-owner'});
+      if(current._updated!==b._updated)throw Object.assign(new Error('STATE_CHANGED'),{code:'booking-state-changed'});
+      if (current.status === 'accepted' && (current.therapistId || null) !== newThId) {
+        const assignee = (newThId && employees.find(e => employeeTherapistId(e) === newThId)) || cur.user;
+        return {...current,...changes,acceptedBy:assignee.id,acceptedByName:assignee.name};
+      }
+      return {...current,...changes};
+    },{force});
+    Object.assign(b,updated);
     toast('✅ 已修改：'+b.name+' / '+b.date+' '+b.time+(newThName?' ・ 師傅→'+newThName:''),'sys','修改成功');closeEditModal();renderStaffContent();
-  }catch(e){Object.keys(b).forEach(k=>delete b[k]);Object.assign(b,old);if(reserved&&candidate){await releaseBedSlot(candidate);if(!changedLockDoc&&old.bed)try{await reserveBedSlot(old,{force:true});}catch(lockErr){console.warn('修改失敗後還原床位鎖失敗',lockErr);}}if(e&&e.code==='bed-conflict')alert('床位已被其他預約占用，請重新選擇');else if(e&&e.code==='not-owner')alert('只能修改自己承接的預約');else if(e&&e.code==='booking-state-changed')alert('預約狀態已在其他裝置變更，請重新確認');else alert('修改預約儲存失敗，請確認網路後再試一次');}
-  finally{endAction('edit_'+editingBookId);}
+  }catch(e){if(e?.code==='therapist-conflict')alert(e.publicMessage);else if(e&&e.code==='bed-conflict')alert('床位已被其他預約占用，請重新選擇');else if(e&&e.code==='not-owner')alert('只能修改自己承接的預約');else if(e&&e.code==='booking-state-changed')alert('預約狀態已在其他裝置變更，請重新確認');else alert('修改預約儲存失敗，請確認網路後再試一次');}
+  finally{endAction('edit_'+editId);}
 }
 
 
@@ -4115,30 +4184,23 @@ document.addEventListener('click', function(e){
   </div>
 </div>
 
-<!-- ── 忘記密碼 Modal ── -->
+<!-- ── 員工協助／店長救援 ── -->
 <div id="forgot-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeForgotModal()">
   <div class="modal-box">
-    <div class="modal-title">
-      <span>🔑 重設密碼</span>
-      <button class="modal-close" onclick="closeForgotModal()">✕</button>
+    <div class="modal-title"><span>🔑 員工／店長密碼協助</span><button class="modal-close" onclick="closeForgotModal()">✕</button></div>
+    <p id="forgot-description" style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:1rem"></p>
+    <div id="forgot-employee-help">
+      <button class="auth-submit" onclick="closeForgotModal()">知道了</button>
+      <button class="sbtn" style="margin-top:12px" onclick="showBossRecoveryForm()">我是店長，需要救援店長帳號</button>
     </div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:1rem">使用 Render 設定的店長救援碼重設密碼；不知道帳號時可將帳號欄留空。</p>
-    <div id="forgot-step1">
-      <div class="auth-inp-wrap"><label class="auth-lbl">店長帳號（不知道可留空）</label>
-        <input class="auth-inp" id="fp-id" placeholder="選填">
-      </div>
-      <div class="auth-inp-wrap"><label class="auth-lbl">店長救援碼</label>
-        <input class="auth-inp" id="fp-code" type="password" autocomplete="off" placeholder="BOSS_RECOVERY_CODE">
-      </div>
-      <div class="auth-inp-wrap"><label class="auth-lbl">設定新密碼</label>
-        <input class="auth-inp" id="fp-newpw" type="password" placeholder="至少6位數">
-      </div>
-      <div class="auth-inp-wrap"><label class="auth-lbl">確認新密碼</label>
-        <input class="auth-inp" id="fp-newpw2" type="password" placeholder="再輸入一次">
-      </div>
+    <form id="forgot-step1" class="hidden" onsubmit="event.preventDefault();forgotReset()">
+      <div class="auth-inp-wrap"><label class="auth-lbl" for="fp-id">店長帳號（不知道可留空）</label><input class="auth-inp" id="fp-id" autocomplete="username" placeholder="只適用店長帳號"></div>
+      <div class="auth-inp-wrap"><label class="auth-lbl" for="fp-code">店長管理碼</label><input class="auth-inp" id="fp-code" type="password" required autocomplete="off" placeholder="網站管理者提供的管理碼"></div>
+      <div class="auth-inp-wrap"><label class="auth-lbl" for="fp-newpw">設定新密碼</label><input class="auth-inp" id="fp-newpw" type="password" required minlength="6" maxlength="128" autocomplete="new-password" placeholder="6–128 位"></div>
+      <div class="auth-inp-wrap"><label class="auth-lbl" for="fp-newpw2">確認新密碼</label><input class="auth-inp" id="fp-newpw2" type="password" required minlength="6" maxlength="128" autocomplete="new-password" placeholder="再輸入一次"></div>
       <div id="fp-err" class="auth-err hidden"></div>
-      <button class="auth-submit" onclick="forgotReset()">確認重設店長密碼</button>
-    </div>
+      <button class="auth-submit" type="submit">確認重設店長密碼</button>
+    </form>
   </div>
 </div>
 
@@ -4152,6 +4214,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.9｜店長單據更正版｜Build 20261020-REPORT</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.11｜師傅預約防重疊版｜Build 20261127-STAFF</div>
 </body>
 </html>

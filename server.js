@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { createBookingCorrectionService, installBookingCorrectionRoutes } = require('./booking-correction-api');
+const { createAccountSupportService, installAccountSupportRoutes } = require('./account-support-api');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -99,6 +100,17 @@ const couponLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: '優惠券操作過於頻繁，請 15 分鐘後再試' }
 });
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 40, standardHeaders: true, legacyHeaders: false,
+  message: { error: '登入嘗試次數過多，請稍後再試' }
+});
+const recoveryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false,
+  message: { error: '密碼救援嘗試次數過多，請 15 分鐘後再試' }
+});
+
+const accountSupportService = createAccountSupportService({ db: firestore, managementCode: BOSS_RECOVERY_CODE });
 
 const DEFAULT_COUPON_CAMPAIGNS = Object.freeze({
   NEW_MEMBER_BOWL90: {
@@ -429,7 +441,7 @@ async function sendLineMsg(to, text) {
 }
 
 // ── 健康檢查 ──
-app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.9' }));
+app.get('/', (req, res) => res.json({ status: 'ok', service: '元氣堂預約系統後端', version: '2.1.11' }));
 
 // ── 員工註冊（註冊碼只存在 Render 環境變數）──
 app.post('/api/register/employee', registrationLimiter, async (req, res) => {
@@ -516,13 +528,13 @@ app.post('/api/register/employee', registrationLimiter, async (req, res) => {
 // ── 店長刪除指定員工帳號（保留預約、報表、班表與打卡歷史）──
 app.post('/api/admin/delete-employee', registrationLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '員工管理功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '員工管理功能尚未完成設定，請聯絡網站管理者設定店長管理碼' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const recoveryCode = String(body.recoveryCode || '');
   const employeeId = cleanString(body.employeeId, 50);
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   if (!/^[A-Za-z0-9_-]{2,50}$/.test(employeeId)) {
     return res.status(400).json({ error: '員工帳號格式不正確' });
@@ -546,14 +558,14 @@ app.post('/api/admin/delete-employee', registrationLimiter, async (req, res) => 
 // ── 店長調整預約管理權限（boss 本身永遠不會被變更）──
 app.post('/api/admin/set-employee-role', registrationLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '權限管理功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '權限管理功能尚未完成設定，請聯絡網站管理者設定店長管理碼' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const recoveryCode = String(body.recoveryCode || '');
   const employeeId = cleanString(body.employeeId, 50);
   const role = cleanString(body.role, 20);
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   if (!/^[A-Za-z0-9_-]{2,50}$/.test(employeeId)) {
     return res.status(400).json({ error: '員工帳號格式不正確' });
@@ -579,13 +591,13 @@ app.post('/api/admin/set-employee-role', registrationLimiter, async (req, res) =
 // ── 店長刪除指定客人登入帳號（保留預約、消費與報表歷史）──
 app.post('/api/admin/delete-customer', adminLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '客人帳號管理尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '客人帳號管理尚未完成設定，請聯絡網站管理者設定店長管理碼' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   const recoveryCode = String(body.recoveryCode || '');
   const customerId = cleanDocumentId(body.customerId);
   if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   if (!customerId) return res.status(400).json({ error: '客人帳號格式不正確' });
   try {
@@ -626,11 +638,11 @@ app.post('/api/admin/delete-customer', adminLimiter, async (req, res) => {
 // ── 店長將「僅歷史紀錄」連結到既有可登入會員帳號 ──
 app.post('/api/admin/link-customer-history', adminLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '會員連結功能尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '會員連結功能尚未完成設定，請聯絡網站管理者設定店長管理碼' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   const targetCustomerId = cleanDocumentId(body.targetCustomerId);
   const bookingIds = [...new Set((Array.isArray(body.bookingIds) ? body.bookingIds : [])
@@ -644,6 +656,7 @@ app.post('/api/admin/link-customer-history', adminLimiter, async (req, res) => {
 
   try {
     const result = await firestore.runTransaction(async transaction => {
+      await accountSupportService.authorizeBoss(transaction, body);
       // 在同一交易內重新讀取全部會員，避免用舊畫面資料連結到重複手機。
       const customerList = await transaction.get(firestore.collection('customers'));
       const targetSnapshot = customerList.docs.find(snapshot => snapshot.id === targetCustomerId);
@@ -767,11 +780,11 @@ app.post('/api/admin/link-customer-history', adminLimiter, async (req, res) => {
 // ── 店長建立或修改優惠券活動──
 app.post('/api/admin/upsert-coupon-campaign', couponLimiter, async (req, res) => {
   if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '優惠券管理尚未完成設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
+    return res.status(503).json({ error: '優惠券管理尚未完成設定，請聯絡網站管理者設定店長管理碼' });
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   let campaign;
   try {
@@ -805,7 +818,7 @@ app.post('/api/admin/set-coupon-campaign-active', couponLimiter, async (req, res
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   const code = cleanCouponCode(body.code);
   if (!/^[A-Z0-9_-]{3,30}$/.test(code) || typeof body.active !== 'boolean') {
@@ -830,7 +843,7 @@ app.post('/api/admin/issue-coupon', couponLimiter, async (req, res) => {
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   try {
     const coupon = await issueCouponToCustomer({
@@ -855,7 +868,7 @@ app.post('/api/admin/issue-coupon-bulk', couponLimiter, async (req, res) => {
   }
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   if (!safeCodeEqual(String(body.recoveryCode || ''), BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
+    return res.status(403).json({ error: '店長管理碼不正確，請向網站管理者確認' });
   }
   const code = cleanCouponCode(body.code);
   const target = body.target === 'all' ? 'all' : 'members';
@@ -1068,61 +1081,7 @@ app.post('/api/coupons/welcome-member', couponLimiter, async (req, res) => {
   }
 });
 
-// ── 店長帳號救援：使用獨立救援碼重設密碼並取回帳號 ID ──
-app.post('/api/admin/reset-boss-password', registrationLimiter, async (req, res) => {
-  if (!firestore || !BOSS_RECOVERY_CODE) {
-    return res.status(503).json({ error: '店長帳號救援功能尚未設定，請先在 Render 設定 BOSS_RECOVERY_CODE' });
-  }
-  const body = req.body && typeof req.body === 'object' ? req.body : {};
-  const recoveryCode = String(body.recoveryCode || '');
-  const password = String(body.password || '');
-  const requestedId = cleanString(body.employeeId, 50);
-  if (!safeCodeEqual(recoveryCode, BOSS_RECOVERY_CODE)) {
-    return res.status(403).json({ error: '店長救援碼錯誤' });
-  }
-  if (password.length < 6 || password.length > 128) {
-    return res.status(400).json({ error: '新密碼長度需為 6–128 位' });
-  }
-  try {
-    let bossDoc = null;
-    if (requestedId) {
-      const snapshot = await firestore.collection('employees').doc(requestedId).get();
-      if (snapshot.exists && snapshot.data().role === 'boss') bossDoc = snapshot;
-      else if (snapshot.exists) return res.status(409).json({ error: '此帳號存在，但不是店長帳號' });
-      else {
-        const bosses = await firestore.collection('employees').where('role', '==', 'boss').limit(2).get();
-        if (bosses.size === 1) bossDoc = bosses.docs[0];
-        else if (bosses.size > 1) return res.status(409).json({ error: '找到多個店長帳號，請填寫正確的店長帳號 ID' });
-      }
-    } else {
-      const snapshot = await firestore.collection('employees').where('role', '==', 'boss').limit(2).get();
-      if (snapshot.size === 1) bossDoc = snapshot.docs[0];
-      else if (snapshot.size > 1) return res.status(409).json({ error: '找到多個店長帳號，請填寫店長帳號 ID' });
-    }
-    if (bossDoc) {
-      await bossDoc.ref.update({ pw: password, passwordResetAt: FieldValue.serverTimestamp() });
-      return res.json({ ok: true, bossId: bossDoc.id, created: false });
-    }
-    const bossId = requestedId || 'boss';
-    if (!/^[A-Za-z0-9_-]{2,50}$/.test(bossId)) {
-      return res.status(400).json({ error: '店長帳號格式不正確' });
-    }
-    await firestore.collection('employees').doc(bossId).set({
-      id: bossId,
-      name: '老闆',
-      pw: password,
-      role: 'boss',
-      lineId: '',
-      therapistId: null,
-      createdAt: FieldValue.serverTimestamp(),
-      passwordResetAt: FieldValue.serverTimestamp()
-    });
-    return res.json({ ok: true, bossId, created: true });
-  } catch (error) {
-    console.error('店長密碼重設失敗:', error.message);
-    return res.status(500).json({ error: '店長密碼重設失敗，請稍後再試' });
-  }
-});
+// 帳號登入、店長救援與指定帳號重設統一由 account-support-api 處理。
 
 // ── 客人預約通知 ──
 app.post('/api/notify/new-booking', notificationLimiter, async (req, res) => {
@@ -1232,6 +1191,11 @@ app.get('/api/check-groups', (req, res) => {
     customerGroupConfigured: !!CUSTOMER_GROUP_ID,
     tokenSet: !!LINE_TOKEN
   });
+});
+
+installAccountSupportRoutes({
+  app, service: accountSupportService,
+  loginLimiter, adminLimiter, recoveryLimiter
 });
 
 installBookingCorrectionRoutes({app,service:createBookingCorrectionService({db:firestore,managementCode:BOSS_RECOVERY_CODE}),limiter:adminLimiter});
