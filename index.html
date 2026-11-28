@@ -332,7 +332,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
   <!-- Firebase SDK -->
   <script src="service-catalog.js?v=2.1.10"></script>
 <script src="booking-correction.js?v=2.1.10"></script>
-<script src="therapist-schedule.js?v=2.1.11"></script>
+<script src="therapist-schedule.js?v=20261128-START"></script>
 <script defer src="booking-correction-ui.js?v=2.1.10"></script>
 <script defer src="account-support-ui.js?v=2.1.10"></script>
 <script type="module">
@@ -363,7 +363,7 @@ input,button,select{font-family:'Noto Sans TC',sans-serif;}
 <div id="toast-container"></div>
 
 <!-- ===== AUTH SCREEN ===== -->
-<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.11｜Build 20261127-STAFF</div>
+<div style="position:fixed;top:8px;right:10px;z-index:9998;background:rgba(44,32,96,.9);color:#fff;padding:4px 9px;border-radius:12px;font-size:10px">元氣堂後台 v2.1.11｜Build 20261128-START</div>
 <div id="auth-screen">
   <div class="auth-logo-wrap">
     <div class="auth-logo-circle">
@@ -3690,6 +3690,7 @@ async function startService(bookId){
       return {...current,startTime:startedTime,startTimestamp:startedAt,startDateKey:todayKey(),endTime:null,endTimestamp:null,durMins:duration,durationMinutes:duration,extraMins:Number(current.extraMins)||0};
     });
     Object.assign(b,updated);
+    if(staffBusy(b))toast('服務已開始，預計結束時間與師傅的其他預約重疊，請確認後續安排','sys','師傅時段提醒');
     if(b.bed){
       try{await reserveBedSlot(b,{force:true});}
       catch(lockErr){console.warn('服務開始後床位鎖同步失敗',lockErr);toast('服務已開始，但床位同步失敗，請留意後續安排','sys','床位提醒');}
@@ -4214,6 +4215,6 @@ document.addEventListener('click', function(e){
     <div id="clock-log-body"></div>
   </div>
 </div>
-<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.11｜師傅預約防重疊版｜Build 20261127-STAFF</div>
+<div id="system-version-footer" style="position:fixed;bottom:0;left:0;right:0;z-index:180;text-align:center;padding:4px 8px;background:rgba(44,32,96,.96);color:rgba(255,255,255,.78);font-size:10px;letter-spacing:.2px">元氣堂後台系統 v2.1.11｜師傅預約防重疊版｜Build 20261128-START</div>
 </body>
 </html>

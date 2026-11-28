@@ -46,8 +46,11 @@
     });
   }
   function conflicts(candidate, rows, employeeFor) {
+    return sharesStaff(candidate, overlapping(candidate, rows), employeeFor);
+  }
+  function sharesStaff(candidate, rows, employeeFor) {
     const ids = staffIds(candidate, employeeFor);
-    return ids.length > 0 && overlapping(candidate, rows).some(row =>
+    return ids.length > 0 && rows.some(row =>
       staffIds(row, employeeFor).some(id => ids.includes(id)));
   }
   // Every allocation on a business day reads and changes the same revision in its
@@ -67,15 +70,19 @@
       const key = 'staff_' + new Date(day * dayMs).toISOString().slice(0, 10);
       locks.push([key, await store.revision(key)]);
     }
-    const rows = overlapping(next, await store.openBookings());
+    const starting = current?.status === 'accepted' && next.status === 'accepted' && !current.startTime && !!next.startTime;
+    const open = await store.openBookings();
+    const rows = starting
+      ? open.filter(row => row.id !== next.id && row.status === 'accepted' && row.startTime && !row.endTime)
+      : overlapping(next, open);
     const employees = new Map();
     for (const row of [next, ...rows]) {
       if ((!row.therapistId || row.therapistId === 'none') && row.acceptedBy && !employees.has(row.acceptedBy)) {
         employees.set(row.acceptedBy, await store.employee(row.acceptedBy));
       }
     }
-    if (conflicts(next, rows, id => employees.get(id))) {
-      const message = '師傅在這段時間已有預約，請改選其他師傅或時段。';
+    if (sharesStaff(next, rows, id => employees.get(id))) {
+      const message = starting ? '這位師傅仍有進行中的服務，請先確認上一張單是否已切單。' : '師傅在這段時間已有預約，請改選其他師傅或時段。';
       throw Object.assign(new Error('THERAPIST_CONFLICT'), {code:'therapist-conflict', status:409, publicMessage:message});
     }
     for (const [key, revision] of locks) store.bump(key, revision + 1);

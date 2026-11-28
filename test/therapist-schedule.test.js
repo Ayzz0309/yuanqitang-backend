@@ -100,3 +100,21 @@ test('failed edits, add-time and bed overrides preserve the original booking and
   await ctx.updateBookingAtomic('B',row=>({...row,time:'10:30'}),{force:false});
   assert.equal(records.get('bookings/B').time,'10:30');
 });
+
+test('starting late permits the next reservation but prevents two concurrent starts', async () => {
+  const other = {...second, status:'accepted', time:'11:00'};
+  const {ctx, records} = screen({'bookings/A':first,'bookings/B':other});
+  const start = id => ctx.updateBookingAtomic(id, row => ({...row,startTime:'10:20'}));
+  const results = await Promise.allSettled([start('A'),start('B')]);
+  assert.equal(results.filter(r => r.status==='fulfilled').length,1);
+  assert.match(results.find(r => r.status==='rejected').reason.publicMessage,/切單/);
+  const running = records.get('bookings/A').startTime ? 'A' : 'B';
+  await ctx.updateBookingAtomic(running,row => ({...row,status:'done',endTime:'11:30'}));
+  await start(running==='A' ? 'B' : 'A');
+});
+
+test('an overdue active support therapist stays busy until checkout', async () => {
+  const other = {...second, status:'accepted',therapistId:'T043',supportId:'T031',startTime:'08:00'};
+  const {ctx} = screen({'bookings/A':first,'bookings/B':other});
+  await assert.rejects(ctx.updateBookingAtomic('A', row => ({...row,startTime:'14:01'})),{code:'therapist-conflict'});
+});
